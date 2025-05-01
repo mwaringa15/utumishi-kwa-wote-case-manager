@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Case } from "@/types";
+import { Case, CaseProgress, CaseStatus } from "@/types";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -45,12 +45,12 @@ const TrackCase = () => {
   });
   
   // If we have an ID in the URL, automatically search for it
-  useState(() => {
+  useEffect(() => {
     const id = searchParams.get("id");
     if (id) {
       handleSearch({ caseId: id });
     }
-  });
+  }, [searchParams]);
   
   const handleSearch = async (data: FormValues) => {
     setIsSearching(true);
@@ -88,13 +88,13 @@ const TrackCase = () => {
         id: caseResult.id,
         crimeReportId: caseResult.crime_report_id,
         assignedOfficerId: caseResult.assigned_officer_id || undefined,
-        progress: caseResult.progress,
+        progress: caseResult.progress as CaseProgress,
         lastUpdated: caseResult.last_updated,
         crimeReport: caseResult.crime_report ? {
           id: caseResult.crime_report.id,
           title: caseResult.crime_report.title,
           description: caseResult.crime_report.description,
-          status: caseResult.crime_report.status,
+          status: caseResult.crime_report.status as CaseStatus,
           createdAt: caseResult.crime_report.created_at,
         } : undefined
       };

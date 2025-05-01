@@ -23,6 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -41,6 +43,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CrimeReportForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -59,19 +62,50 @@ const CrimeReportForm = () => {
     setIsSubmitting(true);
     
     try {
-      // In a real app, this would connect to your Supabase backend
-      console.log("Submitted data:", data);
+      // First, create the crime report
+      const { data: crimeReport, error: crimeReportError } = await supabase
+        .from('crime_reports')
+        .insert({
+          title: data.title,
+          description: data.description,
+          location: data.location,
+          incident_date: data.incidentDate,
+          category: data.category,
+          contact_phone: data.contactPhone || null,
+          additional_info: data.additionalInfo || null,
+        })
+        .select()
+        .single();
       
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (crimeReportError) {
+        throw new Error(crimeReportError.message);
+      }
+
+      // Then, create a case linked to this crime report
+      const { data: caseData, error: caseError } = await supabase
+        .from('cases')
+        .insert({
+          crime_report_id: crimeReport.id,
+          progress: 'Pending',
+        })
+        .select()
+        .single();
+      
+      if (caseError) {
+        throw new Error(caseError.message);
+      }
       
       toast({
         title: "Crime report submitted successfully!",
-        description: "Your report has been filed with reference ID: " + Math.random().toString(36).substring(2, 10).toUpperCase(),
+        description: `Your report has been filed with reference ID: ${caseData.id.substring(0, 8).toUpperCase()}`,
       });
+      
+      // Redirect to the tracking page with the case ID
+      navigate(`/track-case?id=${caseData.id}`);
       
       form.reset();
     } catch (error) {
+      console.error("Error submitting report:", error);
       toast({
         title: "Error submitting report",
         description: "Please try again later",
