@@ -21,6 +21,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Case } from "@/types";
 import { Search } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   caseId: z.string().min(3, "Please enter a valid case ID")
@@ -55,42 +56,51 @@ const TrackCase = () => {
     setIsSearching(true);
     
     try {
-      // In a real app, this would fetch data from your Supabase backend
-      console.log("Searching for case:", data.caseId);
+      // Fetch case data from Supabase
+      const { data: caseResult, error: caseError } = await supabase
+        .from('cases')
+        .select(`
+          *,
+          crime_report:crime_report_id (
+            id,
+            title,
+            description,
+            status,
+            created_at
+          )
+        `)
+        .eq('id', data.caseId)
+        .single();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock data - depend on the case ID to determine if found or not
-      const caseIdLower = data.caseId.toLowerCase();
-      
-      if (caseIdLower.startsWith("c") || caseIdLower.startsWith("r")) {
-        // Mock found case
-        const mockCase: Case = {
-          id: data.caseId,
-          crimeReportId: "r-" + Math.random().toString(36).substring(2, 10),
-          assignedOfficerId: "off-" + Math.random().toString(36).substring(2, 10),
-          progress: Math.random() > 0.6 ? "In Progress" : Math.random() > 0.3 ? "Pending" : "Completed",
-          lastUpdated: new Date().toISOString(),
-          crimeReport: {
-            id: "r-" + Math.random().toString(36).substring(2, 10),
-            title: "Case #" + data.caseId,
-            description: "This is a mock case for demonstration purposes. In a real application, this would show the actual details of your reported case.",
-            status: Math.random() > 0.6 ? "Under Investigation" : Math.random() > 0.3 ? "Submitted" : "Closed",
-            createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString(),
-          }
-        };
-        
-        setCaseData(mockCase);
-      } else {
-        // Case not found
+      if (caseError || !caseResult) {
         toast({
           title: "Case not found",
           description: "We couldn't find a case with that ID. Please check and try again.",
           variant: "destructive",
         });
         setCaseData(null);
+        setIsSearching(false);
+        return;
       }
+      
+      // Convert the Supabase result to our Case type
+      const foundCase: Case = {
+        id: caseResult.id,
+        crimeReportId: caseResult.crime_report_id,
+        assignedOfficerId: caseResult.assigned_officer_id || undefined,
+        progress: caseResult.progress,
+        lastUpdated: caseResult.last_updated,
+        crimeReport: caseResult.crime_report ? {
+          id: caseResult.crime_report.id,
+          title: caseResult.crime_report.title,
+          description: caseResult.crime_report.description,
+          status: caseResult.crime_report.status,
+          createdAt: caseResult.crime_report.created_at,
+        } : undefined
+      };
+      
+      setCaseData(foundCase);
+      
     } catch (error) {
       console.error("Error searching for case", error);
       toast({
@@ -153,7 +163,7 @@ const TrackCase = () => {
             </Form>
             
             <div className="text-sm text-gray-500 mt-4">
-              <p>For demo purposes, enter any ID starting with 'C' or 'R' to see a mock case</p>
+              <p>Enter your case ID to track the status of your report</p>
             </div>
           </div>
           
@@ -168,7 +178,7 @@ const TrackCase = () => {
                   <div className="flex">
                     <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
                     <div className="ml-3">
-                      <p className="text-sm font-medium">Officer {caseData.assignedOfficerId?.substring(0, 8)}</p>
+                      <p className="text-sm font-medium">Officer {caseData.assignedOfficerId?.substring(0, 8) || "Unassigned"}</p>
                       <p className="text-sm text-gray-500">
                         {new Date(caseData.lastUpdated || "").toLocaleDateString()}
                       </p>

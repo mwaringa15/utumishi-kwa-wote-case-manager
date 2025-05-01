@@ -9,7 +9,83 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      cases: {
+        Row: {
+          assigned_officer_id: string | null
+          crime_report_id: string
+          evidence: Json | null
+          id: string
+          last_updated: string
+          progress: string
+        }
+        Insert: {
+          assigned_officer_id?: string | null
+          crime_report_id: string
+          evidence?: Json | null
+          id?: string
+          last_updated?: string
+          progress?: string
+        }
+        Update: {
+          assigned_officer_id?: string | null
+          crime_report_id?: string
+          evidence?: Json | null
+          id?: string
+          last_updated?: string
+          progress?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cases_crime_report_id_fkey"
+            columns: ["crime_report_id"]
+            isOneToOne: false
+            referencedRelation: "crime_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crime_reports: {
+        Row: {
+          additional_info: string | null
+          category: string
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          incident_date: string
+          location: string
+          status: string
+          title: string
+        }
+        Insert: {
+          additional_info?: string | null
+          category: string
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          incident_date: string
+          location: string
+          status?: string
+          title: string
+        }
+        Update: {
+          additional_info?: string | null
+          category?: string
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          incident_date?: string
+          location?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
