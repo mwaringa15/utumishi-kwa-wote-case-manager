@@ -24,7 +24,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface LoginFormProps {
-  onLogin?: (email: string, password: string) => void;
+  onLogin?: (email: string, password: string) => Promise<void>;
 }
 
 const LoginForm = ({ onLogin }: LoginFormProps) => {
@@ -44,35 +44,24 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would authenticate with Supabase
       console.log("Login attempt:", data);
       
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
       if (onLogin) {
-        onLogin(data.email, data.password);
-      } else {
-        // Demo login - automatically redirect based on email domain
-        let role = "Public";
-        if (data.email.endsWith("@police.go.ke")) {
-          role = "Officer";
+        await onLogin(data.email, data.password);
+        
+        // Navigate based on role
+        if (data.email.endsWith("@police.go.ke") || 
+            data.email.endsWith("@admin.police.go.ke") || 
+            data.email.endsWith("@commander.police.go.ke") || 
+            data.email.endsWith("@ocs.police.go.ke")) {
           navigate("/officer-dashboard");
         } else {
           navigate("/dashboard");
         }
-        
-        toast({
-          title: "Logged in successfully!",
-          description: `Welcome back! You are logged in as: ${role}`,
-        });
       }
     } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "Invalid email or password",
-        variant: "destructive",
-      });
+      console.error("Login error:", error);
+      // Error is already handled in the useAuth hook
     } finally {
       setIsLoading(false);
     }

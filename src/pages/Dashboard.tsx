@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -7,9 +6,10 @@ import CaseCard from "@/components/CaseCard";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Case, CrimeReport } from "@/types";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, withAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { FileText, Search } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -19,58 +19,69 @@ const Dashboard = () => {
   const [myCases, setMyCases] = useState<Case[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Redirect to login if not authenticated
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    
-    // Mock API call to load data
     const loadData = async () => {
       setIsLoading(true);
+      
       try {
-        // In a real app, this would fetch data from your Supabase backend
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!user?.id) return;
         
-        // Mock data
-        const mockReports: CrimeReport[] = [
-          {
-            id: "r1",
-            title: "Stolen Mobile Phone",
-            description: "My phone was snatched at the bus station around 6 PM yesterday. It's a Samsung Galaxy S21, black color.",
-            status: "Under Investigation",
-            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-          {
-            id: "r2",
-            title: "Damaged Vehicle",
-            description: "Found my car with scratches on all sides in the parking lot at Central Mall.",
-            status: "Submitted",
-            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-        ];
+        // Fetch crime reports
+        const { data: reportsData, error: reportsError } = await supabase
+          .from('crime_reports')
+          .select('*')
+          .eq('created_by', user.id);
+          
+        if (reportsError) throw reportsError;
         
-        const mockCases: Case[] = [
-          {
-            id: "c1",
-            crimeReportId: "r1",
-            assignedOfficerId: "off123",
-            progress: "In Progress",
-            lastUpdated: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            crimeReport: mockReports[0],
-          },
-          {
-            id: "c2",
-            crimeReportId: "r2",
-            progress: "Pending",
-            lastUpdated: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            crimeReport: mockReports[1],
-          },
-        ];
+        // Fetch cases linked to those reports
+        if (reportsData.length > 0) {
+          const reportIds = reportsData.map(report => report.id);
+          
+          const { data: casesData, error: casesError } = await supabase
+            .from('cases')
+            .select(`
+              *,
+              crime_report:crime_report_id (*)
+            `)
+            .in('crime_report_id', reportIds);
+            
+          if (casesError) throw casesError;
+          
+          // Convert to our app types
+          const typedCases: Case[] = casesData.map(caseItem => ({
+            id: caseItem.id,
+            crimeReportId: caseItem.crime_report_id,
+            assignedOfficerId: caseItem.assigned_officer_id,
+            progress: caseItem.progress,
+            lastUpdated: caseItem.last_updated,
+            crimeReport: caseItem.crime_report ? {
+              id: caseItem.crime_report.id,
+              title: caseItem.crime_report.title,
+              description: caseItem.crime_report.description,
+              status: caseItem.crime_report.status,
+              createdAt: caseItem.crime_report.created_at,
+              location: caseItem.crime_report.location,
+              category: caseItem.crime_report.category
+            } : undefined
+          }));
+          
+          setMyCases(typedCases);
+        }
         
-        setMyReports(mockReports);
-        setMyCases(mockCases);
+        // Convert reports to our app types
+        const typedReports: CrimeReport[] = reportsData.map(report => ({
+          id: report.id,
+          title: report.title,
+          description: report.description,
+          status: report.status,
+          createdById: report.created_by,
+          createdAt: report.created_at,
+          location: report.location,
+          category: report.category
+        }));
+        
+        setMyReports(typedReports);
       } catch (error) {
         console.error("Failed to load dashboard data", error);
         toast({
@@ -83,8 +94,10 @@ const Dashboard = () => {
       }
     };
     
-    loadData();
-  }, [user, navigate, toast]);
+    if (user) {
+      loadData();
+    }
+  }, [user, toast]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -228,4 +241,5 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+// Export with auth wrapper to protect this route
+export default withAuth(Dashboard);

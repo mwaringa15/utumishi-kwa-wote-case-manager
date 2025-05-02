@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, Shield, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NavbarProps {
   isLoggedIn?: boolean;
@@ -17,8 +17,15 @@ interface NavbarProps {
 
 const Navbar = ({ isLoggedIn = false, userRole = "Public" }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-200">
@@ -66,8 +73,8 @@ const Navbar = ({ isLoggedIn = false, userRole = "Public" }: NavbarProps) => {
                   <DropdownMenuItem>
                     <Link to="/profile" className="w-full">Profile</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link to="/" className="w-full">Logout</Link>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <span className="w-full">Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -155,13 +162,15 @@ const Navbar = ({ isLoggedIn = false, userRole = "Public" }: NavbarProps) => {
                 >
                   Profile
                 </Link>
-                <Link
-                  to="/"
-                  className="block font-medium hover:text-kenya-green"
-                  onClick={() => setIsMenuOpen(false)}
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="block w-full text-left font-medium hover:text-kenya-green"
                 >
                   Logout
-                </Link>
+                </button>
               </div>
             ) : (
               <div className="space-y-2 pt-2 border-t">

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { Link, useNavigate } from "react-router-dom";
+import { UserRole } from "@/types";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -31,7 +31,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface RegisterFormProps {
-  onRegister?: (data: Omit<FormValues, "confirmPassword">) => void;
+  onRegister?: (data: Omit<FormValues, "confirmPassword">) => Promise<void>;
 }
 
 const RegisterForm = ({ onRegister }: RegisterFormProps) => {
@@ -55,31 +55,41 @@ const RegisterForm = ({ onRegister }: RegisterFormProps) => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would register with Supabase
-      const { confirmPassword, ...registerData } = data;
-      console.log("Registration data:", registerData);
+      console.log("Registration data:", data);
       
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Determine role based on email domain
+      let role: UserRole = "Public";
+      if (data.email.endsWith("@police.go.ke")) {
+        role = "Officer";
+      } else if (data.email.endsWith("@admin.police.go.ke")) {
+        role = "Administrator";
+      } else if (data.email.endsWith("@commander.police.go.ke")) {
+        role = "Commander";
+      } else if (data.email.endsWith("@ocs.police.go.ke")) {
+        role = "OCS";
+      } else if (data.email.endsWith("@judiciary.go.ke")) {
+        role = "Judiciary";
+      }
       
       if (onRegister) {
-        onRegister(registerData);
-      } else {
-        // Mock successful registration
+        const { confirmPassword, ...registerData } = data;
+        
+        // Add user to supabase auth
+        await onRegister({
+          ...registerData,
+          role
+        });
+        
+        // Navigate to login
         toast({
           title: "Registration successful!",
           description: "Your account has been created. You can now login.",
         });
-        
-        // Redirect to login page
         navigate("/login");
       }
-    } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: "There was a problem creating your account",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      // Error is handled in useAuth hook
     } finally {
       setIsLoading(false);
     }

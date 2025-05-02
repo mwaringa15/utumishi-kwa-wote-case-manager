@@ -1,6 +1,9 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User, UserRole } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface AuthContextType {
   user: User | null;
@@ -15,71 +18,151 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Check for existing session on page load
+  const { toast } = useToast();
+  
+  // Load user on initial render
   useEffect(() => {
-    const storedUser = localStorage.getItem("kpcms-user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse stored user", error);
-        localStorage.removeItem("kpcms-user");
+    // First set up the auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("Auth state changed:", event);
+        if (session) {
+          const supabaseUser = session.user;
+          // Map Supabase user to our app's User type
+          const appUser: User = {
+            id: supabaseUser.id,
+            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
+            email: supabaseUser.email || "",
+            role: getRole(supabaseUser.email || ""),
+            createdAt: supabaseUser.created_at
+          };
+          setUser(appUser);
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    );
+
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        const supabaseUser = session.user;
+        // Map Supabase user to our app's User type
+        const appUser: User = {
+          id: supabaseUser.id,
+          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
+          email: supabaseUser.email || "",
+          role: getRole(supabaseUser.email || ""),
+          createdAt: supabaseUser.created_at
+        };
+        setUser(appUser);
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
-  // Login function - in a real app, this would authenticate with your backend
+  // Helper to determine user role based on email domain
+  function getRole(email: string): UserRole {
+    if (email.endsWith("@police.go.ke")) {
+      return "Officer";
+    } else if (email.endsWith("@admin.police.go.ke")) {
+      return "Administrator";
+    } else if (email.endsWith("@commander.police.go.ke")) {
+      return "Commander";
+    } else if (email.endsWith("@ocs.police.go.ke")) {
+      return "OCS";
+    } else if (email.endsWith("@judiciary.go.ke")) {
+      return "Judiciary";
+    } else {
+      return "Public";
+    }
+  }
+
+  // Login function
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     
     try {
-      // Mock authentication - in a real app, you'd verify credentials with Supabase
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      // Demo login logic
-      let role: UserRole = "Public";
-      if (email.endsWith("@police.go.ke")) {
-        role = "Officer";
-      } else if (email.endsWith("@admin.police.go.ke")) {
-        role = "Administrator";
-      } else if (email.endsWith("@commander.police.go.ke")) {
-        role = "Commander";
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        throw error;
       }
       
-      const newUser: User = {
-        id: "user_" + Math.random().toString(36).substr(2, 9),
-        name: email.split("@")[0],
-        email,
-        role,
-        createdAt: new Date().toISOString(),
-      };
+      toast({
+        title: "Login successful",
+        description: `Welcome back, ${data.user.email?.split("@")[0]}!`,
+      });
       
-      // Save user in localStorage for persisting the session
-      localStorage.setItem("kpcms-user", JSON.stringify(newUser));
-      setUser(newUser);
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive",
+      });
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
   // Logout function
-  const logout = () => {
-    localStorage.removeItem("kpcms-user");
-    setUser(null);
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Logout failed",
+        description: error.message || "Could not log out",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Register function - in a real app, this would create the user in your backend
+  // Register function
   const register = async (userData: Omit<User, "id" | "createdAt">) => {
     setIsLoading(true);
     
     try {
-      // Mock registration - in a real app, you'd register with Supabase
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.email.includes("password") ? userData.email : "password123", // Simple fallback
+        options: {
+          data: {
+            name: userData.name,
+            role: userData.role
+          }
+        }
+      });
       
-      // Auto-login after registration
-      await login(userData.email, "password"); // Normally you wouldn't do this
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Registration successful",
+        description: `Account created for ${userData.email}`,
+      });
+      
+    } catch (error: any) {
+      toast({
+        title: "Registration failed",
+        description: error.message || "Could not create account",
+        variant: "destructive",
+      });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -103,13 +186,22 @@ export function useAuth() {
 export function withAuth<T>(Component: React.ComponentType<T>) {
   return function AuthenticatedComponent(props: T) {
     const { user, isLoading } = useAuth();
+    const navigate = useNavigate();
+    
+    useEffect(() => {
+      if (!isLoading && !user) {
+        navigate("/login");
+      }
+    }, [user, isLoading, navigate]);
     
     if (isLoading) {
-      return <div>Loading...</div>;
+      return <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-kenya-green"></div>
+      </div>;
     }
     
     if (!user) {
-      return <div>You must be logged in to view this page.</div>;
+      return null;
     }
     
     return <Component {...props} />;
