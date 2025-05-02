@@ -15,13 +15,14 @@ const TrackCase = () => {
   const [searchParams] = useSearchParams();
   const { isSearching, caseData, handleSearch, error } = useTrackCase();
   
-  // If we have an ID in the URL, automatically search for it
+  // If we have an ID in the URL, automatically search for it only once on initial load
   useEffect(() => {
     const id = searchParams.get("id");
     if (id) {
+      // Only search if we have a valid ID
       handleSearch({ caseId: id });
     }
-  }, [searchParams, handleSearch]);
+  }, [searchParams.get("id")]); // Only re-run if the ID in the URL changes
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

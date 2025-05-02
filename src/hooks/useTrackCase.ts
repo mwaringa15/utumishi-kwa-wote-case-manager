@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Case, CaseProgress, CaseStatus } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,10 +10,17 @@ export function useTrackCase() {
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const lastSearchedId = useRef<string | null>(null);
 
   const handleSearch = async (data: CaseSearchFormValues) => {
+    // If we're already searching for this ID, prevent duplicate requests
+    if (isSearching && lastSearchedId.current === data.caseId) {
+      return;
+    }
+    
     setIsSearching(true);
     setError(null);
+    lastSearchedId.current = data.caseId;
     
     try {
       console.log("Searching for case with ID:", data.caseId);
