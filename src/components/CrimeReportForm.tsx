@@ -60,6 +60,7 @@ const CrimeReportForm = () => {
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
+    console.log("Submitting form data:", data);
     
     try {
       // First, create the crime report
@@ -73,13 +74,17 @@ const CrimeReportForm = () => {
           category: data.category,
           contact_phone: data.contactPhone || null,
           additional_info: data.additionalInfo || null,
+          status: 'Submitted'
         })
         .select()
         .single();
       
       if (crimeReportError) {
+        console.error("Error creating crime report:", crimeReportError);
         throw new Error(crimeReportError.message);
       }
+      
+      console.log("Created crime report:", crimeReport);
 
       // Then, create a case linked to this crime report
       const { data: caseData, error: caseError } = await supabase
@@ -87,17 +92,24 @@ const CrimeReportForm = () => {
         .insert({
           crime_report_id: crimeReport.id,
           progress: 'Pending',
+          last_updated: new Date().toISOString()
         })
         .select()
         .single();
       
       if (caseError) {
+        console.error("Error creating case:", caseError);
         throw new Error(caseError.message);
       }
       
+      console.log("Created case:", caseData);
+      
+      // Format case ID for display
+      const formattedCaseId = caseData.id.substring(0, 8).toUpperCase();
+      
       toast({
         title: "Crime report submitted successfully!",
-        description: `Your report has been filed with reference ID: ${caseData.id.substring(0, 8).toUpperCase()}`,
+        description: `Your report has been filed with reference ID: ${formattedCaseId}`,
       });
       
       // Redirect to the tracking page with the case ID

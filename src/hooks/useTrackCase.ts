@@ -8,12 +8,16 @@ import { CaseSearchFormValues } from "@/components/case-tracking/CaseSearchForm"
 export function useTrackCase() {
   const [isSearching, setIsSearching] = useState(false);
   const [caseData, setCaseData] = useState<Case | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleSearch = async (data: CaseSearchFormValues) => {
     setIsSearching(true);
+    setError(null);
     
     try {
+      console.log("Searching for case with ID:", data.caseId);
+      
       // Fetch case data from Supabase
       const { data: caseResult, error: caseError } = await supabase
         .from('cases')
@@ -24,22 +28,30 @@ export function useTrackCase() {
             title,
             description,
             status,
-            created_at
+            created_at,
+            location,
+            category
           )
         `)
         .eq('id', data.caseId)
         .single();
       
-      if (caseError || !caseResult) {
-        toast({
-          title: "Case not found",
-          description: "We couldn't find a case with that ID. Please check and try again.",
-          variant: "destructive",
-        });
+      if (caseError) {
+        console.error("Case search error:", caseError);
+        setError("Case not found. We couldn't find a case with that ID. Please check and try again.");
         setCaseData(null);
         setIsSearching(false);
         return;
       }
+      
+      if (!caseResult) {
+        setError("No case found with that ID.");
+        setCaseData(null);
+        setIsSearching(false);
+        return;
+      }
+      
+      console.log("Case found:", caseResult);
       
       // Convert the Supabase result to our Case type
       const foundCase: Case = {
@@ -54,18 +66,22 @@ export function useTrackCase() {
           description: caseResult.crime_report.description,
           status: caseResult.crime_report.status as CaseStatus,
           createdAt: caseResult.crime_report.created_at,
+          location: caseResult.crime_report.location,
+          category: caseResult.crime_report.category
         } : undefined
       };
       
       setCaseData(foundCase);
       
+      // Show toast on successful case retrieval
+      toast({
+        title: "Case found",
+        description: `Viewing case ${caseResult.id.substring(0, 8).toUpperCase()}`,
+      });
+      
     } catch (error) {
       console.error("Error searching for case", error);
-      toast({
-        title: "Error",
-        description: "There was a problem searching for your case",
-        variant: "destructive",
-      });
+      setError("There was a problem searching for your case");
       setCaseData(null);
     } finally {
       setIsSearching(false);
@@ -75,6 +91,7 @@ export function useTrackCase() {
   return {
     isSearching,
     caseData,
+    error,
     handleSearch
   };
 }

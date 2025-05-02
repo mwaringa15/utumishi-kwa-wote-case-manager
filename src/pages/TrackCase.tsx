@@ -8,11 +8,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTrackCase } from "@/hooks/useTrackCase";
 import { CaseSearchForm } from "@/components/case-tracking/CaseSearchForm";
 import { CaseDetails } from "@/components/case-tracking/CaseDetails";
+import { Toaster } from "@/components/ui/toaster";
 
 const TrackCase = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const { isSearching, caseData, handleSearch } = useTrackCase();
+  const { isSearching, caseData, handleSearch, error } = useTrackCase();
   
   // If we have an ID in the URL, automatically search for it
   useEffect(() => {
@@ -20,11 +21,12 @@ const TrackCase = () => {
     if (id) {
       handleSearch({ caseId: id });
     }
-  }, [searchParams]);
+  }, [searchParams, handleSearch]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar isLoggedIn={!!user} userRole={user?.role} />
+      <Toaster />
       
       <div className="container mx-auto px-4 py-8 flex-grow">
         <div className="max-w-3xl mx-auto">
@@ -47,6 +49,13 @@ const TrackCase = () => {
             isSearching={isSearching} 
             onSearch={handleSearch} 
           />
+          
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded mb-6">
+              <p>{error}</p>
+              <p className="text-sm mt-1">Please check the case ID and try again.</p>
+            </div>
+          )}
           
           {caseData && <CaseDetails caseData={caseData} />}
         </div>

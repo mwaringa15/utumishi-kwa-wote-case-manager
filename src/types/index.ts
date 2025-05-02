@@ -19,6 +19,8 @@ export interface CrimeReport {
   status: CaseStatus;
   createdById?: string;
   createdAt?: string;
+  location?: string;
+  category?: string;
 }
 
 export interface Case {
