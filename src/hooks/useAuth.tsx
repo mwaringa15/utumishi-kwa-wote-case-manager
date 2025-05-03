@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
-        password: userData.email.includes("password") ? userData.email : "password123", // Simple fallback
+        password: userData.password, // Use the actual password from userData
         options: {
           data: {
             name: userData.name,
