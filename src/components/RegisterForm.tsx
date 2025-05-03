@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,7 +32,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface RegisterFormProps {
-  onRegister?: (data: Omit<FormValues, "confirmPassword">) => Promise<void>;
+  onRegister?: (data: { name: string; email: string; password: string; nationalId?: string; phone?: string; role?: UserRole }) => Promise<void>;
 }
 
 const RegisterForm = ({ onRegister }: RegisterFormProps) => {
@@ -74,7 +75,7 @@ const RegisterForm = ({ onRegister }: RegisterFormProps) => {
       if (onRegister) {
         const { confirmPassword, ...registerData } = data;
         
-        // Add user to supabase auth
+        // Add user to supabase auth with proper type
         await onRegister({
           ...registerData,
           role

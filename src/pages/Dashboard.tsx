@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -5,7 +6,7 @@ import Footer from "@/components/Footer";
 import CaseCard from "@/components/CaseCard";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Case, CrimeReport } from "@/types";
+import { Case, CrimeReport, CaseProgress, CaseStatus } from "@/types";
 import { useAuth, withAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { FileText, Search } from "lucide-react";
@@ -48,18 +49,18 @@ const Dashboard = () => {
             
           if (casesError) throw casesError;
           
-          // Convert to our app types
+          // Convert to our app types with proper type casting
           const typedCases: Case[] = casesData.map(caseItem => ({
             id: caseItem.id,
             crimeReportId: caseItem.crime_report_id,
             assignedOfficerId: caseItem.assigned_officer_id,
-            progress: caseItem.progress,
+            progress: caseItem.progress as CaseProgress,
             lastUpdated: caseItem.last_updated,
             crimeReport: caseItem.crime_report ? {
               id: caseItem.crime_report.id,
               title: caseItem.crime_report.title,
               description: caseItem.crime_report.description,
-              status: caseItem.crime_report.status,
+              status: caseItem.crime_report.status as CaseStatus,
               createdAt: caseItem.crime_report.created_at,
               location: caseItem.crime_report.location,
               category: caseItem.crime_report.category
@@ -69,12 +70,12 @@ const Dashboard = () => {
           setMyCases(typedCases);
         }
         
-        // Convert reports to our app types
+        // Convert reports to our app types with proper type casting
         const typedReports: CrimeReport[] = reportsData.map(report => ({
           id: report.id,
           title: report.title,
           description: report.description,
-          status: report.status,
+          status: report.status as CaseStatus,
           createdById: report.created_by,
           createdAt: report.created_at,
           location: report.location,

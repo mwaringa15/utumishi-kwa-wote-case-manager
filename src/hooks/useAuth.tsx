@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User, UserRole } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  register: (userData: Omit<User, "id" | "createdAt">) => Promise<void>;
+  register: (userData: { name: string; email: string; password: string; nationalId?: string; phone?: string; role?: UserRole }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -132,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Register function
-  const register = async (userData: Omit<User, "id" | "createdAt">) => {
+  const register = async (userData: { name: string; email: string; password: string; nationalId?: string; phone?: string; role?: UserRole }) => {
     setIsLoading(true);
     
     try {
