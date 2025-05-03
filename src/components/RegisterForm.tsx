@@ -75,9 +75,13 @@ const RegisterForm = ({ onRegister }: RegisterFormProps) => {
       if (onRegister) {
         const { confirmPassword, ...registerData } = data;
         
-        // Add user to supabase auth with proper type
+        // Add user to supabase auth with proper type - ensuring required fields are passed explicitly
         await onRegister({
-          ...registerData,
+          name: registerData.name,  // Explicitly passing as required property
+          email: registerData.email, // Explicitly passing as required property
+          password: registerData.password, // Explicitly passing as required property
+          nationalId: registerData.nationalId,
+          phone: registerData.phone,
           role
         });
         
