@@ -46,11 +46,11 @@ const CaseCard = ({
           </CardTitle>
           <div className="flex space-x-2">
             {caseData.crimeReport?.status && (
-              <Badge className={`${getStatusColor(caseData.crimeReport.status)}`}>
+              <Badge className={getStatusColor(caseData.crimeReport.status)}>
                 {caseData.crimeReport.status}
               </Badge>
             )}
-            <Badge className={`${getProgressColor(caseData.progress)}`}>
+            <Badge className={getProgressColor(caseData.progress)}>
               {caseData.progress}
             </Badge>
           </div>

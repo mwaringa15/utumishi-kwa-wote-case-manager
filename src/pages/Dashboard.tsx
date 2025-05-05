@@ -29,9 +29,9 @@ const Dashboard = () => {
         
         // Fetch crime reports
         const { data: reportsData, error: reportsError } = await supabase
-          .from('crime_reports')
+          .from('reports')
           .select('*')
-          .eq('created_by', user.id);
+          .eq('reporter_id', user.id);
           
         if (reportsError) throw reportsError;
         
@@ -43,27 +43,28 @@ const Dashboard = () => {
             .from('cases')
             .select(`
               *,
-              crime_report:crime_report_id (*)
+              report:report_id (*)
             `)
-            .in('crime_report_id', reportIds);
+            .in('report_id', reportIds);
             
           if (casesError) throw casesError;
           
           // Convert to our app types with proper type casting
           const typedCases: Case[] = casesData.map(caseItem => ({
             id: caseItem.id,
-            crimeReportId: caseItem.crime_report_id,
+            crimeReportId: caseItem.report_id,
             assignedOfficerId: caseItem.assigned_officer_id,
-            progress: caseItem.progress as CaseProgress,
-            lastUpdated: caseItem.last_updated,
-            crimeReport: caseItem.crime_report ? {
-              id: caseItem.crime_report.id,
-              title: caseItem.crime_report.title,
-              description: caseItem.crime_report.description,
-              status: caseItem.crime_report.status as CaseStatus,
-              createdAt: caseItem.crime_report.created_at,
-              location: caseItem.crime_report.location,
-              category: caseItem.crime_report.category
+            progress: caseItem.status as CaseProgress,
+            lastUpdated: caseItem.updated_at,
+            crimeReport: caseItem.report ? {
+              id: caseItem.report.id,
+              title: caseItem.report.title,
+              description: caseItem.report.description,
+              status: caseItem.report.status as CaseStatus,
+              createdAt: caseItem.report.created_at,
+              location: caseItem.report.location,
+              category: caseItem.report.category,
+              createdById: user.id // Use the current user's ID as the creator
             } : undefined
           }));
           
@@ -76,7 +77,7 @@ const Dashboard = () => {
           title: report.title,
           description: report.description,
           status: report.status as CaseStatus,
-          createdById: report.created_by,
+          createdById: report.reporter_id || user.id,
           createdAt: report.created_at,
           location: report.location,
           category: report.category

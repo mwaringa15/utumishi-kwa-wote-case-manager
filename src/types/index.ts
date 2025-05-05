@@ -1,5 +1,5 @@
 
-// src/types/index.ts - Extending as needed
+// src/types/index.ts
 
 // User types
 export type UserRole = "Public" | "Officer" | "OCS" | "Commander" | "Administrator" | "Judiciary";
@@ -23,11 +23,12 @@ export interface CrimeReport {
   id: string;
   title: string;
   description: string;
-  status: string;
+  status: CrimeStatus;
   createdById: string;
   createdAt: string;
   crimeType?: string;
   location?: string;
+  category?: string; // Added to match usage in code
   victimName?: string;
   victimContact?: string;
   witnessDetails?: string;
@@ -37,15 +38,14 @@ export interface CrimeReport {
 
 // Case types
 export type CaseProgress = "Pending" | "In Progress" | "Pending Review" | "Completed";
-export type CaseStatus = "Under Investigation" | "Closed" | "Submitted to Judiciary" | "Returned from Judiciary" | "Under Court Process";
-export type JudiciaryStatus = "Pending Review" | "Accepted" | "Returned";
+export type CaseStatus = "Under Investigation" | "Closed" | "Submitted to Judiciary" | "Returned from Judiciary" | "Under Court Process" | "Submitted";
 
 export interface Case {
   id: string;
   crimeReportId: string;
   assignedOfficerId?: string;
   assignedOfficerName?: string;
-  progress: string;
+  progress: CaseProgress;
   lastUpdated: string;
   crimeReport?: CrimeReport;
   submittedToJudiciary?: boolean;
@@ -55,6 +55,7 @@ export interface Case {
 
 // Case update types
 export type UpdateType = "Progress Update" | "Evidence Added" | "Status Change" | "Case Priority Change";
+export type JudiciaryStatus = "Pending Review" | "Accepted" | "Returned";
 
 export interface CaseUpdate {
   id: string;

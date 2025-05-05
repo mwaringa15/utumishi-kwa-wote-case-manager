@@ -65,7 +65,7 @@ const CrimeReportForm = () => {
     try {
       // First, create the crime report
       const { data: crimeReport, error: crimeReportError } = await supabase
-        .from('crime_reports')
+        .from('reports')
         .insert({
           title: data.title,
           description: data.description,
@@ -90,9 +90,10 @@ const CrimeReportForm = () => {
       const { data: caseData, error: caseError } = await supabase
         .from('cases')
         .insert({
-          crime_report_id: crimeReport.id,
+          report_id: crimeReport.id,
           progress: 'Pending',
-          last_updated: new Date().toISOString()
+          status: 'Submitted',
+          updated_at: new Date().toISOString()
         })
         .select()
         .single();

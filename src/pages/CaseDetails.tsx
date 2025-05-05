@@ -386,7 +386,7 @@ const CaseDetails = () => {
                     )}
                   </CardContent>
                   <CardFooter>
-                    <Button variant="outline" className="w-full" onClick={() => document.querySelector('button[value="timeline"]')?.click()}>
+                    <Button variant="outline" className="w-full" onClick={() => document.getElementById('evidence-tab')?.click?.() || document.getElementById('evidence-tab')?.dispatchEvent?.(new MouseEvent('click', { bubbles: true })}>
                       View All Updates
                     </Button>
                   </CardFooter>
@@ -469,8 +469,7 @@ const CaseDetails = () => {
                       <Button 
                         variant="outline" 
                         className="w-full flex items-center justify-center"
-                        onClick={() => document.querySelector('button[value="update"]')?.click()}
-                      >
+                        onClick={() => document.getElementById('notes-tab')?.click?.() || document.getElementById('notes-tab')?.dispatchEvent?.(new MouseEvent('click', { bubbles: true })}>
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Add Update
                       </Button>

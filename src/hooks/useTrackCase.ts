@@ -1,7 +1,7 @@
 
 import { useState, useRef } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Case, CaseProgress, CaseStatus } from "@/types";
+import { Case, CaseProgress, CaseStatus, CrimeReport } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { CaseSearchFormValues } from "@/components/case-tracking/CaseSearchForm";
 
@@ -30,7 +30,7 @@ export function useTrackCase() {
         .from('cases')
         .select(`
           *,
-          crime_report:crime_report_id (
+          report:report_id (
             id,
             title,
             description,
@@ -63,18 +63,19 @@ export function useTrackCase() {
       // Convert the Supabase result to our Case type
       const foundCase: Case = {
         id: caseResult.id,
-        crimeReportId: caseResult.crime_report_id,
+        crimeReportId: caseResult.report_id,
         assignedOfficerId: caseResult.assigned_officer_id || undefined,
-        progress: caseResult.progress as CaseProgress,
-        lastUpdated: caseResult.last_updated,
-        crimeReport: caseResult.crime_report ? {
-          id: caseResult.crime_report.id,
-          title: caseResult.crime_report.title,
-          description: caseResult.crime_report.description,
-          status: caseResult.crime_report.status as CaseStatus,
-          createdAt: caseResult.crime_report.created_at,
-          location: caseResult.crime_report.location,
-          category: caseResult.crime_report.category
+        progress: caseResult.status as CaseProgress,
+        lastUpdated: caseResult.updated_at,
+        crimeReport: caseResult.report ? {
+          id: caseResult.report.id,
+          title: caseResult.report.title,
+          description: caseResult.report.description,
+          status: caseResult.report.status as CaseStatus,
+          createdAt: caseResult.report.created_at,
+          location: caseResult.report.location,
+          category: caseResult.report.category,
+          createdById: "anonymous" // Providing a default value as it's required by the type
         } : undefined
       };
       
