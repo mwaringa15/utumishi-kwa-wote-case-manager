@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -503,7 +502,7 @@ const CaseDetails = () => {
                 {caseUpdates.length > 0 ? (
                   <Timeline>
                     {caseUpdates.map((update, index) => (
-                      <TimelineItem key={update.id}>
+                      <TimelineItem key={update.id} className="relative">
                         {index < caseUpdates.length - 1 && <TimelineConnector />}
                         <TimelineHeader>
                           <TimelineIcon>
@@ -546,7 +545,7 @@ const CaseDetails = () => {
                       </TimelineItem>
                     ))}
                     
-                    <TimelineItem>
+                    <TimelineItem className="relative">
                       <TimelineHeader>
                         <TimelineIcon>
                           <Calendar className="h-4 w-4 text-gray-600" />

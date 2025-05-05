@@ -80,8 +80,49 @@ export function TimelineDescription({ children, className }: TimelineDescription
   )
 }
 
+// Add the missing components needed for CaseDetails.tsx
+interface TimelineConnectorProps {
+  className?: string
+}
+
+export function TimelineConnector({ className }: TimelineConnectorProps) {
+  return (
+    <div className={cn("absolute h-full w-0.5 left-5 top-5 bg-border", className)} />
+  )
+}
+
+interface TimelineHeaderProps {
+  children: React.ReactNode
+  className?: string
+}
+
+export function TimelineHeader({ children, className }: TimelineHeaderProps) {
+  return (
+    <div className={cn("flex items-center", className)}>
+      {children}
+    </div>
+  )
+}
+
+interface TimelineBodyProps {
+  children: React.ReactNode
+  className?: string
+}
+
+export function TimelineBody({ children, className }: TimelineBodyProps) {
+  return (
+    <div className={cn("mt-2 ml-14", className)}>
+      {children}
+    </div>
+  )
+}
+
+// Export all components through Timeline for dot notation access
 Timeline.Item = TimelineItem
 Timeline.Icon = TimelineIcon
 Timeline.Content = TimelineContent
 Timeline.Title = TimelineTitle
 Timeline.Description = TimelineDescription
+Timeline.Connector = TimelineConnector
+Timeline.Header = TimelineHeader
+Timeline.Body = TimelineBody
