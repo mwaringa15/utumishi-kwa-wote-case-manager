@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -202,7 +201,7 @@ const SupervisorDashboard = () => {
               id: "r203",
               title: "Assault at Nightclub",
               description: "Physical altercation between patrons at nightclub.",
-              status: "Completed",
+              status: "Closed", // Fixed the error here
               createdById: "user203",
               createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
               location: "Club Zeros, Westlands",

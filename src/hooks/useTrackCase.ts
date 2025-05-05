@@ -74,8 +74,7 @@ export function useTrackCase() {
           status: caseResult.report.status as CaseStatus,
           createdAt: caseResult.report.created_at,
           location: caseResult.report.location,
-          // Only include category if it exists in the report
-          ...(caseResult.report.category && { category: caseResult.report.category }),
+          // Do not include category as it doesn't exist in the database
           createdById: caseResult.report.reporter_id || "anonymous" // Providing a default value as it's required by the type
         }
       };
