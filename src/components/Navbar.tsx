@@ -10,7 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 
 interface NavbarProps {
   isLoggedIn?: boolean;
@@ -19,7 +20,8 @@ interface NavbarProps {
 
 const Navbar = ({ isLoggedIn = false, userRole = "Public" }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
+  const { logout } = useAuthActions();
   const navigate = useNavigate();
   const location = useLocation();
 

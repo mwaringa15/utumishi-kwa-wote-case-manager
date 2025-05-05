@@ -4,7 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { AuthProvider } from "@/hooks/auth/AuthProvider";
+import { ProtectedRoute } from "@/hooks/auth/ProtectedRoute";
 
 // Pages
 import Index from "./pages/Index";
@@ -21,40 +22,6 @@ import CaseDetails from "./pages/CaseDetails";
 // Login and Register pages
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-
-// Protected Route Component
-const ProtectedRoute = ({ 
-  element, 
-  allowedRoles = [], 
-  redirectTo = "/login" 
-}) => {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-kenya-green"></div>
-    </div>;
-  }
-  
-  if (!user) {
-    return <Navigate to={redirectTo} replace />;
-  }
-  
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    // Redirect to appropriate dashboard based on role
-    if (user.role === "Officer") {
-      return <Navigate to="/officer-dashboard" replace />;
-    } else if (user.role === "OCS" || user.role === "Commander" || user.role === "Administrator") {
-      return <Navigate to="/supervisor-dashboard" replace />;
-    } else if (user.role === "Judiciary") {
-      return <Navigate to="/judiciary-dashboard" replace />;
-    } else {
-      return <Navigate to="/dashboard" replace />;
-    }
-  }
-  
-  return element;
-};
 
 const queryClient = new QueryClient();
 
