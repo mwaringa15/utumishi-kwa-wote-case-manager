@@ -30,15 +30,7 @@ export function useTrackCase() {
         .from('cases')
         .select(`
           *,
-          report:report_id (
-            id,
-            title,
-            description,
-            status,
-            created_at,
-            location,
-            category
-          )
+          report:report_id (*)
         `)
         .eq('id', data.caseId)
         .single();
@@ -60,6 +52,14 @@ export function useTrackCase() {
       
       console.log("Case found:", caseResult);
       
+      // Handle the case where report might be null or undefined
+      if (!caseResult.report) {
+        setError("Case found but report data is missing.");
+        setCaseData(null);
+        setIsSearching(false);
+        return;
+      }
+      
       // Convert the Supabase result to our Case type
       const foundCase: Case = {
         id: caseResult.id,
@@ -67,16 +67,17 @@ export function useTrackCase() {
         assignedOfficerId: caseResult.assigned_officer_id || undefined,
         progress: caseResult.status as CaseProgress,
         lastUpdated: caseResult.updated_at,
-        crimeReport: caseResult.report ? {
+        crimeReport: {
           id: caseResult.report.id,
           title: caseResult.report.title,
           description: caseResult.report.description,
           status: caseResult.report.status as CaseStatus,
           createdAt: caseResult.report.created_at,
           location: caseResult.report.location,
-          category: caseResult.report.category,
-          createdById: "anonymous" // Providing a default value as it's required by the type
-        } : undefined
+          // Only include category if it exists in the report
+          ...(caseResult.report.category && { category: caseResult.report.category }),
+          createdById: caseResult.report.reporter_id || "anonymous" // Providing a default value as it's required by the type
+        }
       };
       
       setCaseData(foundCase);

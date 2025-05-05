@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -391,8 +390,14 @@ const CaseDetails = () => {
                       variant="outline" 
                       className="w-full" 
                       onClick={() => {
-                        document.getElementById('evidence-tab')?.click?.() || 
-                        document.getElementById('evidence-tab')?.dispatchEvent?.(new MouseEvent('click', { bubbles: true }));
+                        const evidenceTab = document.getElementById('evidence-tab');
+                        if (evidenceTab) {
+                          if (typeof evidenceTab.click === 'function') {
+                            evidenceTab.click();
+                          } else if (evidenceTab.dispatchEvent) {
+                            evidenceTab.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                          }
+                        }
                       }}
                     >
                       View All Updates
@@ -478,8 +483,14 @@ const CaseDetails = () => {
                         variant="outline" 
                         className="w-full flex items-center justify-center"
                         onClick={() => {
-                          document.getElementById('notes-tab')?.click?.() || 
-                          document.getElementById('notes-tab')?.dispatchEvent?.(new MouseEvent('click', { bubbles: true }));
+                          const notesTab = document.getElementById('notes-tab');
+                          if (notesTab) {
+                            if (typeof notesTab.click === 'function') {
+                              notesTab.click();
+                            } else if (notesTab.dispatchEvent) {
+                              notesTab.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                            }
+                          }
                         }}
                       >
                         <MessageSquare className="h-4 w-4 mr-2" />

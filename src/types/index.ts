@@ -28,7 +28,7 @@ export interface CrimeReport {
   createdAt: string;
   crimeType?: string;
   location?: string;
-  category?: string; // Added to match usage in code
+  category?: string; // Keeping this as it's used in the code
   victimName?: string;
   victimContact?: string;
   witnessDetails?: string;
@@ -38,7 +38,8 @@ export interface CrimeReport {
 
 // Case types
 export type CaseProgress = "Pending" | "In Progress" | "Pending Review" | "Completed";
-export type CaseStatus = "Under Investigation" | "Closed" | "Submitted to Judiciary" | "Returned from Judiciary" | "Under Court Process" | "Submitted";
+// Update CaseStatus to match CrimeStatus to fix type compatibility issues
+export type CaseStatus = CrimeStatus;
 
 export interface Case {
   id: string;

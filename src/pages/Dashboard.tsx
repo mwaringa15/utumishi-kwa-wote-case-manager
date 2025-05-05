@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -63,7 +62,6 @@ const Dashboard = () => {
               status: caseItem.report.status as CaseStatus,
               createdAt: caseItem.report.created_at,
               location: caseItem.report.location,
-              category: caseItem.report.category,
               createdById: user.id // Use the current user's ID as the creator
             } : undefined
           }));
@@ -79,8 +77,7 @@ const Dashboard = () => {
           status: report.status as CaseStatus,
           createdById: report.reporter_id || user.id,
           createdAt: report.created_at,
-          location: report.location,
-          category: report.category
+          location: report.location
         }));
         
         setMyReports(typedReports);

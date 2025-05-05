@@ -23,6 +23,10 @@ const CaseCard = ({
       case "Submitted": return "bg-blue-500";
       case "Under Investigation": return "bg-amber-500";
       case "Closed": return "bg-green-500";
+      case "Rejected": return "bg-red-500";
+      case "Submitted to Judiciary": return "bg-purple-500";
+      case "Under Court Process": return "bg-indigo-500";
+      case "Returned from Judiciary": return "bg-orange-500";
       default: return "bg-gray-500";
     }
   };
@@ -32,9 +36,25 @@ const CaseCard = ({
     switch (progress) {
       case "Pending": return "bg-gray-500";
       case "In Progress": return "bg-kenya-red";
+      case "Pending Review": return "bg-purple-500";
       case "Completed": return "bg-kenya-green";
       default: return "bg-gray-500";
     }
+  };
+
+  // Helper function to get next status
+  const getNextStatus = (currentStatus: CaseStatus): CaseStatus => {
+    if (currentStatus === "Submitted") return "Under Investigation";
+    if (currentStatus === "Under Investigation") return "Closed";
+    return "Submitted";
+  };
+
+  // Helper function to get next progress
+  const getNextProgress = (currentProgress: CaseProgress): CaseProgress => {
+    if (currentProgress === "Pending") return "In Progress";
+    if (currentProgress === "In Progress") return "Completed";
+    if (currentProgress === "Completed") return "Pending";
+    return "Pending";
   };
 
   return (
@@ -83,9 +103,9 @@ const CaseCard = ({
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => onUpdateProgress?.(caseData.id || "", 
-              caseData.progress === "Pending" ? "In Progress" : 
-              caseData.progress === "In Progress" ? "Completed" : "Pending"
+            onClick={() => onUpdateProgress?.(
+              caseData.id, 
+              getNextProgress(caseData.progress)
             )}
           >
             Update Progress
@@ -93,9 +113,9 @@ const CaseCard = ({
           <Button 
             size="sm" 
             className="bg-kenya-green hover:bg-kenya-green/90 text-white"
-            onClick={() => onUpdateStatus?.(caseData.id || "", 
-              caseData.crimeReport?.status === "Submitted" ? "Under Investigation" : 
-              caseData.crimeReport?.status === "Under Investigation" ? "Closed" : "Submitted"
+            onClick={() => caseData.crimeReport?.status && onUpdateStatus?.(
+              caseData.id, 
+              getNextStatus(caseData.crimeReport.status)
             )}
           >
             Update Status
