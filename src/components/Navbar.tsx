@@ -1,11 +1,13 @@
+
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, Shield, User } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Menu, X, Shield, User, FileText, Search, HelpCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,8 +19,9 @@ interface NavbarProps {
 
 const Navbar = ({ isLoggedIn = false, userRole = "Public" }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   
@@ -27,6 +30,48 @@ const Navbar = ({ isLoggedIn = false, userRole = "Public" }: NavbarProps) => {
     navigate("/");
   };
 
+  // Get appropriate dashboard link based on role
+  const getDashboardLink = () => {
+    if (!isLoggedIn) return "/login";
+    
+    switch (userRole) {
+      case "Officer":
+        return "/officer-dashboard";
+      case "OCS":
+      case "Commander":
+      case "Administrator":
+        return "/supervisor-dashboard";
+      case "Judiciary":
+        return "/judiciary-dashboard";
+      default:
+        return "/dashboard";
+    }
+  };
+
+  // Nav links based on user role
+  const getNavLinks = () => {
+    const links = [];
+    
+    // Common links for all users
+    links.push({ title: "Home", path: "/" });
+    
+    if (!isLoggedIn || userRole === "Public") {
+      links.push(
+        { title: "Report a Crime", path: "/report-crime" },
+        { title: "Track a Case", path: "/track-case" },
+        { title: "FAQs", path: "/faq" }
+      );
+    }
+    
+    if (isLoggedIn) {
+      links.push({ title: "Dashboard", path: getDashboardLink() });
+    }
+    
+    return links;
+  };
+
+  const navLinks = getNavLinks();
+  
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-200">
       <div className="container mx-auto px-4 py-3">
@@ -40,40 +85,41 @@ const Navbar = ({ isLoggedIn = false, userRole = "Public" }: NavbarProps) => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="font-medium hover:text-kenya-green transition-colors">
-              Home
-            </Link>
-            <Link to="/report-crime" className="font-medium hover:text-kenya-green transition-colors">
-              Report a Crime
-            </Link>
-            <Link to="/track-case" className="font-medium hover:text-kenya-green transition-colors">
-              Track a Case
-            </Link>
-            <Link to="/about" className="font-medium hover:text-kenya-green transition-colors">
-              About Us
-            </Link>
+            {navLinks.map((link) => (
+              <Link 
+                key={link.path} 
+                to={link.path} 
+                className={`font-medium transition-colors ${
+                  location.pathname === link.path 
+                    ? "text-kenya-green" 
+                    : "hover:text-kenya-green"
+                }`}
+              >
+                {link.title}
+              </Link>
+            ))}
             
             {isLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="flex items-center">
                     <User className="h-4 w-4 mr-2" />
-                    {userRole}
+                    {user?.name || userRole}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem>
-                    <Link to="/dashboard" className="w-full">Dashboard</Link>
+                    <Link to={getDashboardLink()} className="w-full">Dashboard</Link>
                   </DropdownMenuItem>
-                  {(userRole === "Officer" || userRole === "OCS" || userRole === "Commander" || userRole === "Administrator") && (
-                    <DropdownMenuItem>
-                      <Link to="/officer-dashboard" className="w-full">Officer Portal</Link>
-                    </DropdownMenuItem>
-                  )}
+                  
                   <DropdownMenuItem>
                     <Link to="/profile" className="w-full">Profile</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout}>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem className="text-red-500" onClick={handleLogout}>
+                    <LogOut className="h-4 w-4 mr-2" />
                     <span className="w-full">Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -108,53 +154,27 @@ const Navbar = ({ isLoggedIn = false, userRole = "Public" }: NavbarProps) => {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden mt-4 pb-4 space-y-4">
-            <Link
-              to="/"
-              className="block font-medium hover:text-kenya-green"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Home
-            </Link>
-            <Link
-              to="/report-crime"
-              className="block font-medium hover:text-kenya-green"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Report a Crime
-            </Link>
-            <Link
-              to="/track-case"
-              className="block font-medium hover:text-kenya-green"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Track a Case
-            </Link>
-            <Link
-              to="/about"
-              className="block font-medium hover:text-kenya-green"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              About Us
-            </Link>
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`block font-medium ${
+                  location.pathname === link.path 
+                    ? "text-kenya-green" 
+                    : "hover:text-kenya-green"
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {link.title}
+              </Link>
+            ))}
             
             {isLoggedIn ? (
               <div className="space-y-2 pt-2 border-t">
-                <Link
-                  to="/dashboard"
-                  className="block font-medium hover:text-kenya-green"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Dashboard
-                </Link>
-                {(userRole === "Officer" || userRole === "OCS" || userRole === "Commander" || userRole === "Administrator") && (
-                  <Link
-                    to="/officer-dashboard"
-                    className="block font-medium hover:text-kenya-green"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Officer Portal
-                  </Link>
-                )}
+                <div className="font-medium text-kenya-black">
+                  {user?.name || userRole}
+                </div>
+                
                 <Link
                   to="/profile"
                   className="block font-medium hover:text-kenya-green"
@@ -162,12 +182,13 @@ const Navbar = ({ isLoggedIn = false, userRole = "Public" }: NavbarProps) => {
                 >
                   Profile
                 </Link>
+                
                 <button
                   onClick={() => {
                     setIsMenuOpen(false);
                     handleLogout();
                   }}
-                  className="block w-full text-left font-medium hover:text-kenya-green"
+                  className="block w-full text-left font-medium text-red-500 hover:text-red-700"
                 >
                   Logout
                 </button>

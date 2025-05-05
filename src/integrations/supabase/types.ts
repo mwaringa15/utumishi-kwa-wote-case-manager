@@ -9,80 +9,320 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      cases: {
+      activities: {
         Row: {
-          assigned_officer_id: string | null
-          crime_report_id: string
-          evidence: Json | null
+          activity_type: string
+          case_id: string | null
+          created_at: string | null
+          description: string | null
           id: string
-          last_updated: string
-          progress: string
+          user_id: string | null
         }
         Insert: {
-          assigned_officer_id?: string | null
-          crime_report_id: string
-          evidence?: Json | null
+          activity_type: string
+          case_id?: string | null
+          created_at?: string | null
+          description?: string | null
           id?: string
-          last_updated?: string
-          progress?: string
+          user_id?: string | null
         }
         Update: {
-          assigned_officer_id?: string | null
-          crime_report_id?: string
-          evidence?: Json | null
+          activity_type?: string
+          case_id?: string | null
+          created_at?: string | null
+          description?: string | null
           id?: string
-          last_updated?: string
-          progress?: string
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "cases_crime_report_id_fkey"
-            columns: ["crime_report_id"]
+            foreignKeyName: "activities_case_id_fkey"
+            columns: ["case_id"]
             isOneToOne: false
-            referencedRelation: "crime_reports"
+            referencedRelation: "cases"
             referencedColumns: ["id"]
           },
         ]
       }
-      crime_reports: {
+      attachments: {
         Row: {
-          additional_info: string | null
-          category: string
-          contact_phone: string | null
-          created_at: string
-          created_by: string | null
-          description: string
+          case_id: string | null
+          file_type: string | null
+          file_url: string
           id: string
-          incident_date: string
-          location: string
-          status: string
-          title: string
+          uploaded_at: string | null
+          uploaded_by: string | null
         }
         Insert: {
-          additional_info?: string | null
-          category: string
-          contact_phone?: string | null
-          created_at?: string
-          created_by?: string | null
-          description: string
+          case_id?: string | null
+          file_type?: string | null
+          file_url: string
           id?: string
-          incident_date: string
-          location: string
-          status?: string
-          title: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
         }
         Update: {
-          additional_info?: string | null
-          category?: string
-          contact_phone?: string | null
-          created_at?: string
-          created_by?: string | null
+          case_id?: string | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attachments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_history: {
+        Row: {
+          case_id: string | null
+          id: string
+          status_after: string | null
+          status_before: string | null
+          update_note: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          case_id?: string | null
+          id?: string
+          status_after?: string | null
+          status_before?: string | null
+          update_note?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          case_id?: string | null
+          id?: string
+          status_after?: string | null
+          status_before?: string | null
+          update_note?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_history_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_history_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cases: {
+        Row: {
+          assigned_officer_id: string | null
+          created_at: string | null
+          id: string
+          priority: string | null
+          report_id: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_officer_id?: string | null
+          created_at?: string | null
+          id?: string
+          priority?: string | null
+          report_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_officer_id?: string | null
+          created_at?: string | null
+          id?: string
+          priority?: string | null
+          report_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cases_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence: {
+        Row: {
+          case_id: string | null
+          description: string | null
+          file_url: string | null
+          id: string
+          uploaded_at: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          case_id?: string | null
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          case_id?: string | null
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      judiciary_reviews: {
+        Row: {
+          case_id: string | null
+          id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          verdict: string | null
+        }
+        Insert: {
+          case_id?: string | null
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          verdict?: string | null
+        }
+        Update: {
+          case_id?: string | null
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          verdict?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "judiciary_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "judiciary_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          location: string
+          reporter_id: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          location: string
+          reporter_id?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
           description?: string
           id?: string
-          incident_date?: string
           location?: string
-          status?: string
+          reporter_id?: string | null
+          status?: string | null
           title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_reporter"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          role: string
+          user_id: string
+        }
+        Insert: {
+          role: string
+          user_id: string
+        }
+        Update: {
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          role: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          role?: string
         }
         Relationships: []
       }
