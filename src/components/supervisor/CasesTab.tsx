@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
-import { Case, UserType } from "@/types";
+import { Case, User as UserType } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

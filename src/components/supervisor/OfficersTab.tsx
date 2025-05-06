@@ -2,7 +2,7 @@
 import { User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserType } from "@/types";
+import { User as UserType } from "@/types";
 
 interface OfficersTabProps {
   officers: UserType[];

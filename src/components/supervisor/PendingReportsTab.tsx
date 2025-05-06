@@ -1,6 +1,6 @@
 
 import { User } from "lucide-react";
-import { CrimeReport, UserType } from "@/types";
+import { CrimeReport, User as UserType } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

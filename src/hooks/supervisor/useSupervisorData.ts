@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Case, CrimeReport, UserType, User } from "@/types";
+import { Case, CrimeReport, User } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -10,7 +10,7 @@ export function useSupervisorData(user: User | null) {
   const [allCases, setAllCases] = useState<Case[]>([]);
   const [pendingReports, setPendingReports] = useState<CrimeReport[]>([]);
   const [filteredCases, setFilteredCases] = useState<Case[]>([]);
-  const [officers, setOfficers] = useState<UserType[]>([]);
+  const [officers, setOfficers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<string>("lastUpdated");
@@ -47,7 +47,7 @@ export function useSupervisorData(user: User | null) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Mock officers data
-        const mockOfficers: UserType[] = [
+        const mockOfficers: User[] = [
           {
             id: "officer1",
             name: "Officer John Doe",
