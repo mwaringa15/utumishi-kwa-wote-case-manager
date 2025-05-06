@@ -25,6 +25,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -44,6 +45,7 @@ const CrimeReportForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -63,19 +65,27 @@ const CrimeReportForm = () => {
     console.log("Submitting form data:", data);
     
     try {
+      // Create the report object and set reporter_id only if a user is logged in
+      const reportData = {
+        title: data.title,
+        description: data.description,
+        location: data.location,
+        incident_date: data.incidentDate,
+        category: data.category,
+        contact_phone: data.contactPhone || null,
+        additional_info: data.additionalInfo || null,
+        status: 'Submitted'
+      };
+      
+      // Only add reporter_id if user is logged in
+      if (user && user.id) {
+        Object.assign(reportData, { reporter_id: user.id });
+      }
+      
       // First, create the crime report
       const { data: crimeReport, error: crimeReportError } = await supabase
         .from('reports')
-        .insert({
-          title: data.title,
-          description: data.description,
-          location: data.location,
-          incident_date: data.incidentDate,
-          category: data.category,
-          contact_phone: data.contactPhone || null,
-          additional_info: data.additionalInfo || null,
-          status: 'Submitted'
-        })
+        .insert(reportData)
         .select()
         .single();
       
