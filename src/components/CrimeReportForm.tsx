@@ -91,7 +91,6 @@ const CrimeReportForm = () => {
         .from('cases')
         .insert({
           report_id: crimeReport.id,
-          progress: 'Pending',
           status: 'Submitted',
           updated_at: new Date().toISOString()
         })

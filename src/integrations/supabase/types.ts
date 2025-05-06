@@ -248,9 +248,13 @@ export type Database = {
       }
       reports: {
         Row: {
+          additional_info: string | null
+          category: string | null
+          contact_phone: string | null
           created_at: string | null
           description: string
           id: string
+          incident_date: string | null
           location: string
           reporter_id: string | null
           status: string | null
@@ -258,9 +262,13 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          additional_info?: string | null
+          category?: string | null
+          contact_phone?: string | null
           created_at?: string | null
           description: string
           id?: string
+          incident_date?: string | null
           location: string
           reporter_id?: string | null
           status?: string | null
@@ -268,9 +276,13 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          additional_info?: string | null
+          category?: string | null
+          contact_phone?: string | null
           created_at?: string | null
           description?: string
           id?: string
+          incident_date?: string | null
           location?: string
           reporter_id?: string | null
           status?: string | null

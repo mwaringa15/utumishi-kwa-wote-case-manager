@@ -1,13 +1,13 @@
 
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CrimeReportForm from "@/components/CrimeReportForm";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Shield } from "lucide-react";
+import { Toaster } from "@/components/ui/toaster";
 
 const ReportCrime = () => {
   const { user } = useAuth();
@@ -16,6 +16,7 @@ const ReportCrime = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar isLoggedIn={!!user} userRole={user?.role} />
+      <Toaster />
       
       <div className="container mx-auto px-4 py-8 flex-grow">
         <div className="max-w-4xl mx-auto">
