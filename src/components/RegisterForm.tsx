@@ -2,46 +2,26 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Form } from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
 import { Link, useNavigate } from "react-router-dom";
-import { UserRole } from "@/types";
-
-const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-  nationalId: z.string().min(6, "National ID must be at least 6 characters"),
-  phone: z.string().min(10, "Phone number must be at least 10 characters"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-interface RegisterFormProps {
-  onRegister?: (data: { name: string; email: string; password: string; nationalId?: string; phone?: string; role?: UserRole }) => Promise<void>;
-}
+import { PersonalInfoFields } from "./auth/PersonalInfoFields";
+import { CredentialFields } from "./auth/CredentialFields";
+import { 
+  registerFormSchema, 
+  RegisterFormValues, 
+  RegisterFormProps,
+  determineUserRole 
+} from "./auth/register-form-schema";
 
 const RegisterForm = ({ onRegister }: RegisterFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerFormSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -52,36 +32,23 @@ const RegisterForm = ({ onRegister }: RegisterFormProps) => {
     },
   });
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     
     try {
       console.log("Registration data:", data);
       
       // Determine role based on email domain
-      let role: UserRole = "Public";
-      if (data.email.endsWith("@police.go.ke")) {
-        role = "Officer";
-      } else if (data.email.endsWith("@admin.police.go.ke")) {
-        role = "Administrator";
-      } else if (data.email.endsWith("@commander.police.go.ke")) {
-        role = "Commander";
-      } else if (data.email.endsWith("@ocs.police.go.ke")) {
-        role = "OCS";
-      } else if (data.email.endsWith("@judiciary.go.ke")) {
-        role = "Judiciary";
-      } else if (data.email.endsWith("@supervisor.go.ke")) {
-        role = "Commander"; // Using Commander role for supervisor emails
-      }
+      const role = determineUserRole(data.email);
       
       if (onRegister) {
         const { confirmPassword, ...registerData } = data;
         
         // Add user to supabase auth with proper type - ensuring required fields are passed explicitly
         await onRegister({
-          name: registerData.name,  // Explicitly passing as required property
-          email: registerData.email, // Explicitly passing as required property
-          password: registerData.password, // Explicitly passing as required property
+          name: registerData.name,
+          email: registerData.email,
+          password: registerData.password,
           nationalId: registerData.nationalId,
           phone: registerData.phone,
           role
@@ -111,106 +78,8 @@ const RegisterForm = ({ onRegister }: RegisterFormProps) => {
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Full Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter your full name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="nationalId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>National ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="ID number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 0712345678" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Enter your email" 
-                    type="email" 
-                    {...field} 
-                    autoComplete="email"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Create a strong password" 
-                    type="password" 
-                    {...field} 
-                    autoComplete="new-password"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Confirm your password" 
-                    type="password" 
-                    {...field} 
-                    autoComplete="new-password"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <PersonalInfoFields control={form.control} />
+          <CredentialFields control={form.control} />
           
           <Button 
             type="submit" 
