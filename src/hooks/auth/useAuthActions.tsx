@@ -13,6 +13,59 @@ export function useAuthActions() {
     setIsLoading(true);
     
     try {
+      // Check for demo accounts first
+      if (email === "leah@judiciary.go.ke" && password === "password123") {
+        // Allow demo judiciary login to bypass actual authentication
+        toast({
+          title: "Login successful",
+          description: "Welcome back, Leah (Judiciary)!",
+        });
+        
+        return { 
+          user: { 
+            id: "demo-judiciary-id",
+            email: "leah@judiciary.go.ke", 
+            role: "Judiciary" 
+          }, 
+          redirectPath: "/judiciary-dashboard" 
+        };
+      }
+      
+      if (email === "officer@police.go.ke" && password === "password123") {
+        // Allow demo police officer login to bypass actual authentication
+        toast({
+          title: "Login successful",
+          description: "Welcome back, Officer!",
+        });
+        
+        return { 
+          user: { 
+            id: "demo-officer-id",
+            email: "officer@police.go.ke", 
+            role: "Officer" 
+          }, 
+          redirectPath: "/officer-dashboard" 
+        };
+      }
+      
+      if (email === "public@example.com" && password === "password123") {
+        // Allow demo public user login to bypass actual authentication
+        toast({
+          title: "Login successful",
+          description: "Welcome back, Public User!",
+        });
+        
+        return { 
+          user: { 
+            id: "demo-public-id",
+            email: "public@example.com", 
+            role: "Public" 
+          }, 
+          redirectPath: "/dashboard" 
+        };
+      }
+      
+      // Regular authentication flow
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password

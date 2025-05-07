@@ -138,12 +138,13 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
             <div className="text-xs text-gray-500 space-y-1">
               <p>Public User: public@example.com / password123</p>
               <p>Police Officer: officer@police.go.ke / password123</p>
+              <p>Judiciary: leah@judiciary.go.ke / password123</p>
             </div>
           </div>
         </form>
       </Form>
     </div>
   );
-};
+}
 
 export default LoginForm;
