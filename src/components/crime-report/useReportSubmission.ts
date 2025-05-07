@@ -34,43 +34,45 @@ export function useReportSubmission() {
         Object.assign(reportData, { reporter_id: user.id });
       }
       
-      // First, create the crime report
-      const { data: crimeReport, error: crimeReportError } = await supabase
+      // Insert the report - the case will be created automatically via our database trigger
+      const { data: reportResponse, error: reportError } = await supabase
         .from('reports')
         .insert(reportData)
         .select()
         .single();
       
-      if (crimeReportError) {
-        console.error("Error creating crime report:", crimeReportError);
-        throw new Error(crimeReportError.message);
+      if (reportError) {
+        console.error("Error submitting report:", reportError);
+        throw new Error(reportError.message);
       }
       
-      console.log("Created crime report:", crimeReport);
+      console.log("Created crime report:", reportResponse);
 
-      // Then, create a case linked to this crime report
+      // Now fetch the automatically created case
       const { data: caseData, error: caseError } = await supabase
         .from('cases')
-        .insert({
-          report_id: crimeReport.id,
-          status: 'Submitted',
-          updated_at: new Date().toISOString()
-        })
         .select()
+        .eq('report_id', reportResponse.id)
         .single();
       
       if (caseError) {
-        console.error("Error creating case:", caseError);
-        throw new Error(caseError.message);
+        console.error("Error retrieving case:", caseError);
+        // Even if we can't retrieve the case, the report was submitted successfully
+        toast({
+          title: "Report submitted successfully!",
+          description: "Your report has been filed, but we couldn't retrieve your case ID.",
+        });
+        navigate('/track-case');
+        return true;
       }
       
-      console.log("Created case:", caseData);
+      console.log("Retrieved case:", caseData);
       
       // Format case ID for display
       const formattedCaseId = caseData.id.substring(0, 8).toUpperCase();
       
       toast({
-        title: "Crime report submitted successfully!",
+        title: "Report submitted successfully!",
         description: `Your report has been filed with reference ID: ${formattedCaseId}`,
       });
       
@@ -78,11 +80,11 @@ export function useReportSubmission() {
       navigate(`/track-case?id=${caseData.id}`);
       
       return true;
-    } catch (error) {
-      console.error("Error submitting report:", error);
+    } catch (error: any) {
+      console.error("Error in report submission process:", error);
       toast({
         title: "Error submitting report",
-        description: "Please try again later",
+        description: error.message || "Please try again later",
         variant: "destructive",
       });
       return false;
