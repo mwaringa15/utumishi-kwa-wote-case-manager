@@ -70,6 +70,8 @@ const RegisterForm = ({ onRegister }: RegisterFormProps) => {
         role = "OCS";
       } else if (data.email.endsWith("@judiciary.go.ke")) {
         role = "Judiciary";
+      } else if (data.email.endsWith("@supervisor.go.ke")) {
+        role = "Commander"; // Using Commander role for supervisor emails
       }
       
       if (onRegister) {

@@ -24,7 +24,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface LoginFormProps {
-  onLogin?: (email: string, password: string) => Promise<void>;
+  onLogin?: (email: string, password: string) => Promise<{ user: any, redirectPath: string } | undefined>;
 }
 
 const LoginForm = ({ onLogin }: LoginFormProps) => {
@@ -47,16 +47,11 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
       console.log("Login attempt:", data);
       
       if (onLogin) {
-        await onLogin(data.email, data.password);
+        const result = await onLogin(data.email, data.password);
         
-        // Navigate based on role
-        if (data.email.endsWith("@police.go.ke") || 
-            data.email.endsWith("@admin.police.go.ke") || 
-            data.email.endsWith("@commander.police.go.ke") || 
-            data.email.endsWith("@ocs.police.go.ke")) {
-          navigate("/officer-dashboard");
-        } else {
-          navigate("/dashboard");
+        if (result && result.redirectPath) {
+          // Navigate to the appropriate dashboard based on the returned path
+          navigate(result.redirectPath);
         }
       }
     } catch (error) {

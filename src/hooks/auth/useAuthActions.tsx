@@ -21,11 +21,56 @@ export function useAuthActions() {
       if (error) {
         throw error;
       }
+
+      const user = data.user;
       
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${data.user.email?.split("@")[0]}!`,
-      });
+      if (user) {
+        // Determine role and redirect based on email domain
+        let role = "public";
+        let redirectPath = "/dashboard";
+        
+        if (email.endsWith("@judiciary.go.ke")) {
+          role = "judiciary";
+          redirectPath = "/judiciary-dashboard";
+        } else if (email.endsWith("@police.go.ke")) {
+          role = "officer";
+          redirectPath = "/officer-dashboard";
+        } else if (email.endsWith("@supervisor.go.ke")) {
+          role = "supervisor";
+          redirectPath = "/supervisor-dashboard";
+        } else if (email.endsWith("@admin.police.go.ke") || 
+                   email.endsWith("@commander.police.go.ke") || 
+                   email.endsWith("@ocs.police.go.ke")) {
+          role = "supervisor";
+          redirectPath = "/supervisor-dashboard";
+        }
+        
+        // Sync user role using the edge function
+        try {
+          const { data: syncData, error: syncError } = await supabase.functions.invoke('sync-user', {
+            body: {
+              id: user.id,
+              email: user.email,
+              role: role
+            }
+          });
+          
+          if (syncError) {
+            console.error("Error syncing user:", syncError);
+          } else {
+            console.log("User synced successfully:", syncData);
+          }
+        } catch (syncErr) {
+          console.error("Error invoking sync-user function:", syncErr);
+        }
+        
+        toast({
+          title: "Login successful",
+          description: `Welcome back, ${user.email?.split("@")[0]}!`,
+        });
+        
+        return { user, redirectPath };
+      }
       
     } catch (error: any) {
       toast({
@@ -63,7 +108,7 @@ export function useAuthActions() {
     try {
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
-        password: userData.password, // Use the actual password from userData
+        password: userData.password,
         options: {
           data: {
             name: userData.name,
@@ -74,6 +119,44 @@ export function useAuthActions() {
       
       if (error) {
         throw error;
+      }
+      
+      const user = data.user;
+      
+      if (user) {
+        // Determine role based on email domain
+        let role = "public";
+        
+        if (userData.email.endsWith("@judiciary.go.ke")) {
+          role = "judiciary";
+        } else if (userData.email.endsWith("@police.go.ke")) {
+          role = "officer";
+        } else if (userData.email.endsWith("@supervisor.go.ke")) {
+          role = "supervisor";
+        } else if (userData.email.endsWith("@admin.police.go.ke") || 
+                   userData.email.endsWith("@commander.police.go.ke") || 
+                   userData.email.endsWith("@ocs.police.go.ke")) {
+          role = "supervisor";
+        }
+        
+        // Sync user role using the edge function
+        try {
+          const { data: syncData, error: syncError } = await supabase.functions.invoke('sync-user', {
+            body: {
+              id: user.id,
+              email: user.email,
+              role: role
+            }
+          });
+          
+          if (syncError) {
+            console.error("Error syncing user:", syncError);
+          } else {
+            console.log("User synced successfully:", syncData);
+          }
+        } catch (syncErr) {
+          console.error("Error invoking sync-user function:", syncErr);
+        }
       }
       
       toast({
