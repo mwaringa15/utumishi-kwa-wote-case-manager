@@ -3,12 +3,12 @@
 // It re-exports from the refactored location
 // In the future, update imports to use "@/hooks/auth" directly
 
-import { AuthProvider, useAuth, withAuth } from "@/hooks/auth";
+import { AuthProvider, useAuth as useAuthOriginal, withAuth } from "@/hooks/auth";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
 
 // Combine the hooks for backwards compatibility
 const useExtendedAuth = () => {
-  const authState = useAuth();
+  const authState = useAuthOriginal();
   const authActions = useAuthActions();
   
   return {

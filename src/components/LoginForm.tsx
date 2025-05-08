@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,6 +49,7 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
         const result = await onLogin(data.email, data.password);
         
         if (result && result.redirectPath) {
+          console.log("Login successful, redirecting to:", result.redirectPath);
           // Navigate to the appropriate dashboard based on the returned path
           navigate(result.redirectPath);
         }
