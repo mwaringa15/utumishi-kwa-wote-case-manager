@@ -16,8 +16,18 @@ export function useReportSubmission() {
     setIsSubmitting(true);
     console.log("Submitting form data:", data);
     
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to submit a report.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return false;
+    }
+    
     try {
-      // Create the report object and set reporter_id only if a user is logged in
+      // Create the report object
       const reportData = {
         title: data.title,
         description: data.description,
@@ -26,13 +36,9 @@ export function useReportSubmission() {
         category: data.category,
         contact_phone: data.contactPhone || null,
         additional_info: data.additionalInfo || null,
+        reporter_id: user.id,
         status: 'Submitted'
       };
-      
-      // Only add reporter_id if user is logged in
-      if (user && user.id) {
-        Object.assign(reportData, { reporter_id: user.id });
-      }
       
       // Insert the report - the case will be created automatically via our database trigger
       const { data: reportResponse, error: reportError } = await supabase
@@ -46,38 +52,15 @@ export function useReportSubmission() {
         throw new Error(reportError.message);
       }
       
-      console.log("Created crime report:", reportResponse);
+      console.log("Created report:", reportResponse);
 
-      // Now fetch the automatically created case
-      const { data: caseData, error: caseError } = await supabase
-        .from('cases')
-        .select()
-        .eq('report_id', reportResponse.id)
-        .single();
-      
-      if (caseError) {
-        console.error("Error retrieving case:", caseError);
-        // Even if we can't retrieve the case, the report was submitted successfully
-        toast({
-          title: "Report submitted successfully!",
-          description: "Your report has been filed, but we couldn't retrieve your case ID.",
-        });
-        navigate('/track-case');
-        return true;
-      }
-      
-      console.log("Retrieved case:", caseData);
-      
-      // Format case ID for display
-      const formattedCaseId = caseData.id.substring(0, 8).toUpperCase();
-      
       toast({
-        title: "Report submitted successfully!",
-        description: `Your report has been filed with reference ID: ${formattedCaseId}`,
+        title: "Report submitted successfully.",
+        description: "Your case is being reviewed.",
       });
       
-      // Redirect to the tracking page with the case ID
-      navigate(`/track-case?id=${caseData.id}`);
+      // Redirect to the dashboard
+      navigate("/dashboard");
       
       return true;
     } catch (error: any) {

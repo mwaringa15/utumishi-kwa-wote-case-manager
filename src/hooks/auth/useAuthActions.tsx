@@ -78,24 +78,24 @@ export function useAuthActions() {
       const user = data.user;
       
       if (user) {
-        // Determine role and redirect based on email domain
-        let role = "public";
+        // Determine redirect path based on email domain
         let redirectPath = "/dashboard";
+        let role = "Public";
         
-        if (email.endsWith("@judiciary.go.ke")) {
-          role = "judiciary";
-          redirectPath = "/judiciary-dashboard";
-        } else if (email.endsWith("@police.go.ke")) {
-          role = "officer";
+        if (email.endsWith("@police.go.ke")) {
           redirectPath = "/officer-dashboard";
+          role = "Officer";
+        } else if (email.endsWith("@judiciary.go.ke")) {
+          redirectPath = "/judiciary-dashboard";
+          role = "Judiciary";
         } else if (email.endsWith("@supervisor.go.ke")) {
-          role = "supervisor";
           redirectPath = "/supervisor-dashboard";
+          role = "Supervisor";
         } else if (email.endsWith("@admin.police.go.ke") || 
                    email.endsWith("@commander.police.go.ke") || 
                    email.endsWith("@ocs.police.go.ke")) {
-          role = "supervisor";
           redirectPath = "/supervisor-dashboard";
+          role = determineRoleFromEmail(email);
         }
         
         // Sync user role using the edge function
@@ -135,6 +135,18 @@ export function useAuthActions() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper function to determine role from email domain
+  const determineRoleFromEmail = (email: string): UserRole => {
+    if (email.endsWith("@admin.police.go.ke")) {
+      return "Administrator";
+    } else if (email.endsWith("@commander.police.go.ke")) {
+      return "Commander";
+    } else if (email.endsWith("@ocs.police.go.ke")) {
+      return "OCS";
+    }
+    return "Public";
   };
 
   // Logout function
