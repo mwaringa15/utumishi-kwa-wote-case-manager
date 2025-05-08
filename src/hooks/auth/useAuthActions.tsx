@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -13,6 +12,8 @@ export function useAuthActions() {
     setIsLoading(true);
     
     try {
+      console.log("Login attempt for:", email);
+      
       // Check for demo accounts first
       if (email === "leah@judiciary.go.ke" && password === "password123") {
         // Allow demo judiciary login to bypass actual authentication
@@ -21,6 +22,7 @@ export function useAuthActions() {
           description: "Welcome back, Leah (Judiciary)!",
         });
         
+        console.log("Successful demo login for judiciary user");
         return { 
           user: { 
             id: "demo-judiciary-id",
@@ -38,6 +40,7 @@ export function useAuthActions() {
           description: "Welcome back, Officer!",
         });
         
+        console.log("Successful demo login for police officer");
         return { 
           user: { 
             id: "demo-officer-id",
@@ -55,6 +58,7 @@ export function useAuthActions() {
           description: "Welcome back, Public User!",
         });
         
+        console.log("Successful demo login for public user");
         return { 
           user: { 
             id: "demo-public-id",
@@ -72,6 +76,7 @@ export function useAuthActions() {
       });
       
       if (error) {
+        console.error("Login error:", error.message);
         throw error;
       }
 
@@ -83,20 +88,28 @@ export function useAuthActions() {
         let role = "Public";
         
         if (email.endsWith("@police.go.ke")) {
+          console.log("Police officer login detected");
           redirectPath = "/officer-dashboard";
           role = "Officer";
         } else if (email.endsWith("@judiciary.go.ke")) {
+          console.log("Judiciary login detected");
           redirectPath = "/judiciary-dashboard";
           role = "Judiciary";
         } else if (email.endsWith("@supervisor.go.ke")) {
+          console.log("Supervisor login detected");
           redirectPath = "/supervisor-dashboard";
           role = "Supervisor";
         } else if (email.endsWith("@admin.police.go.ke") || 
                    email.endsWith("@commander.police.go.ke") || 
                    email.endsWith("@ocs.police.go.ke")) {
+          console.log("Admin/Commander/OCS login detected");
           redirectPath = "/supervisor-dashboard";
           role = determineRoleFromEmail(email);
+        } else {
+          console.log("Public user login detected");
         }
+        
+        console.log(`User role determined as: ${role}, redirecting to: ${redirectPath}`);
         
         // Sync user role using the edge function
         try {
@@ -122,10 +135,11 @@ export function useAuthActions() {
           description: `Welcome back, ${user.email?.split("@")[0]}!`,
         });
         
-        return { user, redirectPath };
+        return { user: { ...user, role }, redirectPath };
       }
       
     } catch (error: any) {
+      console.error("Login failed:", error.message);
       toast({
         title: "Login failed",
         description: error.message || "Invalid email or password",
