@@ -60,11 +60,11 @@ export function useReportSubmission() {
       }
       
       console.log("Retrieved case data:", caseData);
-      const generatedCaseId = caseData.id;
-      setCaseId(generatedCaseId);
+      const newCaseId = caseData.id;
+      setCaseId(newCaseId);
 
       // Format the case ID for display (first 8 characters in uppercase)
-      const displayCaseId = generatedCaseId.substring(0, 8).toUpperCase();
+      const displayCaseId = newCaseId.substring(0, 8).toUpperCase();
       
       toast({
         title: "Report submitted successfully",
@@ -75,12 +75,12 @@ export function useReportSubmission() {
       if (user?.email?.endsWith('@supervisor.go.ke')) {
         navigate("/supervisor-dashboard");
       } else if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator'].includes(user.role)) {
-        // Explicitly use the newly generated case ID for navigation
-        console.log(`Redirecting officer to case: ${generatedCaseId}`);
-        navigate(`/case/${generatedCaseId}`);
+        // Make sure we're using the correct case ID from the newly created case
+        console.log(`Redirecting officer to new case: ${newCaseId}`);
+        navigate(`/case/${newCaseId}`);
       } else {
         // For public users, navigate to track case page with the new ID
-        navigate(`/track-case?id=${generatedCaseId}`);
+        navigate(`/track-case?id=${newCaseId}`);
       }
       
       return true;
