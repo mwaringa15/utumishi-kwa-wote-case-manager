@@ -2,7 +2,7 @@
 // src/types/index.ts
 
 // User types
-export type UserRole = "Public" | "Officer" | "OCS" | "Commander" | "Administrator" | "Judiciary";
+export type UserRole = "Public" | "Officer" | "OCS" | "Commander" | "Administrator" | "Judiciary" | "Supervisor";
 
 export interface User {
   id?: string;

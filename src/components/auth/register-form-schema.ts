@@ -39,7 +39,7 @@ export const determineUserRole = (email: string): UserRole => {
   } else if (email.endsWith("@judiciary.go.ke")) {
     return "Judiciary";
   } else if (email.endsWith("@supervisor.go.ke")) {
-    return "Commander"; // Using Commander role for supervisor emails
+    return "Supervisor"; // Using Supervisor role for supervisor emails
   } else {
     return "Public";
   }
