@@ -10,6 +10,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Case, CaseProgress, CaseStatus, CrimeReport } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Search, Filter, Upload } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { EvidenceUploader } from "@/components/officer/EvidenceUploader";
 
 const OfficerDashboard = () => {
   const { user } = useAuth();
@@ -18,12 +29,21 @@ const OfficerDashboard = () => {
   const [assignedCases, setAssignedCases] = useState<Case[]>([]);
   const [pendingReports, setPendingReports] = useState<CrimeReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeCase, setActiveCase] = useState<Case | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCaseForEvidence, setSelectedCaseForEvidence] = useState<string | null>(null);
   const [stats, setStats] = useState({
     activeCases: 0,
     pendingReports: 0,
     closedCases: 0,
     totalAssigned: 0
   });
+  
+  // Filter cases based on search term
+  const filteredCases = assignedCases.filter(caseItem => 
+    caseItem.crimeReport?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    caseItem.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Redirect to login if not authenticated or not an officer
   useEffect(() => {
@@ -238,6 +258,18 @@ const OfficerDashboard = () => {
       description: `You have been assigned to case: ${report.title}`,
     });
   };
+  
+  // Handle evidence upload completion
+  const handleEvidenceUploaded = () => {
+    // Close the dialog and update the case
+    setSelectedCaseForEvidence(null);
+    
+    // In a real app, you would refresh the case data
+    toast({
+      title: "Evidence uploaded",
+      description: "The evidence has been attached to the case",
+    });
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -298,6 +330,19 @@ const OfficerDashboard = () => {
           </Card>
         </div>
         
+        {/* Search and filters */}
+        <div className="flex flex-wrap items-center gap-4 mb-6">
+          <div className="relative grow max-w-md">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search cases..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
+        
         <Tabs defaultValue="assigned" className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="assigned">Assigned Cases</TabsTrigger>
@@ -312,21 +357,51 @@ const OfficerDashboard = () => {
                 <div className="flex justify-center py-8">
                   <div className="animate-pulse text-gray-400">Loading cases...</div>
                 </div>
-              ) : assignedCases.length > 0 ? (
+              ) : filteredCases.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {assignedCases.map((caseItem) => (
-                    <CaseCard 
-                      key={caseItem.id} 
-                      caseData={caseItem} 
-                      showActions={true}
-                      onUpdateStatus={handleUpdateStatus}
-                      onUpdateProgress={handleUpdateProgress}
-                    />
+                  {filteredCases.map((caseItem) => (
+                    <div key={caseItem.id} className="relative">
+                      <CaseCard 
+                        caseData={caseItem} 
+                        showActions={true}
+                        onUpdateStatus={handleUpdateStatus}
+                        onUpdateProgress={handleUpdateProgress}
+                      />
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="absolute top-4 right-4 bg-white"
+                            onClick={() => setSelectedCaseForEvidence(caseItem.id)}
+                          >
+                            <Upload className="h-4 w-4 mr-1" />
+                            Evidence
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Upload Evidence</DialogTitle>
+                            <DialogDescription>
+                              Attach evidence to case {caseItem.id}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <EvidenceUploader 
+                            caseId={caseItem.id} 
+                            onComplete={handleEvidenceUploaded} 
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">You don't have any assigned cases yet</p>
+                  <p className="text-gray-500">
+                    {searchTerm 
+                      ? "No cases match your search criteria" 
+                      : "You don't have any assigned cases yet"}
+                  </p>
                 </div>
               )}
             </div>
