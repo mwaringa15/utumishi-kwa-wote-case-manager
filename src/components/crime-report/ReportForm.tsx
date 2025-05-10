@@ -9,7 +9,11 @@ import { SubmitReportButton } from "./SubmitReportButton";
 import { crimeReportSchema, CrimeReportFormValues } from "./types";
 import { useReportSubmission } from "./useReportSubmission";
 
-export function ReportForm() {
+interface ReportFormProps {
+  onComplete?: () => void;
+}
+
+export function ReportForm({ onComplete }: ReportFormProps) {
   const { isSubmitting, handleSubmit } = useReportSubmission();
   
   const form = useForm<CrimeReportFormValues>({
@@ -29,6 +33,9 @@ export function ReportForm() {
     const success = await handleSubmit(data);
     if (success) {
       form.reset();
+      if (onComplete) {
+        onComplete();
+      }
     }
   };
 

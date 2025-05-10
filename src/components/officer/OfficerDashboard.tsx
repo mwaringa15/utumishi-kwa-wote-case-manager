@@ -9,15 +9,19 @@ import { StatsOverview } from "./StatsOverview";
 import { AssignedCasesTab } from "./AssignedCasesTab";
 import { PendingReportsTab } from "./PendingReportsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCasesAndReports } from "@/hooks/officer/useCasesAndReports";
+import { Button } from "@/components/ui/button";
+import CrimeReportForm from "@/components/CrimeReportForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const OfficerDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [openReportDialog, setOpenReportDialog] = useState(false);
   const { 
     assignedCases, 
     pendingReports, 
@@ -35,23 +39,50 @@ const OfficerDashboard = () => {
     caseItem.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar isLoggedIn={!!user} userRole={user?.role} />
       
       <div className="container mx-auto px-4 py-8 flex-grow">
+        <Button 
+          variant="ghost" 
+          className="mb-4 px-2" 
+          onClick={handleGoBack}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div>
             <h1 className="text-2xl font-bold text-kenya-black mb-1">Officer Dashboard</h1>
             <p className="text-gray-600">Welcome, Officer {user?.name}</p>
           </div>
-          <div className="mt-4 sm:mt-0">
-            <button 
+          <div className="mt-4 sm:mt-0 flex gap-3">
+            <Dialog open={openReportDialog} onOpenChange={setOpenReportDialog}>
+              <DialogTrigger asChild>
+                <Button className="bg-kenya-green hover:bg-kenya-green/90 text-white">
+                  New Crime Report
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create New Crime Report</DialogTitle>
+                </DialogHeader>
+                <CrimeReportForm onComplete={() => setOpenReportDialog(false)} />
+              </DialogContent>
+            </Dialog>
+
+            <Button 
               onClick={() => navigate("/officer-reports")}
-              className="bg-kenya-green hover:bg-kenya-green/90 text-white px-4 py-2 rounded"
+              className="bg-kenya-green hover:bg-kenya-green/90 text-white"
             >
               View All Reports
-            </button>
+            </Button>
           </div>
         </div>
         

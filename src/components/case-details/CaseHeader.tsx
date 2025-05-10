@@ -1,7 +1,7 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { Case } from "@/types";
+import { BackButton } from "@/components/ui/back-button";
 
 interface CaseHeaderProps {
   caseData: Case;
@@ -13,13 +13,7 @@ export function CaseHeader({ caseData, onBack }: CaseHeaderProps) {
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
       <div>
         <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            className="mr-2" 
-            onClick={onBack}
-          >
-            ← Back
-          </Button>
+          <BackButton className="mr-2" />
           <h1 className="text-2xl font-bold text-kenya-black">{caseData.crimeReport?.title}</h1>
         </div>
         <p className="text-gray-600 ml-12">Case ID: {caseData.id}</p>

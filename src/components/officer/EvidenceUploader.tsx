@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { Upload, X } from "lucide-react";
+import { Upload, X, FileText, Video } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EvidenceUploaderProps {
   caseId: string;
@@ -23,6 +24,17 @@ export function EvidenceUploader({ caseId, onComplete }: EvidenceUploaderProps) 
     }
   };
 
+  const getFileIcon = (fileName: string) => {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    if (extension === 'pdf') {
+      return <FileText className="h-5 w-5 text-blue-600" />;
+    } else if (['mp4', 'mov', 'avi', 'wmv'].includes(extension || '')) {
+      return <Video className="h-5 w-5 text-blue-600" />;
+    } else {
+      return <Upload className="h-5 w-5 text-blue-600" />;
+    }
+  };
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -38,15 +50,30 @@ export function EvidenceUploader({ caseId, onComplete }: EvidenceUploaderProps) 
     setIsUploading(true);
     
     try {
-      // In a real app, this would upload to Supabase Storage
-      // const { data, error } = await supabase.storage.from('evidence').upload(...)
+      // Generate a unique file path
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${caseId}/${Date.now()}.${fileExt}`;
+      
+      // Upload to Supabase Storage (would be implemented in a real app)
+      // const { data, error } = await supabase.storage.from('evidence').upload(filePath, file);
       
       // Mock successful upload
       await new Promise(resolve => setTimeout(resolve, 1500));
       
+      // In a real app, save the evidence record to the database
+      const evidenceData = {
+        case_id: caseId,
+        description: description,
+        file_url: `https://example.com/${filePath}`, // This would be the actual URL from storage
+        file_type: file.type
+      };
+      
+      // Mock database insertion
+      console.log("Evidence data to be saved:", evidenceData);
+      
       toast({
         title: "Evidence uploaded",
-        description: "Your evidence has been submitted successfully",
+        description: `Evidence has been uploaded and associated with case ${caseId}`,
       });
       
       setFile(null);
@@ -72,7 +99,7 @@ export function EvidenceUploader({ caseId, onComplete }: EvidenceUploaderProps) 
     <form onSubmit={handleUpload} className="space-y-4">
       <div className="space-y-2">
         <label htmlFor="evidence-description" className="text-sm font-medium">
-          Description
+          Evidence Description
         </label>
         <Textarea
           id="evidence-description"
@@ -87,23 +114,23 @@ export function EvidenceUploader({ caseId, onComplete }: EvidenceUploaderProps) 
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
           <Upload className="mx-auto h-8 w-8 text-gray-400" />
           <p className="mt-2 text-sm text-gray-500">Click to upload or drag and drop</p>
-          <p className="mt-1 text-xs text-gray-400">PDF, Images, Video, Audio (max 25MB)</p>
+          <p className="mt-1 text-xs text-gray-400">PDF, Video (MP4, MOV), max 100MB</p>
           <Input
             type="file"
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             onChange={handleFileChange}
-            accept="image/*,application/pdf,video/*,audio/*"
+            accept="application/pdf,video/mp4,video/quicktime,video/x-msvideo,video/x-ms-wmv"
           />
         </div>
       ) : (
         <div className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
           <div className="flex items-center">
             <div className="bg-blue-100 p-2 rounded-md">
-              <Upload className="h-5 w-5 text-blue-600" />
+              {getFileIcon(file.name)}
             </div>
             <div className="ml-3 truncate">
               <p className="text-sm font-medium">{file.name}</p>
-              <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(0)}KB</p>
+              <p className="text-xs text-gray-500">{(file.size / (1024 * 1024)).toFixed(2)}MB</p>
             </div>
           </div>
           <Button
