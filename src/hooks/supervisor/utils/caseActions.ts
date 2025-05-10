@@ -1,13 +1,13 @@
 
 import { Case, CrimeReport } from "@/types";
-import { ToastType } from "../types";
+import { SupervisorStats, ToastType } from "../types";
 
 export interface CaseActionsConfig {
   allCases: Case[];
   setAllCases: (cases: Case[]) => void;
   pendingReports: CrimeReport[];
   setPendingReports: (reports: CrimeReport[]) => void;
-  setStats: (updater: (prev: any) => any) => void;
+  setStats: (updater: (prev: SupervisorStats) => SupervisorStats) => void;
   showToast: ToastType;
 }
 
@@ -25,7 +25,7 @@ export const createCaseActionHandlers = ({
   
   // Handle case assignment
   const handleAssignCase = (caseId: string, officerId: string, officerName: string) => {
-    setAllCases(prev => prev.map(caseItem => {
+    setAllCases(allCases.map(caseItem => {
       if (caseItem.id === caseId) {
         return {
           ...caseItem,
@@ -64,13 +64,13 @@ export const createCaseActionHandlers = ({
     };
     
     // Add to all cases
-    setAllCases(prev => [...prev, newCase]);
+    setAllCases([...allCases, newCase]);
     
     // Remove from pending reports
-    setPendingReports(prev => prev.filter(r => r.id !== reportId));
+    setPendingReports(pendingReports.filter(r => r.id !== reportId));
     
     // Update stats
-    setStats(prev => ({
+    setStats((prev: SupervisorStats) => ({
       ...prev,
       totalCases: prev.totalCases + 1,
       activeCases: prev.activeCases + 1,
@@ -85,7 +85,7 @@ export const createCaseActionHandlers = ({
   
   // Handle escalating a case to judiciary
   const handleSubmitToJudiciary = (caseId: string) => {
-    setAllCases(prev => prev.map(caseItem => {
+    setAllCases(allCases.map(caseItem => {
       if (caseItem.id === caseId && caseItem.crimeReport) {
         return {
           ...caseItem,

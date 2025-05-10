@@ -12,3 +12,7 @@ export interface SupervisorStats {
   completedCases: number;
   totalOfficers: number;
 }
+
+export interface StatsUpdater {
+  (prev: SupervisorStats): SupervisorStats;
+}
