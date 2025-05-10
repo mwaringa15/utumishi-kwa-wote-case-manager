@@ -35,6 +35,8 @@ export function ProtectedRoute({
       return <Navigate to="/supervisor-dashboard" replace />;
     } else if (user.role === "Judiciary") {
       return <Navigate to="/judiciary-dashboard" replace />;
+    } else if (user.role === "Supervisor") {
+      return <Navigate to="/supervisor-dashboard" replace />;
     } else {
       return <Navigate to="/dashboard" replace />;
     }

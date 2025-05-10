@@ -80,6 +80,8 @@ function getRole(email: string): User["role"] {
     return "OCS";
   } else if (email.endsWith("@judiciary.go.ke")) {
     return "Judiciary";
+  } else if (email.endsWith("@supervisor.go.ke")) {
+    return "Supervisor";
   } else {
     return "Public";
   }

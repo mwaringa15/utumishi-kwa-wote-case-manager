@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -48,6 +49,24 @@ export function useAuthActions() {
             role: "Officer" 
           }, 
           redirectPath: "/officer-dashboard" 
+        };
+      }
+
+      if (email === "supervisor@supervisor.go.ke" && password === "password123") {
+        // Add demo supervisor login
+        toast({
+          title: "Login successful",
+          description: "Welcome back, Supervisor!",
+        });
+        
+        console.log("Successful demo login for supervisor user");
+        return { 
+          user: { 
+            id: "demo-supervisor-id",
+            email: "supervisor@supervisor.go.ke", 
+            role: "Supervisor" 
+          }, 
+          redirectPath: "/supervisor-dashboard" 
         };
       }
       
