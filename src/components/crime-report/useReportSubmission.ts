@@ -8,6 +8,7 @@ import { CrimeReportFormValues } from "./types";
 
 export function useReportSubmission() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [caseId, setCaseId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -45,17 +46,37 @@ export function useReportSubmission() {
       }
       
       console.log("Created report:", reportResponse);
+      
+      // Fetch the case ID that was automatically created by the database trigger
+      const { data: caseData, error: caseError } = await supabase
+        .from('cases')
+        .select('id')
+        .eq('report_id', reportResponse.id)
+        .single();
+      
+      if (caseError) {
+        console.error("Error fetching case ID:", caseError);
+        throw new Error("Report submitted, but couldn't retrieve case ID.");
+      }
+      
+      console.log("Retrieved case data:", caseData);
+      const generatedCaseId = caseData.id;
+      setCaseId(generatedCaseId);
 
+      // Format the case ID for display (first 8 characters in uppercase)
+      const displayCaseId = generatedCaseId.substring(0, 8).toUpperCase();
+      
       toast({
-        title: "Report submitted successfully.",
-        description: "Your case is being reviewed.",
+        title: "Report submitted successfully",
+        description: `Your case ID is: ${displayCaseId}. Use this ID to track your case status.`,
       });
       
       // Redirect based on user role
       if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator'].includes(user.role)) {
         navigate("/officer-dashboard");
       } else {
-        navigate("/dashboard");
+        // For public users, navigate to track case page with the ID
+        navigate(`/track-case?id=${generatedCaseId}`);
       }
       
       return true;
@@ -74,6 +95,7 @@ export function useReportSubmission() {
 
   return {
     isSubmitting,
+    caseId,
     handleSubmit
   };
 }
