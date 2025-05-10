@@ -71,8 +71,10 @@ export function useReportSubmission() {
         description: `Your case ID is: ${displayCaseId}. Use this ID to track your case status.`,
       });
       
-      // Redirect based on user role
-      if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator'].includes(user.role)) {
+      // Redirect based on user role or email domain
+      if (user?.email?.endsWith('@supervisor.go.ke')) {
+        navigate("/supervisor-dashboard");
+      } else if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator'].includes(user.role)) {
         navigate("/officer-dashboard");
       } else {
         // For public users, navigate to track case page with the ID
