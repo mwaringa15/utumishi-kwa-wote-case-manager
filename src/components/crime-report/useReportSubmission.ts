@@ -75,7 +75,9 @@ export function useReportSubmission() {
       if (user?.email?.endsWith('@supervisor.go.ke')) {
         navigate("/supervisor-dashboard");
       } else if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator'].includes(user.role)) {
-        navigate("/officer-dashboard");
+        // For officers, navigate to case details page with the new case ID
+        // This ensures they can track the case they just created
+        navigate(`/case/${generatedCaseId}`);
       } else {
         // For public users, navigate to track case page with the ID
         navigate(`/track-case?id=${generatedCaseId}`);
