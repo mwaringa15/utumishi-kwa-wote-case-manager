@@ -9,11 +9,12 @@ import { StatsOverview } from "./StatsOverview";
 import { AssignedCasesTab } from "./AssignedCasesTab";
 import { PendingReportsTab } from "./PendingReportsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, ArrowLeft } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCasesAndReports } from "@/hooks/officer/useCasesAndReports";
 import { Button } from "@/components/ui/button";
 import CrimeReportForm from "@/components/CrimeReportForm";
+import { BackButton } from "@/components/ui/back-button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const OfficerDashboard = () => {
@@ -39,23 +40,12 @@ const OfficerDashboard = () => {
     caseItem.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleGoBack = () => {
-    navigate(-1);
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar isLoggedIn={!!user} userRole={user?.role} />
       
       <div className="container mx-auto px-4 py-8 flex-grow">
-        <Button 
-          variant="ghost" 
-          className="mb-4 px-2" 
-          onClick={handleGoBack}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
+        <BackButton />
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div>

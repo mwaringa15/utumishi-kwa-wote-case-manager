@@ -16,16 +16,6 @@ export function useReportSubmission() {
     setIsSubmitting(true);
     console.log("Submitting form data:", data);
     
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "You must be logged in to submit a report.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return false;
-    }
-    
     try {
       // Create the report object
       const reportData = {
@@ -36,9 +26,11 @@ export function useReportSubmission() {
         category: data.category,
         contact_phone: data.contactPhone || null,
         additional_info: data.additionalInfo || null,
-        reporter_id: user.id,
+        reporter_id: user?.id || null, // Allow null if user is not authenticated
         status: 'Submitted'
       };
+      
+      console.log("Sending report data to server:", reportData);
       
       // Insert the report - the case will be created automatically via our database trigger
       const { data: reportResponse, error: reportError } = await supabase
@@ -59,8 +51,12 @@ export function useReportSubmission() {
         description: "Your case is being reviewed.",
       });
       
-      // Redirect to the dashboard
-      navigate("/dashboard");
+      // Redirect based on user role
+      if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator'].includes(user.role)) {
+        navigate("/officer-dashboard");
+      } else {
+        navigate("/dashboard");
+      }
       
       return true;
     } catch (error: any) {

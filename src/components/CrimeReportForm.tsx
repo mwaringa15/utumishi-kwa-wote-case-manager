@@ -1,5 +1,6 @@
 
 import { ReportForm } from "./crime-report/ReportForm";
+import { BackButton } from "@/components/ui/back-button";
 
 interface CrimeReportFormProps {
   onComplete?: () => void;
@@ -8,7 +9,10 @@ interface CrimeReportFormProps {
 const CrimeReportForm = ({ onComplete }: CrimeReportFormProps) => {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-kenya-black mb-6">Report a Crime</h2>
+      <div className="mb-6">
+        <BackButton />
+        <h2 className="text-2xl font-bold text-kenya-black mt-2">Report a Crime</h2>
+      </div>
       <ReportForm onComplete={onComplete} />
     </div>
   );
