@@ -12,6 +12,8 @@ import { OfficersTab } from "@/components/supervisor/OfficersTab";
 import { useSupervisorData } from "@/hooks/supervisor/useSupervisorData";
 import { RegionalStats } from "@/components/supervisor/RegionalStats";
 import { OfficerPerformance } from "@/components/supervisor/OfficerPerformance";
+import { SupervisorSidebar } from "@/components/supervisor/SupervisorSidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 const SupervisorDashboard = () => {
   const { user } = useAuth();
@@ -50,60 +52,65 @@ const SupervisorDashboard = () => {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar isLoggedIn={!!user} userRole={user?.role} />
       
-      <div className="container mx-auto px-4 py-8 flex-grow">
-        <SupervisorDashboardHeader user={user} />
-        <StatsOverview stats={stats} />
-        
-        {/* Show analytics for Commander/Admin users */}
-        {isCommanderOrAdmin && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <RegionalStats data={regionalData} isLoading={isLoading} />
-            <OfficerPerformance officers={officers} isLoading={isLoading} />
-          </div>
-        )}
-        
-        <SearchAndFilters
-          searchTerm={searchTerm}
-          sortField={sortField}
-          sortDirection={sortDirection}
-          setSearchTerm={setSearchTerm}
-          toggleSort={toggleSort}
-          setSortDirection={setSortDirection}
-        />
-        
-        <Tabs defaultValue="cases" className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="cases">All Cases</TabsTrigger>
-            <TabsTrigger value="pending">Pending Reports</TabsTrigger>
-            <TabsTrigger value="officers">Officers</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="cases">
-            <CasesTab 
-              filteredCases={filteredCases}
-              officers={officers}
-              isLoading={isLoading}
-              handleAssignCase={handleAssignCase}
-              handleSubmitToJudiciary={handleSubmitToJudiciary}
+      <div className="flex-grow flex">
+        <SidebarProvider>
+          <SupervisorSidebar />
+          <SidebarInset className="p-6">
+            <SupervisorDashboardHeader user={user} />
+            <StatsOverview stats={stats} />
+            
+            {/* Show analytics for Commander/Admin users */}
+            {isCommanderOrAdmin && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <RegionalStats data={regionalData} isLoading={isLoading} />
+                <OfficerPerformance officers={officers} isLoading={isLoading} />
+              </div>
+            )}
+            
+            <SearchAndFilters
+              searchTerm={searchTerm}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              setSearchTerm={setSearchTerm}
+              toggleSort={toggleSort}
+              setSortDirection={setSortDirection}
             />
-          </TabsContent>
-          
-          <TabsContent value="pending">
-            <PendingReportsTab 
-              pendingReports={pendingReports}
-              officers={officers}
-              isLoading={isLoading}
-              handleCreateCase={handleCreateCase}
-            />
-          </TabsContent>
-          
-          <TabsContent value="officers">
-            <OfficersTab 
-              officers={officers}
-              isLoading={isLoading}
-            />
-          </TabsContent>
-        </Tabs>
+            
+            <Tabs defaultValue="cases" className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="cases">All Cases</TabsTrigger>
+                <TabsTrigger value="pending">Pending Reports</TabsTrigger>
+                <TabsTrigger value="officers">Officers</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="cases">
+                <CasesTab 
+                  filteredCases={filteredCases}
+                  officers={officers}
+                  isLoading={isLoading}
+                  handleAssignCase={handleAssignCase}
+                  handleSubmitToJudiciary={handleSubmitToJudiciary}
+                />
+              </TabsContent>
+              
+              <TabsContent value="pending">
+                <PendingReportsTab 
+                  pendingReports={pendingReports}
+                  officers={officers}
+                  isLoading={isLoading}
+                  handleCreateCase={handleCreateCase}
+                />
+              </TabsContent>
+              
+              <TabsContent value="officers">
+                <OfficersTab 
+                  officers={officers}
+                  isLoading={isLoading}
+                />
+              </TabsContent>
+            </Tabs>
+          </SidebarInset>
+        </SidebarProvider>
       </div>
       
       <Footer />

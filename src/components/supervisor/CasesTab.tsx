@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, User } from "lucide-react";
 import { Case, User as UserType } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/use-toast";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 interface CasesTabProps {
   filteredCases: Case[];
@@ -30,30 +31,120 @@ export function CasesTab({
   handleSubmitToJudiciary
 }: CasesTabProps) {
   const navigate = useNavigate();
+  const [localSearch, setLocalSearch] = useState("");
+  const [sortColumn, setSortColumn] = useState("lastUpdated");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  
+  // Local filter based on search term
+  const localFilteredCases = filteredCases.filter(caseItem => 
+    caseItem.id.toLowerCase().includes(localSearch.toLowerCase()) ||
+    caseItem.crimeReport?.title.toLowerCase().includes(localSearch.toLowerCase()) ||
+    caseItem.assignedOfficerName?.toLowerCase().includes(localSearch.toLowerCase())
+  );
+  
+  // Sort function
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+  
+  // Get progress badge color
+  const getProgressColor = (progress: string) => {
+    switch (progress) {
+      case "Completed": return "bg-green-100 text-green-800";
+      case "In Progress": return "bg-blue-100 text-blue-800";
+      case "Pending Review": return "bg-purple-100 text-purple-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
   
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-lg shadow">
+      <div className="p-4 border-b">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 className="text-lg font-semibold">All Cases ({localFilteredCases.length})</h2>
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search cases..."
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+      </div>
+      
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Case ID
+              <th 
+                scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("id")}
+              >
+                <div className="flex items-center gap-1">
+                  Case ID
+                  {sortColumn === "id" && (
+                    sortDirection === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                  )}
+                </div>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Title
+              <th 
+                scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("title")}
+              >
+                <div className="flex items-center gap-1">
+                  Title
+                  {sortColumn === "title" && (
+                    sortDirection === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                  )}
+                </div>
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Type
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Officer
+              <th 
+                scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("officer")}
+              >
+                <div className="flex items-center gap-1">
+                  Officer
+                  {sortColumn === "officer" && (
+                    sortDirection === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                  )}
+                </div>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+              <th 
+                scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("progress")}
+              >
+                <div className="flex items-center gap-1">
+                  Status
+                  {sortColumn === "progress" && (
+                    sortDirection === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                  )}
+                </div>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Last Updated
+              <th 
+                scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("lastUpdated")}
+              >
+                <div className="flex items-center gap-1">
+                  Last Updated
+                  {sortColumn === "lastUpdated" && (
+                    sortDirection === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                  )}
+                </div>
               </th>
               <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -67,30 +158,36 @@ export function CasesTab({
                   <div className="animate-pulse text-gray-400">Loading cases...</div>
                 </td>
               </tr>
-            ) : filteredCases.length > 0 ? (
-              filteredCases.map((caseItem) => (
+            ) : localFilteredCases.length > 0 ? (
+              localFilteredCases.map((caseItem) => (
                 <tr key={caseItem.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
                     {caseItem.id}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                     {caseItem.crimeReport?.title}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {caseItem.crimeReport?.crimeType || "N/A"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {caseItem.assignedOfficerName || "Unassigned"}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {caseItem.assignedOfficerName ? (
+                      <div className="flex items-center">
+                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
+                          <User className="h-4 w-4 text-gray-600" />
+                        </div>
+                        <span>{caseItem.assignedOfficerName}</span>
+                      </div>
+                    ) : (
+                      <Badge variant="outline" className="text-amber-500 border-amber-200 bg-amber-50">
+                        Unassigned
+                      </Badge>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      caseItem.progress === "Completed" ? "bg-green-100 text-green-800" :
-                      caseItem.progress === "In Progress" ? "bg-blue-100 text-blue-800" :
-                      caseItem.progress === "Pending Review" ? "bg-purple-100 text-purple-800" :
-                      "bg-gray-100 text-gray-800"
-                    }`}>
+                    <Badge className={getProgressColor(caseItem.progress)}>
                       {caseItem.progress}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(caseItem.lastUpdated).toLocaleDateString()}
@@ -119,7 +216,7 @@ export function CasesTab({
                             </DialogDescription>
                           </DialogHeader>
                           <div className="py-4">
-                            <div className="space-y-4">
+                            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
                               {officers.map((officer) => (
                                 <div 
                                   key={officer.id} 
