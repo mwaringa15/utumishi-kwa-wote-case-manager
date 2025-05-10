@@ -17,6 +17,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load user on initial render
   useEffect(() => {
+    console.log("Auth provider initializing...");
+    
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {

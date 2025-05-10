@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -182,20 +181,48 @@ export function useAuthActions() {
     return "Public";
   };
 
-  // Logout function
+  // Logout function - FIX: Improved logout functionality
   const logout = async () => {
+    setIsLoading(true);
     try {
-      await supabase.auth.signOut();
+      console.log("Starting logout process...");
+      
+      // Clean up all Supabase auth tokens in localStorage
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Attempt global sign out from Supabase
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
+      if (error) {
+        console.error("Error during logout:", error.message);
+        throw error;
+      }
+      
+      console.log("Logout successful");
+      
       toast({
         title: "Logged out",
         description: "You have been successfully logged out",
       });
+      
+      // Force page reload to clear all application state
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
+      
     } catch (error: any) {
+      console.error("Logout failed:", error);
       toast({
         title: "Logout failed",
         description: error.message || "Could not log out",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 

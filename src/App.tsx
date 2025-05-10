@@ -70,8 +70,8 @@ const App = () => (
               path="/supervisor-dashboard" 
               element={<ProtectedRoute 
                 element={<SupervisorDashboard />} 
-                allowedRoles={["OCS", "Commander", "Administrator"]} 
-                redirectTo="/officer-dashboard" 
+                allowedRoles={["OCS", "Commander", "Administrator", "Supervisor"]} 
+                redirectTo="/dashboard" 
               />} 
             />
             

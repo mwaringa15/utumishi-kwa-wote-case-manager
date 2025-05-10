@@ -72,7 +72,7 @@ export function useReportSubmission() {
       });
       
       // Redirect based on user role or email domain
-      if (user?.email?.endsWith('@supervisor.go.ke')) {
+      if (user?.email?.endsWith('@supervisor.go.ke') || ["Supervisor"].includes(user?.role || "")) {
         navigate("/supervisor-dashboard");
       } else if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator'].includes(user.role)) {
         // Make sure we're using the correct case ID from the newly created case
