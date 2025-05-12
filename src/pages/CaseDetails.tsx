@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Case, CaseProgress, CaseUpdate } from "@/types";
+import { Case, CaseProgress, CaseStatus, CaseUpdate } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -129,7 +129,8 @@ const CaseDetails = () => {
             id: fetchedCase.reports.id,
             title: fetchedCase.reports.title,
             description: fetchedCase.reports.description,
-            status: fetchedCase.reports.status,
+            // Fix: Cast the string status to CrimeStatus type
+            status: fetchedCase.reports.status as CaseStatus,
             createdById: "",
             createdAt: fetchedCase.reports.created_at,
             location: fetchedCase.reports.location,
@@ -156,7 +157,7 @@ const CaseDetails = () => {
         setCaseUpdates(formattedUpdates);
         
         console.log(`Successfully loaded case data for ID: ${id}`);
-        sessionStorage.setItem('lastViewedCase', id);
+        sessionStorage.removeItem('lastViewedCase'); // Clear any cached case ID
       } catch (error: any) {
         console.error("Failed to load case data", error);
         toast({
