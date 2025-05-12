@@ -47,20 +47,49 @@ export function useReportSubmission() {
       
       console.log("Created report:", reportResponse);
       
+      // For officers, auto-create a case if one wasn't created by the database trigger
+      let newCaseId;
+      
       // Fetch the case ID that was automatically created by the database trigger
       const { data: caseData, error: caseError } = await supabase
         .from('cases')
         .select('id')
         .eq('report_id', reportResponse.id)
         .single();
-      
+        
       if (caseError) {
-        console.error("Error fetching case ID:", caseError);
-        throw new Error("Report submitted, but couldn't retrieve case ID.");
+        // If no case was created by the trigger, create one now for officers
+        if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator', 'Supervisor'].includes(user.role)) {
+          console.log("No case found, creating one for officer...");
+          
+          // Create a case manually
+          const { data: newCase, error: newCaseError } = await supabase
+            .from('cases')
+            .insert({
+              report_id: reportResponse.id,
+              status: 'Under Investigation',
+              assigned_officer_id: user.id, // Auto-assign to the submitting officer
+              priority: 'medium'
+            })
+            .select()
+            .single();
+            
+          if (newCaseError) {
+            console.error("Error creating case:", newCaseError);
+            throw new Error("Report submitted, but couldn't create a case. Please try again.");
+          }
+          
+          newCaseId = newCase.id;
+          console.log("Created new case:", newCaseId);
+        } else {
+          console.error("Error fetching case ID:", caseError);
+          throw new Error("Report submitted, but couldn't retrieve case ID.");
+        }
+      } else {
+        newCaseId = caseData.id;
       }
       
-      console.log("Retrieved case data:", caseData);
-      const newCaseId = caseData.id;
+      console.log("Retrieved case ID:", newCaseId);
       setCaseId(newCaseId);
 
       // Format the case ID for display (first 8 characters in uppercase)
