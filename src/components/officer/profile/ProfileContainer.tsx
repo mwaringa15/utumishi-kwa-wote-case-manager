@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -5,7 +6,7 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { UserRole, Case, OfficerStatus } from "@/types";
+import { UserRole, Case, OfficerStatus, CaseStatus as CaseStatusType, CaseProgress as CaseProgressType } from "@/types";
 import { BackButton } from "@/components/ui/back-button";
 import { ProfileHeader } from "@/components/officer/profile/ProfileHeader";
 import { ProfileContent } from "@/components/officer/profile/ProfileContent";
@@ -110,14 +111,14 @@ export const ProfileContainer = () => {
       crimeReportId: caseItem.report_id,
       assignedOfficerId: user.id,
       assignedOfficerName: profile?.full_name || "",
-      progress: caseItem.status as CaseProgress,
+      progress: caseItem.status as CaseProgressType,
       lastUpdated: caseItem.updated_at,
       priority: caseItem.priority as "high" | "medium" | "low",
       crimeReport: caseItem.reports ? {
         id: caseItem.report_id,
         title: caseItem.reports.title || "Unknown",
         description: caseItem.reports.description || "",
-        status: caseItem.status as CaseStatus,
+        status: caseItem.status as CaseStatusType,
         createdById: "",
         createdAt: caseItem.created_at,
         location: "",
@@ -184,38 +185,3 @@ export const ProfileContainer = () => {
     </div>
   );
 };
-
-const ProfileLoadingState = () => (
-  <div className="flex justify-center items-center p-8">
-    <div className="animate-pulse text-gray-500">Loading profile...</div>
-  </div>
-);
-
-const ProfileErrorState = () => (
-  <div className="text-center py-8 text-gray-500">
-    Could not load profile information
-  </div>
-);
-
-interface ProfileContentProps {
-  profile: OfficerProfile;
-  assignedCases: Case[];
-  onStatusUpdate: (status: OfficerStatus) => Promise<void>;
-  statusLoading: boolean;
-}
-
-const ProfileContent = ({ profile, assignedCases, onStatusUpdate, statusLoading }: ProfileContentProps) => (
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div className="lg:col-span-1">
-      <OfficerProfileCard 
-        profile={profile}
-        onStatusUpdate={onStatusUpdate}
-        statusLoading={statusLoading}
-      />
-    </div>
-
-    <div className="lg:col-span-2">
-      <AssignedCasesTable cases={assignedCases} />
-    </div>
-  </div>
-);
