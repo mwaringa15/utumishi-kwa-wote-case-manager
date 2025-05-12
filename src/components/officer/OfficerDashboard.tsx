@@ -9,7 +9,7 @@ import { StatsOverview } from "./StatsOverview";
 import { AssignedCasesTab } from "./AssignedCasesTab";
 import { PendingReportsTab } from "./PendingReportsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search } from "lucide-react";
+import { Search, UserCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCasesAndReports } from "@/hooks/officer/useCasesAndReports";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,15 @@ const OfficerDashboard = () => {
             <p className="text-gray-600">Welcome, Officer {user?.name}</p>
           </div>
           <div className="mt-4 sm:mt-0 flex gap-3">
+            <Button 
+              variant="outline"
+              onClick={() => navigate("/officer-profile")}
+              className="flex items-center gap-2"
+            >
+              <UserCircle className="h-4 w-4" />
+              Profile
+            </Button>
+            
             <Dialog open={openReportDialog} onOpenChange={setOpenReportDialog}>
               <DialogTrigger asChild>
                 <Button className="bg-kenya-green hover:bg-kenya-green/90 text-white">

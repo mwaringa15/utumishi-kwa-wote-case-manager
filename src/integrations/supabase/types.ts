@@ -131,6 +131,7 @@ export type Database = {
           id: string
           priority: string | null
           report_id: string | null
+          station: string | null
           status: string
           updated_at: string | null
         }
@@ -140,6 +141,7 @@ export type Database = {
           id?: string
           priority?: string | null
           report_id?: string | null
+          station?: string | null
           status?: string
           updated_at?: string | null
         }
@@ -149,6 +151,7 @@ export type Database = {
           id?: string
           priority?: string | null
           report_id?: string | null
+          station?: string | null
           status?: string
           updated_at?: string | null
         }
@@ -313,6 +316,7 @@ export type Database = {
           full_name: string | null
           id: string
           role: string
+          status: string | null
         }
         Insert: {
           created_at?: string | null
@@ -320,6 +324,7 @@ export type Database = {
           full_name?: string | null
           id: string
           role: string
+          status?: string | null
         }
         Update: {
           created_at?: string | null
@@ -327,6 +332,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           role?: string
+          status?: string | null
         }
         Relationships: []
       }
