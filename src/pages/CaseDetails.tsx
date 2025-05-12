@@ -37,14 +37,22 @@ const CaseDetails = () => {
   // Load case data
   useEffect(() => {
     const loadCaseData = async () => {
+      if (!id) return;
+      
       setIsLoading(true);
+      
+      // Clear any cached data to ensure we're getting fresh data
+      setCaseData(null);
+      setCaseUpdates([]);
+      
       try {
+        console.log(`Loading case data for ID: ${id}`);
         // In a real app, this would fetch from Supabase
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Mock case data
+        // Mock case data - would be from Supabase in production
         const mockCase: Case = {
-          id: id || "c123",
+          id: id,
           crimeReportId: "r456",
           assignedOfficerId: "officer789",
           assignedOfficerName: "Officer John Doe",
@@ -68,7 +76,7 @@ const CaseDetails = () => {
         const mockUpdates: CaseUpdate[] = [
           {
             id: "u1",
-            caseId: id || "c123",
+            caseId: id,
             officerId: "officer789",
             officerName: "Officer John Doe",
             content: "Opened case and started initial investigation. Requested security footage from the convenience store.",
@@ -77,7 +85,7 @@ const CaseDetails = () => {
           },
           {
             id: "u2",
-            caseId: id || "c123",
+            caseId: id,
             officerId: "officer789",
             officerName: "Officer John Doe",
             content: "Received security footage. Clearly shows suspect's face. Will run through facial recognition database.",
@@ -87,7 +95,7 @@ const CaseDetails = () => {
           },
           {
             id: "u3",
-            caseId: id || "c123",
+            caseId: id,
             officerId: "commander123",
             officerName: "Commander Sarah Johnson",
             content: "Reviewed case. Priority upgraded to high. Please expedite facial recognition search.",
@@ -98,6 +106,10 @@ const CaseDetails = () => {
         
         setCaseData(mockCase);
         setCaseUpdates(mockUpdates);
+        
+        // Save current case ID to session storage to help debugging
+        console.log(`Loaded case data for ID: ${id}`);
+        sessionStorage.setItem('lastViewedCase', id);
       } catch (error) {
         console.error("Failed to load case data", error);
         toast({

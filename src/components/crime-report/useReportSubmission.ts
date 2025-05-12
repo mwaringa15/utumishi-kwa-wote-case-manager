@@ -100,13 +100,17 @@ export function useReportSubmission() {
         description: `Your case ID is: ${displayCaseId}. Use this ID to track your case status.`,
       });
       
+      // Clear any potentially cached case information in session storage
+      sessionStorage.removeItem('lastViewedCase');
+
       // Redirect based on user role or email domain
       if (user?.email?.endsWith('@supervisor.go.ke') || ["Supervisor"].includes(user?.role || "")) {
         navigate("/supervisor-dashboard");
       } else if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator'].includes(user.role)) {
         // Make sure we're using the correct case ID from the newly created case
         console.log(`Redirecting officer to new case: ${newCaseId}`);
-        navigate(`/case/${newCaseId}`);
+        // Use replace instead of push to avoid back button issues
+        navigate(`/case/${newCaseId}`, { replace: true });
       } else {
         // For public users, navigate to track case page with the new ID
         navigate(`/track-case?id=${newCaseId}`);
