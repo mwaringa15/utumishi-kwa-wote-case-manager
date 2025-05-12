@@ -23,6 +23,16 @@ export const UserMenu = ({ user, dashboardLink, isMobile = false, onClose }: Use
   const navigate = useNavigate();
   const { logout } = useAuthActions();
 
+  // Get the correct profile link based on user role
+  const getProfileLink = () => {
+    if (user?.role === 'Officer' || user?.role === 'OCS' || user?.role === 'Commander' || user?.role === 'Administrator') {
+      return '/officer-profile';
+    }
+    return '/profile';
+  };
+
+  const profileLink = getProfileLink();
+
   const handleLogout = async () => {
     await logout();
     navigate("/");
@@ -37,7 +47,7 @@ export const UserMenu = ({ user, dashboardLink, isMobile = false, onClose }: Use
         </div>
         
         <Link
-          to="/profile"
+          to={profileLink}
           className="block font-medium hover:text-kenya-green"
           onClick={onClose}
         >
@@ -76,7 +86,7 @@ export const UserMenu = ({ user, dashboardLink, isMobile = false, onClose }: Use
         </DropdownMenuItem>
         
         <DropdownMenuItem>
-          <Link to="/profile" className="w-full">Profile</Link>
+          <Link to={profileLink} className="w-full">Profile</Link>
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
