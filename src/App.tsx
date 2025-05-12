@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/hooks/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import OfficerDashboard from "./pages/OfficerDashboard";
+import OfficerProfile from "./pages/OfficerProfile"; // Add import
 import ReportCrime from "./pages/ReportCrime";
 import TrackCase from "./pages/TrackCase";
 import NotFound from "./pages/NotFound";
@@ -52,6 +53,14 @@ const App = () => (
               path="/officer-dashboard" 
               element={<ProtectedRoute 
                 element={<OfficerDashboard />} 
+                allowedRoles={["Officer", "OCS", "Commander", "Administrator"]} 
+                redirectTo="/dashboard" 
+              />} 
+            />
+            <Route 
+              path="/officer-profile" 
+              element={<ProtectedRoute 
+                element={<OfficerProfile />} 
                 allowedRoles={["Officer", "OCS", "Commander", "Administrator"]} 
                 redirectTo="/dashboard" 
               />} 
