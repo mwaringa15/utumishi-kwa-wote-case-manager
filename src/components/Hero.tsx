@@ -6,16 +6,16 @@ const Hero = () => {
   return (
     <div className="relative bg-white overflow-hidden">
       {/* Background police images */}
-      <div className="absolute top-8 left-8 z-0 opacity-20">
+      <div className="absolute top-8 left-8 z-0 opacity-30">
         <img 
           src="/lovable-uploads/1a8b3892-6f95-41ae-a2e4-aa111a152b6d.png" 
           alt="Kenya Police Badge" 
-          className="w-24 h-auto mb-2"
+          className="w-32 h-auto mb-4"
         />
         <img 
           src="/lovable-uploads/b839cfb7-a0f2-4b19-be28-a6d4692303cc.png" 
           alt="National Police Service Emblem" 
-          className="w-24 h-auto"
+          className="w-32 h-auto"
         />
       </div>
 
