@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { UserRole, Case } from "@/types";
+import { UserRole, Case, OfficerStatus, CaseStatus, CaseProgress } from "@/types";
 import {
   Card,
   CardContent,
@@ -41,7 +41,7 @@ interface OfficerProfile {
   email: string;
   role: UserRole;
   station?: string;
-  status: 'on_duty' | 'on_leave' | 'off_duty';
+  status: OfficerStatus;
 }
 
 const OfficerProfile = () => {
@@ -73,7 +73,15 @@ const OfficerProfile = () => {
           throw profileError;
         }
 
-        setProfile(profileData);
+        // Cast the role and status to the correct types
+        setProfile({
+          id: profileData.id,
+          full_name: profileData.full_name,
+          email: profileData.email,
+          role: profileData.role as UserRole,
+          station: profileData.station,
+          status: profileData.status as OfficerStatus
+        });
 
         // Fetch assigned cases
         const { data: casesData, error: casesError } = await supabase
@@ -100,13 +108,14 @@ const OfficerProfile = () => {
           crimeReportId: caseItem.report_id,
           assignedOfficerId: user.id,
           assignedOfficerName: profileData.full_name || "",
-          progress: caseItem.status,
+          progress: caseItem.status as CaseProgress,
           lastUpdated: caseItem.updated_at,
+          priority: caseItem.priority as "high" | "medium" | "low",
           crimeReport: caseItem.reports ? {
-            id: caseItem.reports.id || caseItem.report_id,
+            id: caseItem.report_id,
             title: caseItem.reports.title || "Unknown",
             description: caseItem.reports.description || "",
-            status: caseItem.status,
+            status: caseItem.status as CaseStatus,
             createdById: "",
             createdAt: caseItem.created_at,
             location: "",
@@ -130,7 +139,7 @@ const OfficerProfile = () => {
     loadProfile();
   }, [user, navigate, toast]);
 
-  const updateStatus = async (newStatus: 'on_duty' | 'on_leave' | 'off_duty') => {
+  const updateStatus = async (newStatus: OfficerStatus) => {
     if (!user?.id || !profile) return;
     
     setStatusLoading(true);

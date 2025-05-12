@@ -3,6 +3,7 @@
 
 // User types
 export type UserRole = "Public" | "Officer" | "OCS" | "Commander" | "Administrator" | "Judiciary" | "Supervisor";
+export type OfficerStatus = "on_duty" | "on_leave" | "off_duty";
 
 export interface User {
   id?: string;
@@ -14,6 +15,7 @@ export interface User {
   badgeNumber?: string;
   station?: string;
   assignedCases?: number;
+  status?: OfficerStatus;
 }
 
 // Crime report types
@@ -52,6 +54,9 @@ export interface Case {
   submittedToJudiciary?: boolean;
   judiciaryStatus?: JudiciaryStatus;
   judiciaryCaseNotes?: string;
+  // Add these properties for the new functionality
+  priority?: "high" | "medium" | "low";
+  station?: string;
 }
 
 // Case update types

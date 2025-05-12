@@ -18,7 +18,12 @@ import { SupervisorSidebar } from "@/components/supervisor/SupervisorSidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Case, User } from "@/types";
+import { Case, User, CaseProgress, CaseStatus, OfficerStatus } from "@/types";
+
+// Define a type for station-specific officer data
+interface StationOfficer extends User {
+  status: OfficerStatus;
+}
 
 const SupervisorDashboard = () => {
   const { user } = useAuth();
@@ -26,7 +31,7 @@ const SupervisorDashboard = () => {
   const { toast } = useToast();
   const [station, setStation] = useState<string | null>(null);
   const [unassignedCases, setUnassignedCases] = useState<Case[]>([]);
-  const [stationOfficers, setStationOfficers] = useState<User[]>([]);
+  const [stationOfficers, setStationOfficers] = useState<StationOfficer[]>([]);
   const [loading, setLoading] = useState(true);
   
   const { 
@@ -113,15 +118,15 @@ const SupervisorDashboard = () => {
           const formattedCases = unassignedCasesData.map(caseItem => ({
             id: caseItem.id,
             crimeReportId: caseItem.report_id,
-            progress: caseItem.status,
+            progress: caseItem.status as CaseProgress,
             lastUpdated: caseItem.updated_at,
             station: caseItem.station,
-            priority: caseItem.priority,
+            priority: caseItem.priority as "high" | "medium" | "low" | undefined,
             crimeReport: caseItem.reports ? {
               id: caseItem.reports.id,
               title: caseItem.reports.title,
               description: caseItem.reports.description,
-              status: caseItem.reports.status,
+              status: caseItem.reports.status as CaseStatus,
               createdById: "",
               createdAt: caseItem.created_at,
               location: caseItem.reports.location,
@@ -154,7 +159,7 @@ const SupervisorDashboard = () => {
                 email: officer.email,
                 role: officer.role,
                 station: officer.station,
-                status: officer.status,
+                status: officer.status as OfficerStatus,
                 badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`, // Mock badge number
                 assignedCases: count || 0
               };
