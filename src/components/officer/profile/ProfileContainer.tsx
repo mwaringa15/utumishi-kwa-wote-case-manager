@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -6,10 +5,12 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { UserRole, Case, OfficerStatus, CaseStatus, CaseProgress } from "@/types";
+import { UserRole, Case, OfficerStatus } from "@/types";
 import { BackButton } from "@/components/ui/back-button";
-import { OfficerProfileCard } from "@/components/officer/profile/OfficerProfileCard";
-import { AssignedCasesTable } from "@/components/officer/profile/AssignedCasesTable";
+import { ProfileHeader } from "@/components/officer/profile/ProfileHeader";
+import { ProfileContent } from "@/components/officer/profile/ProfileContent";
+import { ProfileLoadingState } from "@/components/officer/profile/ProfileLoadingState";
+import { ProfileErrorState } from "@/components/officer/profile/ProfileErrorState";
 
 export interface OfficerProfile {
   id?: string;
@@ -163,8 +164,7 @@ export const ProfileContainer = () => {
       
       <div className="container mx-auto px-4 py-8 flex-grow">
         <BackButton />
-        
-        <h1 className="text-2xl font-bold mb-8">Officer Profile</h1>
+        <ProfileHeader />
         
         {loading ? (
           <ProfileLoadingState />
