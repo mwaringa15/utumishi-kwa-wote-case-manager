@@ -5,21 +5,21 @@ import { Button } from "@/components/ui/button";
 const Hero = () => {
   return (
     <div className="relative bg-white overflow-hidden">
-      <div className="max-w-7xl mx-auto">
-        {/* Kenya Police Images */}
-        <div className="absolute top-4 left-4 z-20 flex flex-col items-center">
-          <img 
-            src="/lovable-uploads/1a8b3892-6f95-41ae-a2e4-aa111a152b6d.png" 
-            alt="Kenya Police Badge" 
-            className="w-40 h-auto mb-2"
-          />
-          <img 
-            src="/lovable-uploads/b839cfb7-a0f2-4b19-be28-a6d4692303cc.png" 
-            alt="National Police Service Emblem" 
-            className="w-40 h-auto"
-          />
-        </div>
+      {/* Background police images */}
+      <div className="absolute top-8 left-8 z-0 opacity-20">
+        <img 
+          src="/lovable-uploads/1a8b3892-6f95-41ae-a2e4-aa111a152b6d.png" 
+          alt="Kenya Police Badge" 
+          className="w-24 h-auto mb-2"
+        />
+        <img 
+          src="/lovable-uploads/b839cfb7-a0f2-4b19-be28-a6d4692303cc.png" 
+          alt="National Police Service Emblem" 
+          className="w-24 h-auto"
+        />
+      </div>
 
+      <div className="max-w-7xl mx-auto">
         <div className="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
           <svg
             className="hidden lg:block absolute right-0 inset-y-0 h-full w-48 text-white transform translate-x-1/2"
