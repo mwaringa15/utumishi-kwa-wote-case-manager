@@ -294,6 +294,21 @@ export type Database = {
         }
         Relationships: []
       }
+      stations: {
+        Row: {
+          id: string
+          name: string
+        }
+        Insert: {
+          id?: string
+          name: string
+        }
+        Update: {
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           role: string
@@ -316,6 +331,7 @@ export type Database = {
           full_name: string | null
           id: string
           role: string
+          station_id: string | null
           status: string | null
         }
         Insert: {
@@ -324,6 +340,7 @@ export type Database = {
           full_name?: string | null
           id: string
           role: string
+          station_id?: string | null
           status?: string | null
         }
         Update: {
@@ -332,9 +349,18 @@ export type Database = {
           full_name?: string | null
           id?: string
           role?: string
+          station_id?: string | null
           status?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_station"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

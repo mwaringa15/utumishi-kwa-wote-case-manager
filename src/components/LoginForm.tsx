@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,22 +13,37 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  stationId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+type Station = {
+  id: string;
+  name: string;
+};
 
 interface LoginFormProps {
-  onLogin?: (email: string, password: string) => Promise<{ user: any, redirectPath: string } | undefined>;
+  onLogin?: (email: string, password: string, stationId?: string) => Promise<{ user: any, redirectPath: string } | undefined>;
 }
 
 const LoginForm = ({ onLogin }: LoginFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [stations, setStations] = useState<Station[]>([]);
+  const [stationsLoading, setStationsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -37,8 +52,38 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
     defaultValues: {
       email: "",
       password: "",
+      stationId: "",
     },
   });
+
+  // Fetch stations on component mount
+  useEffect(() => {
+    const fetchStations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('stations')
+          .select('id, name')
+          .order('name');
+        
+        if (error) {
+          console.error("Error fetching stations:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load stations. Please refresh the page.",
+            variant: "destructive",
+          });
+        } else {
+          setStations(data || []);
+        }
+      } catch (err) {
+        console.error("Exception fetching stations:", err);
+      } finally {
+        setStationsLoading(false);
+      }
+    };
+
+    fetchStations();
+  }, [toast]);
 
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
@@ -47,7 +92,7 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
       console.log("Login attempt:", data);
       
       if (onLogin) {
-        const result = await onLogin(data.email, data.password);
+        const result = await onLogin(data.email, data.password, data.stationId || undefined);
         
         if (result && result.redirectPath) {
           console.log("Login successful, redirecting to:", result.redirectPath);
@@ -104,6 +149,35 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
                     {...field} 
                     autoComplete="current-password"
                   />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="stationId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Select your station</FormLabel>
+                <FormControl>
+                  <Select 
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={stationsLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a station" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stations.map((station) => (
+                        <SelectItem key={station.id} value={station.id}>
+                          {station.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>

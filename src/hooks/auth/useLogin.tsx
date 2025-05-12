@@ -10,11 +10,11 @@ export function useLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, stationId?: string) => {
     setIsLoading(true);
     
     try {
-      console.log("Login attempt for:", email);
+      console.log("Login attempt for:", email, "with station:", stationId);
       
       // Check for demo accounts first
       const demoAccount = checkForDemoAccount(email, password);
@@ -52,18 +52,16 @@ export function useLogin() {
         const role = determineRoleFromEmail(email);
         let redirectPath = "/dashboard";
         
-        if (email.endsWith("@police.go.ke")) {
+        if (role === "Officer") {
           console.log("Police officer login detected");
           redirectPath = "/officer-dashboard";
-        } else if (email.endsWith("@judiciary.go.ke")) {
+        } else if (role === "Judiciary") {
           console.log("Judiciary login detected");
           redirectPath = "/judiciary-dashboard";
-        } else if (email.endsWith("@supervisor.go.ke")) {
+        } else if (role === "Supervisor") {
           console.log("Supervisor login detected");
           redirectPath = "/supervisor-dashboard";
-        } else if (email.endsWith("@admin.police.go.ke") || 
-                   email.endsWith("@commander.police.go.ke") || 
-                   email.endsWith("@ocs.police.go.ke")) {
+        } else if (role === "Administrator" || role === "Commander" || role === "OCS") {
           console.log("Admin/Commander/OCS login detected");
           redirectPath = "/supervisor-dashboard";
         } else {
@@ -72,23 +70,40 @@ export function useLogin() {
         
         console.log(`User role determined as: ${role}, redirecting to: ${redirectPath}`);
         
-        // Sync user role using the edge function
+        // Sync user role using the edge function with station info if provided
         try {
-          const { data: syncData, error: syncError } = await supabase.functions.invoke('sync-user', {
-            body: {
-              id: user.id,
-              email: user.email,
-              role: role
-            }
+          const syncData = {
+            id: user.id,
+            email: user.email,
+            role: role
+          };
+          
+          // Include station_id if provided
+          if (stationId) {
+            syncData['station_id'] = stationId;
+          }
+          
+          const { data: syncResult, error: syncError } = await supabase.functions.invoke('sync-user', {
+            body: syncData
           });
           
           if (syncError) {
             console.error("Error syncing user:", syncError);
+            toast({
+              title: "Profile Sync Error",
+              description: "Login successful but failed to sync user profile. Please contact admin.",
+              variant: "destructive",
+            });
           } else {
-            console.log("User synced successfully:", syncData);
+            console.log("User synced successfully:", syncResult);
           }
         } catch (syncErr) {
           console.error("Error invoking sync-user function:", syncErr);
+          toast({
+            title: "Profile Sync Error",
+            description: "Login successful but failed to sync user profile. Please contact admin.",
+            variant: "destructive",
+          });
         }
         
         toast({
