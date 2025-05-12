@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { Case, CaseProgress, CaseUpdate } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Tabs,
   TabsContent,
@@ -47,74 +48,120 @@ const CaseDetails = () => {
       
       try {
         console.log(`Loading case data for ID: ${id}`);
-        // In a real app, this would fetch from Supabase
-        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Mock case data - would be from Supabase in production
-        const mockCase: Case = {
-          id: id,
-          crimeReportId: "r456",
-          assignedOfficerId: "officer789",
-          assignedOfficerName: "Officer John Doe",
-          progress: "In Progress",
-          lastUpdated: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        // Fetch actual case data from Supabase
+        const { data: fetchedCase, error: caseError } = await supabase
+          .from('cases')
+          .select(`
+            id,
+            status,
+            priority,
+            assigned_officer_id,
+            created_at,
+            updated_at,
+            report_id,
+            reports (
+              id,
+              title,
+              description,
+              status,
+              created_at,
+              location,
+              category,
+              contact_phone,
+              additional_info
+            )
+          `)
+          .eq('id', id)
+          .single();
+          
+        if (caseError) {
+          console.error("Failed to load case data", caseError);
+          throw new Error("Failed to load case data");
+        }
+        
+        if (!fetchedCase) {
+          console.error("No case found with ID:", id);
+          throw new Error("Case not found");
+        }
+        
+        // Get the officer name if assigned
+        let officerName = "";
+        if (fetchedCase.assigned_officer_id) {
+          const { data: officerData } = await supabase
+            .from('users')
+            .select('full_name')
+            .eq('id', fetchedCase.assigned_officer_id)
+            .single();
+            
+          officerName = officerData?.full_name || "Unknown Officer";
+        }
+        
+        // Fetch case updates
+        const { data: updates, error: updatesError } = await supabase
+          .from('case_history')
+          .select(`
+            id,
+            case_id,
+            updated_by,
+            update_note,
+            updated_at,
+            status_before,
+            status_after,
+            users (full_name)
+          `)
+          .eq('case_id', id)
+          .order('updated_at', { ascending: false });
+          
+        if (updatesError) {
+          console.error("Failed to load case updates", updatesError);
+        }
+        
+        // Format the case data to match our Case type
+        const formattedCase: Case = {
+          id: fetchedCase.id,
+          crimeReportId: fetchedCase.report_id,
+          assignedOfficerId: fetchedCase.assigned_officer_id || "",
+          assignedOfficerName: officerName,
+          progress: fetchedCase.status as CaseProgress,
+          lastUpdated: fetchedCase.updated_at,
           crimeReport: {
-            id: "r456",
-            title: "Armed Robbery Investigation",
-            description: "Armed robbery at a convenience store on Main Street. The suspect was armed with a handgun and fled with approximately $500 in cash. Security camera footage is available.",
-            status: "Under Investigation",
-            createdById: "user123",
-            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            location: "123 Main Street, Downtown",
-            crimeType: "Armed Robbery",
-            victimName: "John Smith",
-            victimContact: "0712345678"
+            id: fetchedCase.reports.id,
+            title: fetchedCase.reports.title,
+            description: fetchedCase.reports.description,
+            status: fetchedCase.reports.status,
+            createdById: "",
+            createdAt: fetchedCase.reports.created_at,
+            location: fetchedCase.reports.location,
+            crimeType: fetchedCase.reports.category,
+            victimName: "",
+            victimContact: fetchedCase.reports.contact_phone || ""
           },
         };
         
-        // Mock updates
-        const mockUpdates: CaseUpdate[] = [
-          {
-            id: "u1",
-            caseId: id,
-            officerId: "officer789",
-            officerName: "Officer John Doe",
-            content: "Opened case and started initial investigation. Requested security footage from the convenience store.",
-            timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            type: "Progress Update"
-          },
-          {
-            id: "u2",
-            caseId: id,
-            officerId: "officer789",
-            officerName: "Officer John Doe",
-            content: "Received security footage. Clearly shows suspect's face. Will run through facial recognition database.",
-            timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            type: "Evidence Added",
-            attachmentName: "security_footage.mp4"
-          },
-          {
-            id: "u3",
-            caseId: id,
-            officerId: "commander123",
-            officerName: "Commander Sarah Johnson",
-            content: "Reviewed case. Priority upgraded to high. Please expedite facial recognition search.",
-            timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-            type: "Case Priority Change"
-          }
-        ];
+        // Format the updates
+        const formattedUpdates: CaseUpdate[] = updates 
+          ? updates.map(update => ({
+              id: update.id,
+              caseId: update.case_id,
+              officerId: update.updated_by || "",
+              officerName: update.users?.full_name || "System",
+              content: update.update_note || `Status changed from ${update.status_before} to ${update.status_after}`,
+              timestamp: update.updated_at,
+              type: update.status_before !== update.status_after ? "Status Change" : "Progress Update"
+            }))
+          : [];
         
-        setCaseData(mockCase);
-        setCaseUpdates(mockUpdates);
+        setCaseData(formattedCase);
+        setCaseUpdates(formattedUpdates);
         
-        // Save current case ID to session storage to help debugging
-        console.log(`Loaded case data for ID: ${id}`);
+        console.log(`Successfully loaded case data for ID: ${id}`);
         sessionStorage.setItem('lastViewedCase', id);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to load case data", error);
         toast({
           title: "Error loading case",
-          description: "Failed to load case details",
+          description: error.message || "Failed to load case details",
           variant: "destructive",
         });
       } finally {
@@ -128,8 +175,8 @@ const CaseDetails = () => {
   }, [id, toast]);
   
   // Handle adding a new update
-  const handleAddUpdate = () => {
-    if (!newUpdateText.trim()) {
+  const handleAddUpdate = async () => {
+    if (!newUpdateText.trim() || !id) {
       toast({
         title: "Cannot add update",
         description: "Update text cannot be empty",
@@ -138,40 +185,101 @@ const CaseDetails = () => {
       return;
     }
     
-    const newUpdate: CaseUpdate = {
-      id: `u${Math.random().toString(36).substring(2, 10)}`,
-      caseId: id || "",
-      officerId: user?.id || "",
-      officerName: user?.name || "",
-      content: newUpdateText,
-      timestamp: new Date().toISOString(),
-      type: "Progress Update"
-    };
-    
-    setCaseUpdates(prev => [newUpdate, ...prev]);
-    setNewUpdateText("");
-    
-    toast({
-      title: "Update added",
-      description: "Your update has been added to the case",
-    });
+    try {
+      // Add update to Supabase
+      const { data: newUpdate, error } = await supabase
+        .from('case_history')
+        .insert({
+          case_id: id,
+          updated_by: user?.id,
+          update_note: newUpdateText,
+          status_before: caseData?.progress,
+          status_after: caseData?.progress
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Format and add to local state
+      const formattedUpdate: CaseUpdate = {
+        id: newUpdate.id,
+        caseId: id,
+        officerId: user?.id || "",
+        officerName: user?.name || "",
+        content: newUpdateText,
+        timestamp: new Date().toISOString(),
+        type: "Progress Update"
+      };
+      
+      setCaseUpdates(prev => [formattedUpdate, ...prev]);
+      setNewUpdateText("");
+      
+      toast({
+        title: "Update added",
+        description: "Your update has been added to the case",
+      });
+    } catch (error: any) {
+      console.error("Failed to add update", error);
+      toast({
+        title: "Error adding update",
+        description: error.message || "Failed to add update",
+        variant: "destructive",
+      });
+    }
   };
   
   // Handle updating case progress
-  const handleUpdateProgress = () => {
-    if (caseData) {
-      const updatedCase = {
-        ...caseData,
-        progress: newProgress,
-        lastUpdated: new Date().toISOString(),
-      };
+  const handleUpdateProgress = async () => {
+    if (!caseData || !id) return;
+    
+    try {
+      // Update case status in Supabase
+      const { error } = await supabase
+        .from('cases')
+        .update({ 
+          status: newProgress,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+        
+      if (error) {
+        throw error;
+      }
       
-      setCaseData(updatedCase);
+      // Add case history record
+      const { data: historyUpdate, error: historyError } = await supabase
+        .from('case_history')
+        .insert({
+          case_id: id,
+          updated_by: user?.id,
+          status_before: caseData.progress,
+          status_after: newProgress,
+          update_note: `Case progress updated to: ${newProgress}`
+        })
+        .select()
+        .single();
+        
+      if (historyError) {
+        console.error("Failed to add history record", historyError);
+      }
+      
+      // Update local state
+      setCaseData(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          progress: newProgress,
+          lastUpdated: new Date().toISOString(),
+        };
+      });
       
       // Add an update about the progress change
       const progressUpdate: CaseUpdate = {
-        id: `u${Math.random().toString(36).substring(2, 10)}`,
-        caseId: id || "",
+        id: historyUpdate?.id || `temp-${Date.now()}`,
+        caseId: id,
         officerId: user?.id || "",
         officerName: user?.name || "",
         content: `Case progress updated to: ${newProgress}`,
@@ -184,6 +292,13 @@ const CaseDetails = () => {
       toast({
         title: "Progress updated",
         description: `Case progress changed to ${newProgress}`,
+      });
+    } catch (error: any) {
+      console.error("Failed to update progress", error);
+      toast({
+        title: "Error updating progress",
+        description: error.message || "Failed to update progress",
+        variant: "destructive",
       });
     }
   };

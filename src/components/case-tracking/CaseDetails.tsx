@@ -12,7 +12,7 @@ interface CaseDetailsProps {
 
 export function CaseDetails({ caseData }: CaseDetailsProps) {
   // Format the case ID to be more user-friendly
-  const formattedCaseId = caseData.id.substring(0, 8).toUpperCase();
+  const formattedCaseId = caseData?.id ? caseData.id.substring(0, 8).toUpperCase() : "UNKNOWN";
   
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -52,7 +52,7 @@ export function CaseDetails({ caseData }: CaseDetailsProps) {
             <div className="ml-3">
               <p className="text-sm font-medium">
                 {caseData.assignedOfficerId ? 
-                  `Officer ${caseData.assignedOfficerId.substring(0, 8)}` : 
+                  `Officer ${caseData.assignedOfficerName || caseData.assignedOfficerId.substring(0, 8)}` : 
                   "Status Update"}
               </p>
               <p className="text-xs text-gray-500">
