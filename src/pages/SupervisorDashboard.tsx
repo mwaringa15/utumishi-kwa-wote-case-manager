@@ -1,3 +1,9 @@
 
 import SupervisorDashboardWrapper from "@/components/supervisor/SupervisorDashboardWrapper";
-export default SupervisorDashboardWrapper;
+import SupervisorDashboardContent from "@/components/supervisor/SupervisorDashboardContent";
+
+const SupervisorDashboard = () => {
+  return <SupervisorDashboardWrapper />;
+};
+
+export default SupervisorDashboard;

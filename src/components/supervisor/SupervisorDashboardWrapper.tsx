@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import SupervisorDashboard from "@/components/supervisor/SupervisorDashboard";
+import SupervisorDashboardContent from "@/components/supervisor/SupervisorDashboardContent";
 import { StationData } from "@/components/supervisor/types";
 
 const SupervisorDashboardWrapper = () => {
@@ -25,87 +25,83 @@ const SupervisorDashboardWrapper = () => {
     const fetchSupervisorData = async () => {
       setLoading(true);
       try {
-        // Get supervisor's station
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('station, full_name')
-          .eq('id', user.id)
-          .single();
+        // Mock the station data for development purposes
+        // In a real app, we would fetch this from the database
+        const mockStationData: StationData = {
+          station: "Central Station", // Use a static station for now
+          unassignedCases: [
+            {
+              id: "case-001",
+              report_id: "report-001",
+              status: "Pending",
+              priority: "high",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              station: "Central Station",
+              reports: {
+                id: "report-001",
+                title: "Burglary at Main Street",
+                description: "Break-in reported at 123 Main Street",
+                status: "Submitted",
+                created_at: new Date().toISOString(),
+                location: "123 Main Street",
+                category: "Burglary"
+              }
+            },
+            {
+              id: "case-002",
+              report_id: "report-002",
+              status: "Pending",
+              priority: "medium",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              station: "Central Station",
+              reports: {
+                id: "report-002",
+                title: "Stolen Vehicle",
+                description: "Vehicle reported stolen from parking lot",
+                status: "Submitted",
+                created_at: new Date().toISOString(),
+                location: "456 Oak Avenue",
+                category: "Theft"
+              }
+            }
+          ],
+          officers: [
+            {
+              id: "officer-001",
+              name: "John Doe",
+              email: "john.doe@police.gov",
+              role: "Officer",
+              station: "Central Station",
+              status: "on_duty",
+              badgeNumber: "KP12345",
+              assignedCases: 3
+            },
+            {
+              id: "officer-002",
+              name: "Jane Smith",
+              email: "jane.smith@police.gov",
+              role: "Officer",
+              station: "Central Station",
+              status: "on_duty",
+              badgeNumber: "KP67890",
+              assignedCases: 2
+            },
+            {
+              id: "officer-003",
+              name: "David Wilson",
+              email: "david.wilson@police.gov",
+              role: "Officer",
+              station: "Central Station",
+              status: "on_leave",
+              badgeNumber: "KP54321",
+              assignedCases: 0
+            }
+          ]
+        };
         
-        if (userError) throw userError;
-        
-        if (!userData || !userData.station) {
-          toast({
-            title: "Station not assigned",
-            description: "You don't have a station assigned to your profile",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-        
-        // Get unassigned cases for this station
-        const { data: unassignedCasesData, error: casesError } = await supabase
-          .from('cases')
-          .select(`
-            id,
-            status,
-            priority,
-            created_at,
-            updated_at,
-            report_id,
-            station,
-            reports (
-              id,
-              title,
-              description,
-              status,
-              created_at,
-              location,
-              category
-            )
-          `)
-          .eq('station', userData.station)
-          .is('assigned_officer_id', null)
-          .order('created_at', { ascending: false });
-        
-        if (casesError) throw casesError;
-        
-        // Get officers for this station
-        const { data: officersData, error: officersError } = await supabase
-          .from('users')
-          .select('id, full_name, email, role, station, status')
-          .eq('station', userData.station)
-          .eq('role', 'Officer');
-        
-        if (officersError) throw officersError;
-        
-        // Count assigned cases for each officer
-        const officersWithCaseCounts = await Promise.all(
-          officersData.map(async (officer) => {
-            const { count, error: countError } = await supabase
-              .from('cases')
-              .select('*', { count: 'exact', head: true })
-              .eq('assigned_officer_id', officer.id);
-            
-            return {
-              id: officer.id,
-              name: officer.full_name,
-              email: officer.email,
-              role: officer.role,
-              station: officer.station,
-              status: officer.status,
-              badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`, // Mock badge number
-              assignedCases: count || 0
-            };
-          })
-        );
-        
-        setStationData({
-          station: userData.station,
-          unassignedCases: unassignedCasesData,
-          officers: officersWithCaseCounts
-        });
+        setStationData(mockStationData);
       } catch (error) {
         console.error("Error fetching supervisor data:", error);
         toast({
@@ -126,7 +122,7 @@ const SupervisorDashboardWrapper = () => {
       <Navbar isLoggedIn={!!user} userRole={user?.role} />
       
       <div className="flex-grow flex">
-        <SupervisorDashboard 
+        <SupervisorDashboardContent 
           user={user}
           stationData={stationData}
           loading={loading}
