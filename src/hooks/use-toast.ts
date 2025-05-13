@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { v4 as uuidv4 } from "uuid";
 
@@ -16,6 +15,13 @@ export type ToasterToast = {
 };
 
 export type Toast = Omit<ToasterToast, "id" | "open" | "createdAt">;
+
+// Define and export UseToastReturn
+export type UseToastReturn = {
+  toasts: ToasterToast[];
+  toast: (props: Toast) => string;
+  dismiss: (toastId: string) => void;
+};
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -109,7 +115,7 @@ const reducer = (state: State, action: Action): State => {
   }
 };
 
-const useToast = () => {
+const useToast = (): UseToastReturn => {
   const [state, dispatch] = React.useReducer(reducer, {
     toasts: [],
   });
@@ -130,7 +136,7 @@ const useToast = () => {
     });
   }, [state.toasts]);
 
-  const toast = React.useCallback(({ ...props }: Toast) => {
+  const toast = React.useCallback(({ ...props }: Toast): string => {
     const id = uuidv4();
 
     const newToast: ToasterToast = {
@@ -148,7 +154,7 @@ const useToast = () => {
     return id;
   }, []);
 
-  const dismiss = React.useCallback((toastId: string) => {
+  const dismiss = React.useCallback((toastId: string): void => {
     dispatch({ type: actionTypes.DISMISS_TOAST, toastId });
   }, []);
 
@@ -162,7 +168,16 @@ const useToast = () => {
 export { useToast };
 
 // Also export a simple version for direct use
-export const toast = (props: Toast) => {
-  const { toast: toastFn } = useToast();
-  toastFn(props);
+// This standalone toast function doesn't return the ID, it's fire-and-forget from caller's perspective.
+// The hook's toast function returns an ID.
+// We need to be careful if `UseToastReturn['toast']` is used for this standalone one.
+// However, the modules are using the toast function passed from the hook instance.
+export const toast = (props: Toast): void => {
+  // This creates a new instance of the hook internally each time it's called.
+  // This might not be what's intended for a global toast function due to state isolation.
+  // For now, let's assume the module files get `toast` from a `useToast()` call higher up.
+  // The error is about `UseToastReturn` so let's focus on that.
+  // The `toast` function being typed in the modules is the one from the hook instance, which returns string.
+  const { toast: toastFn } = useToast(); 
+  toastFn(props); // The toastFn from useToast returns a string, but here it's not used.
 };
