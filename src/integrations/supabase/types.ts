@@ -260,6 +260,7 @@ export type Database = {
           incident_date: string | null
           location: string
           reporter_id: string | null
+          station_id: string | null
           status: string | null
           title: string
           updated_at: string | null
@@ -274,6 +275,7 @@ export type Database = {
           incident_date?: string | null
           location: string
           reporter_id?: string | null
+          station_id?: string | null
           status?: string | null
           title: string
           updated_at?: string | null
@@ -288,11 +290,20 @@ export type Database = {
           incident_date?: string | null
           location?: string
           reporter_id?: string | null
+          station_id?: string | null
           status?: string | null
           title?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reports_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stations: {
         Row: {

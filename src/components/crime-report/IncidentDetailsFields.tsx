@@ -5,12 +5,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Control } from "react-hook-form";
 import { CrimeReportFormValues } from "./types";
+import { useStations } from "@/hooks/useStations";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface IncidentDetailsFieldsProps {
   control: Control<CrimeReportFormValues>;
 }
 
 export function IncidentDetailsFields({ control }: IncidentDetailsFieldsProps) {
+  const { data: stations, isLoading: isLoadingStations } = useStations();
+
   return (
     <>
       <FormField
@@ -60,31 +64,63 @@ export function IncidentDetailsFields({ control }: IncidentDetailsFieldsProps) {
         />
       </div>
       
-      <FormField
-        control={control}
-        name="category"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Crime Category</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select crime category" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="theft">Theft/Robbery</SelectItem>
-                <SelectItem value="assault">Assault/Violence</SelectItem>
-                <SelectItem value="fraud">Fraud/Scam</SelectItem>
-                <SelectItem value="property">Property Damage</SelectItem>
-                <SelectItem value="traffic">Traffic Incident</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField
+          control={control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Crime Category</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select crime category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="theft">Theft/Robbery</SelectItem>
+                  <SelectItem value="assault">Assault/Violence</SelectItem>
+                  <SelectItem value="fraud">Fraud/Scam</SelectItem>
+                  <SelectItem value="property">Property Damage</SelectItem>
+                  <SelectItem value="traffic">Traffic Incident</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={control}
+          name="stationId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Police Station</FormLabel>
+              {isLoadingStations ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select nearest police station" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {stations?.map(station => (
+                      <SelectItem key={station.id} value={station.id}>
+                        {station.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <FormDescription>Select the police station to handle your report</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
       
       <FormField
         control={control}

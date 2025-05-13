@@ -24,6 +24,7 @@ export function ReportForm({ onComplete }: ReportFormProps) {
       location: "",
       incidentDate: new Date().toISOString().split("T")[0],
       category: "",
+      stationId: "",
       contactPhone: "",
       additionalInfo: "",
     },

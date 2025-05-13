@@ -25,6 +25,7 @@ export function useReportSubmission() {
         location: data.location,
         incident_date: data.incidentDate,
         category: data.category,
+        station_id: data.stationId,
         contact_phone: data.contactPhone || null,
         additional_info: data.additionalInfo || null,
         reporter_id: user?.id || null, // Allow null if user is not authenticated

@@ -9,8 +9,14 @@ export const crimeReportSchema = z.object({
     message: "Please enter a valid date",
   }),
   category: z.string().min(1, "Please select a category"),
+  stationId: z.string().min(1, "Please select a police station"),
   contactPhone: z.string().optional(),
   additionalInfo: z.string().optional(),
 });
 
 export type CrimeReportFormValues = z.infer<typeof crimeReportSchema>;
+
+export type Station = {
+  id: string;
+  name: string;
+};
