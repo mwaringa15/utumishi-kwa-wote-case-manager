@@ -10,7 +10,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { PendingReportsTab } from "@/components/supervisor/PendingReportsTab";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { CrimeReport, User } from "@/types";
+import { CrimeReport, User, UserRole, CrimeStatus } from "@/types";
 
 const SupervisorReportsPage = () => {
   const { user } = useAuth();
@@ -65,24 +65,27 @@ const SupervisorReportsPage = () => {
         if (officersError) throw officersError;
 
         // Format officers data
-        const formattedOfficers = officersData.map(officer => ({
+        const formattedOfficers: User[] = officersData.map(officer => ({
           id: officer.id,
           name: officer.full_name || officer.email.split('@')[0],
           email: officer.email,
-          role: officer.role,
+          role: "Officer" as UserRole, // Cast to UserRole enum
           badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
           assignedCases: 0 // Placeholder
         }));
 
         // Format reports
-        const formattedReports = reportsData.map(report => ({
+        const formattedReports: CrimeReport[] = reportsData.map(report => ({
           id: report.id,
           title: report.title,
           description: report.description,
-          status: report.status,
+          status: report.status as CrimeStatus, // Cast to CrimeStatus enum
           createdAt: report.created_at,
           crimeType: report.category,
-          location: report.location
+          location: report.location,
+          createdById: report.reporter_id || user.id, // Use reporter_id if available, otherwise fallback to current user
+          // Add other required fields
+          category: report.category
         }));
 
         setOfficers(formattedOfficers);

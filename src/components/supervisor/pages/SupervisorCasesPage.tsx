@@ -10,7 +10,8 @@ import { BackButton } from "@/components/ui/back-button";
 import { CasesTab } from "@/components/supervisor/CasesTab";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Case, User } from "@/types";
+import { Case, User, UserRole, CaseStatus } from "@/types";
+import { SupervisorCase, SupervisorCrimeReport, SupervisorOfficer } from "@/components/supervisor/types";
 
 const SupervisorCasesPage = () => {
   const { user } = useAuth();
@@ -87,8 +88,8 @@ const SupervisorCasesPage = () => {
           officerMap[officer.id] = officer.full_name || officer.email.split('@')[0];
         });
 
-        // Format cases data
-        const formattedCases = casesData.map(caseItem => {
+        // Format cases data with proper type conversion
+        const formattedCases: Case[] = casesData.map(caseItem => {
           // Progress based on status
           const progressMapping: Record<string, any> = {
             'Submitted': 'Pending',
@@ -107,28 +108,31 @@ const SupervisorCasesPage = () => {
             assignedOfficerName: caseItem.assigned_officer_id ? officerMap[caseItem.assigned_officer_id] : undefined,
             progress: progressMapping[caseItem.status] || 'Pending',
             lastUpdated: caseItem.updated_at || caseItem.created_at,
-            priority: caseItem.priority,
+            priority: caseItem.priority as "high" | "medium" | "low" | undefined,
             station: caseItem.station,
             crimeReport: caseItem.reports ? {
               id: caseItem.reports.id,
               title: caseItem.reports.title,
               description: caseItem.reports.description,
-              status: caseItem.reports.status,
+              status: caseItem.reports.status as CaseStatus,
               createdAt: caseItem.reports.created_at,
               location: caseItem.reports.location,
-              crimeType: caseItem.reports.category
+              crimeType: caseItem.reports.category,
+              // Add the required field
+              createdById: user.id,  // Using current user as fallback since we don't have the actual creator
             } : undefined
           };
         });
 
-        // Format officers data
-        const formattedOfficers = officersData.map(officer => ({
+        // Format officers data with proper type conversion
+        const formattedOfficers: User[] = officersData.map(officer => ({
           id: officer.id,
           name: officer.full_name || officer.email.split('@')[0],
           email: officer.email,
-          role: officer.role,
+          role: "Officer" as UserRole,  // Cast to UserRole enum
           badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
-          assignedCases: casesData.filter(c => c.assigned_officer_id === officer.id).length
+          assignedCases: casesData.filter(c => c.assigned_officer_id === officer.id).length,
+          status: officer.status as any
         }));
 
         setCases(formattedCases);

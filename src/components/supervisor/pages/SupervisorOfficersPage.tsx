@@ -10,7 +10,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { OfficersTab } from "@/components/supervisor/OfficersTab";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@/types";
+import { User, UserRole, OfficerStatus } from "@/types";
 
 const SupervisorOfficersPage = () => {
   const { user } = useAuth();
@@ -77,13 +77,13 @@ const SupervisorOfficersPage = () => {
         }
 
         // Format officers data
-        const formattedOfficers = officersData.map(officer => ({
+        const formattedOfficers: User[] = officersData.map(officer => ({
           id: officer.id,
           name: officer.full_name || officer.email.split('@')[0],
           email: officer.email,
-          role: officer.role,
+          role: "Officer" as UserRole, // Cast to UserRole enum
           station: stationData?.name || 'Unknown Station',
-          status: officer.status || 'on_duty',
+          status: (officer.status || 'on_duty') as OfficerStatus,
           badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
           assignedCases: officerCaseCounts[officer.id] || 0
         }));
