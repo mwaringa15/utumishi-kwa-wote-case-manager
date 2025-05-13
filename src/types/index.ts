@@ -57,6 +57,7 @@ export interface Case {
   // Add these properties for the new functionality
   priority?: "high" | "medium" | "low";
   station?: string;
+  status: CaseStatus; // Added this property
 }
 
 // Case update types
@@ -73,3 +74,4 @@ export interface CaseUpdate {
   type: UpdateType;
   attachmentName?: string;
 }
+

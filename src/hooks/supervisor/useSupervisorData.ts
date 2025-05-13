@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Case, CrimeReport, User, UserRole, CaseStatus, CrimeStatus, OfficerStatus, CaseProgress } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
@@ -179,6 +178,7 @@ export function useSupervisorData(user: User | null) {
             lastUpdated: c.updated_at || c.created_at,
             priority: c.priority as "high" | "medium" | "low" | undefined,
             station: c.station,
+            status: c.status as CaseStatus, // Ensure this line is present and correct
             crimeReport: report ? {
               id: report.id,
               title: report.title,
@@ -190,7 +190,6 @@ export function useSupervisorData(user: User | null) {
               category: report.category,
               createdById: report.reporter_id || user.id, 
             } : undefined,
-            status: c.status as CaseStatus,
           };
         }) || [];
         setAllCases(fetchedCases);
@@ -267,7 +266,7 @@ export function useSupervisorData(user: User | null) {
     sortDirection,
     setSearchTerm,
     // setSortField, // Controlled by toggleSort
-    // setSortDirection, // Controlled by toggleSort
+    setSortDirection, // Ensure this is returned
     toggleSort,
     handleAssignCase,
     handleCreateCase,
