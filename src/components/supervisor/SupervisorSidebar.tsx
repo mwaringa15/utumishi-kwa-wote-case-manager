@@ -1,6 +1,6 @@
 
 import { HomeIcon, ClipboardList, Users2, AlertCircle, BarChart3 } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { 
   Sidebar, 
@@ -48,47 +48,47 @@ export function SupervisorSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={isActive("/supervisor-dashboard")}>
-                  <a href="/supervisor-dashboard">
+                  <Link to="/supervisor-dashboard">
                     <HomeIcon />
                     <span>Dashboard</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={isActive("/cases")}>
-                  <a href="/cases">
+                  <Link to="/cases">
                     <ClipboardList />
                     <span>Cases</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={isActive("/reports")}>
-                  <a href="/reports">
+                  <Link to="/reports">
                     <AlertCircle />
                     <span>Reports</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={isActive("/officers")}>
-                  <a href="/officers">
+                  <Link to="/officers">
                     <Users2 />
                     <span>Officers</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               {isCommanderOrAdmin && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={isActive("/analytics")}>
-                    <a href="/analytics">
+                    <Link to="/analytics">
                       <BarChart3 />
                       <span>Analytics</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}

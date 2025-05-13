@@ -11,13 +11,16 @@ import { ProtectedRoute } from "@/hooks/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import OfficerDashboard from "./pages/OfficerDashboard";
-import OfficerProfile from "./pages/OfficerProfile"; // Add import
+import OfficerProfile from "./pages/OfficerProfile";
 import ReportCrime from "./pages/ReportCrime";
 import TrackCase from "./pages/TrackCase";
 import NotFound from "./pages/NotFound";
 import FAQPage from "./pages/FAQPage";
 import JudiciaryDashboard from "./pages/JudiciaryDashboard";
 import SupervisorDashboard from "./pages/SupervisorDashboard";
+import SupervisorCases from "./pages/SupervisorCases";
+import SupervisorReports from "./pages/SupervisorReports";
+import SupervisorOfficers from "./pages/SupervisorOfficers";
 import CaseDetails from "./pages/CaseDetails";
 
 // Login and Register pages
@@ -79,6 +82,30 @@ const App = () => (
               path="/supervisor-dashboard" 
               element={<ProtectedRoute 
                 element={<SupervisorDashboard />} 
+                allowedRoles={["OCS", "Commander", "Administrator", "Supervisor"]} 
+                redirectTo="/dashboard" 
+              />} 
+            />
+            <Route 
+              path="/cases" 
+              element={<ProtectedRoute 
+                element={<SupervisorCases />} 
+                allowedRoles={["OCS", "Commander", "Administrator", "Supervisor"]} 
+                redirectTo="/dashboard" 
+              />} 
+            />
+            <Route 
+              path="/reports" 
+              element={<ProtectedRoute 
+                element={<SupervisorReports />} 
+                allowedRoles={["OCS", "Commander", "Administrator", "Supervisor"]} 
+                redirectTo="/dashboard" 
+              />} 
+            />
+            <Route 
+              path="/officers" 
+              element={<ProtectedRoute 
+                element={<SupervisorOfficers />} 
                 allowedRoles={["OCS", "Commander", "Administrator", "Supervisor"]} 
                 redirectTo="/dashboard" 
               />} 
