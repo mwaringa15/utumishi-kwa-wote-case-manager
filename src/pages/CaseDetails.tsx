@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -41,8 +40,6 @@ const CaseDetails = () => {
       if (!id) return;
       
       setIsLoading(true);
-      
-      // Clear any cached data to ensure we're getting fresh data
       setCaseData(null);
       setCaseUpdates([]);
       
@@ -123,19 +120,19 @@ const CaseDetails = () => {
           crimeReportId: fetchedCase.report_id,
           assignedOfficerId: fetchedCase.assigned_officer_id || "",
           assignedOfficerName: officerName,
-          progress: fetchedCase.status as CaseProgress,
+          progress: fetchedCase.status as CaseProgress, // This is for UI display of progress
+          status: fetchedCase.status as CaseStatus,     // This is the actual status from DB
           lastUpdated: fetchedCase.updated_at,
           crimeReport: {
             id: fetchedCase.reports.id,
             title: fetchedCase.reports.title,
             description: fetchedCase.reports.description,
-            // Fix: Cast the string status to CrimeStatus type
-            status: fetchedCase.reports.status as CaseStatus,
-            createdById: "",
+            status: fetchedCase.reports.status as CaseStatus, // Status of the report itself
+            createdById: "", // Needs to be derived if available, e.g. from fetchedCase.reports.reporter_id
             createdAt: fetchedCase.reports.created_at,
             location: fetchedCase.reports.location,
             crimeType: fetchedCase.reports.category,
-            victimName: "",
+            victimName: "", // Needs to be derived if available
             victimContact: fetchedCase.reports.contact_phone || ""
           },
         };

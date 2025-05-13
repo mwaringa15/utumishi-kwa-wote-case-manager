@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -66,7 +65,8 @@ const SupervisorCasesPage = () => {
               status,
               created_at,
               location,
-              category
+              category,
+              reporter_id 
             )
           `)
           .eq('station', stationId);
@@ -90,7 +90,6 @@ const SupervisorCasesPage = () => {
 
         // Format cases data with proper type conversion
         const formattedCases: Case[] = casesData.map(caseItem => {
-          // Progress based on status
           const progressMapping: Record<string, any> = {
             'Submitted': 'Pending',
             'Under Investigation': 'In Progress',
@@ -101,25 +100,27 @@ const SupervisorCasesPage = () => {
             'Returned from Judiciary': 'In Progress'
           };
           
+          const reportData = caseItem.reports as any; // Cast to any to access properties, ensure it's defined
+
           return {
             id: caseItem.id,
             crimeReportId: caseItem.report_id,
             assignedOfficerId: caseItem.assigned_officer_id,
             assignedOfficerName: caseItem.assigned_officer_id ? officerMap[caseItem.assigned_officer_id] : undefined,
             progress: progressMapping[caseItem.status] || 'Pending',
+            status: caseItem.status as CaseStatus, // Added missing status property
             lastUpdated: caseItem.updated_at || caseItem.created_at,
             priority: caseItem.priority as "high" | "medium" | "low" | undefined,
             station: caseItem.station,
-            crimeReport: caseItem.reports ? {
-              id: caseItem.reports.id,
-              title: caseItem.reports.title,
-              description: caseItem.reports.description,
-              status: caseItem.reports.status as CaseStatus,
-              createdAt: caseItem.reports.created_at,
-              location: caseItem.reports.location,
-              crimeType: caseItem.reports.category,
-              // Add the required field
-              createdById: user.id,  // Using current user as fallback since we don't have the actual creator
+            crimeReport: reportData ? {
+              id: reportData.id,
+              title: reportData.title,
+              description: reportData.description,
+              status: reportData.status as CaseStatus,
+              createdAt: reportData.created_at,
+              location: reportData.location,
+              crimeType: reportData.category,
+              createdById: reportData.reporter_id || user.id, 
             } : undefined
           };
         });

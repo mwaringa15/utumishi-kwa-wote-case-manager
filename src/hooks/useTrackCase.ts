@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Case, CaseProgress, CaseStatus, CrimeReport } from "@/types";
@@ -65,7 +64,8 @@ export function useTrackCase() {
         id: caseResult.id,
         crimeReportId: caseResult.report_id,
         assignedOfficerId: caseResult.assigned_officer_id || undefined,
-        progress: caseResult.status as CaseProgress,
+        progress: caseResult.status as CaseProgress, // Maps to visual progress
+        status: caseResult.status as CaseStatus,     // Actual case status
         lastUpdated: caseResult.updated_at,
         crimeReport: {
           id: caseResult.report.id,
@@ -74,8 +74,7 @@ export function useTrackCase() {
           status: caseResult.report.status as CaseStatus,
           createdAt: caseResult.report.created_at,
           location: caseResult.report.location,
-          // Do not include category as it doesn't exist in the database
-          createdById: caseResult.report.reporter_id || "anonymous" // Providing a default value as it's required by the type
+          createdById: caseResult.report.reporter_id || "anonymous"
         }
       };
       

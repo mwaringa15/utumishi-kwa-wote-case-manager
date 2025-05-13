@@ -111,18 +111,19 @@ export const ProfileContainer = () => {
       crimeReportId: caseItem.report_id,
       assignedOfficerId: user.id,
       assignedOfficerName: profile?.full_name || "",
-      progress: caseItem.status as CaseProgressType,
+      progress: caseItem.status as CaseProgressType, // This maps to visual progress
+      status: caseItem.status as CaseStatusType,     // This is the actual case status
       lastUpdated: caseItem.updated_at,
       priority: caseItem.priority as "high" | "medium" | "low",
       crimeReport: caseItem.reports ? {
         id: caseItem.report_id,
         title: caseItem.reports.title || "Unknown",
         description: caseItem.reports.description || "",
-        status: caseItem.status as CaseStatusType,
-        createdById: "",
-        createdAt: caseItem.created_at,
-        location: "",
-        crimeType: ""
+        status: caseItem.status as CaseStatusType, // Report status, might differ from case status
+        createdById: "", // This might need to be fetched or derived if available
+        createdAt: caseItem.created_at, // This is case creation, report might have different one
+        location: "", // Report location, might need to be fetched if available in reports table
+        crimeType: "" // Report crimeType, might need to be fetched if available in reports table
       } : undefined
     }));
 
