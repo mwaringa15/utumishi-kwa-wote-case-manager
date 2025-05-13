@@ -1,4 +1,3 @@
-
 // src/types/index.ts
 
 // User types
@@ -75,3 +74,10 @@ export interface CaseUpdate {
   attachmentName?: string;
 }
 
+// Officer Dashboard specific types
+export interface OfficerStats {
+  activeCases: number;
+  pendingReports: number;
+  closedCases: number;
+  totalAssigned: number;
+}
