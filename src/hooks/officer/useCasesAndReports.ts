@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Case, CaseProgress, CaseStatus, CrimeReport, User } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
@@ -50,6 +49,7 @@ export function useCasesAndReports(user: User | null) {
             crimeReportId: "r5",
             assignedOfficerId: user?.id,
             progress: "In Progress",
+            status: "Under Investigation", // Added status
             lastUpdated: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
             crimeReport: {
               id: "r5",
@@ -65,12 +65,13 @@ export function useCasesAndReports(user: User | null) {
             crimeReportId: "r6",
             assignedOfficerId: user?.id,
             progress: "Pending",
+            status: "Submitted", // Added status (typically maps to report status initially)
             lastUpdated: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
             crimeReport: {
               id: "r6",
               title: "Break-in at Business Premises",
               description: "Store broken into overnight. Security camera shows two individuals.",
-              status: "Under Investigation",
+              status: "Under Investigation", // Report status
               createdById: "user101",
               createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
             },
@@ -80,6 +81,7 @@ export function useCasesAndReports(user: User | null) {
             crimeReportId: "r7",
             assignedOfficerId: user?.id,
             progress: "Completed",
+            status: "Closed", // Added status
             lastUpdated: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
             crimeReport: {
               id: "r7",
@@ -122,14 +124,15 @@ export function useCasesAndReports(user: User | null) {
   // Handle case status update
   const handleUpdateStatus = (caseId: string, newStatus: CaseStatus) => {
     setAssignedCases(prev => prev.map(caseItem => {
-      if (caseItem.id === caseId && caseItem.crimeReport) {
+      if (caseItem.id === caseId) { // crimeReport check removed as status is now top-level on Case
         return {
           ...caseItem,
+          status: newStatus, // Update case status
           lastUpdated: new Date().toISOString(),
-          crimeReport: {
+          crimeReport: caseItem.crimeReport ? { // Also update report status if it exists
             ...caseItem.crimeReport,
-            status: newStatus
-          }
+            status: newStatus 
+          } : undefined
         };
       }
       return caseItem;
@@ -145,30 +148,26 @@ export function useCasesAndReports(user: User | null) {
   const handleUpdateProgress = (caseId: string, newProgress: CaseProgress) => {
     setAssignedCases(prev => prev.map(caseItem => {
       if (caseItem.id === caseId) {
+        let newStatus = caseItem.status; // Keep current status by default
+        if (newProgress === "Completed" && caseItem.crimeReport) {
+          newStatus = "Closed"; // If progress is completed, case status becomes Closed
+        } else if (newProgress === "In Progress" && caseItem.status === "Submitted") {
+          newStatus = "Under Investigation"; // If starting progress, move to Under Investigation
+        }
+
         return {
           ...caseItem,
           progress: newProgress,
+          status: newStatus, 
           lastUpdated: new Date().toISOString(),
+          crimeReport: caseItem.crimeReport ? { // Also update report status if progress is 'Completed'
+            ...caseItem.crimeReport,
+            status: newProgress === "Completed" ? "Closed" : caseItem.crimeReport.status
+          } : undefined
         };
       }
       return caseItem;
     }));
-    
-    // If case is completed, also update the crime report status to closed
-    if (newProgress === "Completed") {
-      setAssignedCases(prev => prev.map(caseItem => {
-        if (caseItem.id === caseId && caseItem.crimeReport) {
-          return {
-            ...caseItem,
-            crimeReport: {
-              ...caseItem.crimeReport,
-              status: "Closed"
-            }
-          };
-        }
-        return caseItem;
-      }));
-    }
     
     toast({
       title: "Case progress updated",
@@ -188,10 +187,11 @@ export function useCasesAndReports(user: User | null) {
       crimeReportId: reportId,
       assignedOfficerId: user?.id,
       progress: "Pending",
+      status: "Submitted", // Initial status for a new case from a report
       lastUpdated: new Date().toISOString(),
       crimeReport: {
         ...report,
-        status: "Under Investigation"
+        status: "Under Investigation" // Report itself becomes "Under Investigation"
       }
     };
     

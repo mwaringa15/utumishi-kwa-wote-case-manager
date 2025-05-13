@@ -46,7 +46,8 @@ export function useDashboardData() {
             id: caseItem.id,
             crimeReportId: caseItem.report_id,
             assignedOfficerId: caseItem.assigned_officer_id,
-            progress: caseItem.status as CaseProgress,
+            progress: caseItem.status as CaseProgress, // This status is actually CaseProgress
+            status: caseItem.status as CaseStatus,     // This is the actual CaseStatus
             lastUpdated: caseItem.updated_at,
             crimeReport: caseItem.report ? {
               id: caseItem.report.id,
