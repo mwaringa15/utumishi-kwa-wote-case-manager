@@ -33,8 +33,10 @@ export interface StationOfficer {
 
 export interface StationData {
   station: string;
+  stationId: string;
   unassignedCases: StationCase[];
   officers: StationOfficer[];
+  pendingReports: any[];
 }
 
 export interface SupervisorDashboardProps {
@@ -42,3 +44,7 @@ export interface SupervisorDashboardProps {
   stationData: StationData | null;
   loading: boolean;
 }
+
+export type ToastType = {
+  (props: { title: string; description: string; variant?: "default" | "destructive" }): void;
+};

@@ -19,7 +19,16 @@ import { StationAnalytics } from "@/components/supervisor/StationAnalytics";
 import { SupervisorTabs } from "@/components/supervisor/SupervisorTabs";
 import { useState } from "react";
 
-const SupervisorDashboardContent = ({ user, stationData, loading }: SupervisorDashboardProps) => {
+interface SupervisorDashboardContentProps extends SupervisorDashboardProps {
+  onAssignCase: (caseId: string, officerId: string) => Promise<boolean>;
+}
+
+const SupervisorDashboardContent = ({ 
+  user, 
+  stationData, 
+  loading,
+  onAssignCase 
+}: SupervisorDashboardContentProps) => {
   const { toast } = useToast();
   const { 
     filteredCases,
@@ -52,31 +61,6 @@ const SupervisorDashboardContent = ({ user, stationData, loading }: SupervisorDa
     { region: "Southern", solved: 38, pending: 20, total: 58 },
   ];
 
-  // Handle case assignment specifically for station cases
-  const handleStationCaseAssignment = async (caseId: string, officerId: string, officerName: string) => {
-    try {
-      // Show success toast
-      toast({
-        title: "Case assigned",
-        description: `Case successfully assigned to Officer ${officerName}`,
-      });
-      
-      // In production, we would update the API
-      // For now, update the local state to simulate a successful assignment
-      if (stationData) {
-        const updatedCases = stationData.unassignedCases.filter(c => c.id !== caseId);
-        stationData.unassignedCases = updatedCases;
-      }
-    } catch (error) {
-      console.error("Error assigning case:", error);
-      toast({
-        title: "Error assigning case",
-        description: "Failed to assign the case to the officer",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <SidebarProvider>
       <SupervisorSidebar />
@@ -92,7 +76,7 @@ const SupervisorDashboardContent = ({ user, stationData, loading }: SupervisorDa
               unassignedCases={stationData.unassignedCases}
               officers={stationData.officers}
               loading={loading}
-              onAssign={handleStationCaseAssignment}
+              onAssign={onAssignCase}
             />
             
             <StationOfficers
