@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SupervisorDashboardHeader } from "@/components/supervisor/SupervisorDashboardHeader";
 import { StatsOverview } from "@/components/supervisor/StatsOverview";
@@ -10,13 +11,14 @@ import { RegionalStats } from "@/components/supervisor/RegionalStats";
 import { OfficerPerformance } from "@/components/supervisor/OfficerPerformance";
 import { SupervisorSidebar } from "@/components/supervisor/SupervisorSidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { useToast } from "@/hooks/use-toast"; // Updated import path
+import { useToast } from "@/hooks/use-toast";
 import { StationUnassignedCases } from "@/components/supervisor/StationUnassignedCases";
 import { StationOfficers } from "@/components/supervisor/StationOfficers";
-import { SupervisorDashboardProps } from "@/components/supervisor/types";
+import { SupervisorDashboardProps, SupervisorStats } from "@/components/supervisor/types"; // Added SupervisorStats
 import { StationAnalytics } from "@/components/supervisor/StationAnalytics";
 import { SupervisorTabs } from "@/components/supervisor/SupervisorTabs";
 import { useState } from "react";
+import { OfficerStats } from "@/types"; // For mapping if needed
 
 interface SupervisorDashboardContentProps extends SupervisorDashboardProps {
   onAssignCase: (caseId: string, officerId: string) => Promise<boolean>;
@@ -25,16 +27,19 @@ interface SupervisorDashboardContentProps extends SupervisorDashboardProps {
 const SupervisorDashboardContent = ({ 
   user, 
   stationData, 
-  loading,
+  loading: stationLoading, // Renamed to avoid conflict if useSupervisorData has 'loading'
   onAssignCase 
 }: SupervisorDashboardContentProps) => {
   const { toast } = useToast();
+  const supervisorHookData = useSupervisorData(user); // Store the hook's return
+
+  // Destructure specifically, using 'cases' as per hook's return
   const { 
-    filteredCases,
+    cases, // Changed from filteredCases
     pendingReports,
     officers,
-    isLoading,
-    stats,
+    isLoading: supervisorIsLoading, // Renamed to avoid conflict
+    stats: supervisorStatsData, // Renamed to avoid conflict
     searchTerm,
     sortField,
     sortDirection,
@@ -44,7 +49,7 @@ const SupervisorDashboardContent = ({
     handleAssignCase,
     handleCreateCase,
     handleSubmitToJudiciary
-  } = useSupervisorData(user);
+  } = supervisorHookData;
 
   // Check if the user is a Commander, Administrator, or OCS to show analytics
   const isCommanderOrAdmin = user?.role === "Commander" || 
@@ -60,12 +65,15 @@ const SupervisorDashboardContent = ({
     { region: "Southern", solved: 38, pending: 20, total: 58 },
   ];
 
+  // The stats from useSupervisorData are SupervisorStats, so it should be directly usable
+  const overviewStats: SupervisorStats = supervisorStatsData;
+
   return (
     <SidebarProvider>
       <SupervisorSidebar />
       <SidebarInset className="p-6">
         <SupervisorDashboardHeader user={user} station={stationData?.station} />
-        <StatsOverview stats={stats} />
+        <StatsOverview stats={overviewStats} /> 
         
         {/* Station-specific sections */}
         {stationData && (
@@ -74,14 +82,14 @@ const SupervisorDashboardContent = ({
               station={stationData.station}
               unassignedCases={stationData.unassignedCases}
               officers={stationData.officers}
-              loading={loading}
+              loading={stationLoading}
               onAssign={onAssignCase}
             />
             
             <StationOfficers
               station={stationData.station}
               officers={stationData.officers}
-              loading={loading}
+              loading={stationLoading}
             />
           </>
         )}
@@ -91,7 +99,7 @@ const SupervisorDashboardContent = ({
           <StationAnalytics 
             regionalData={regionalData} 
             officers={officers} 
-            isLoading={isLoading} 
+            isLoading={supervisorIsLoading} 
           />
         )}
         
@@ -102,10 +110,10 @@ const SupervisorDashboardContent = ({
           setSearchTerm={setSearchTerm}
           toggleSort={toggleSort}
           setSortDirection={setSortDirection}
-          filteredCases={filteredCases}
+          filteredCases={cases} // Pass 'cases' here
           pendingReports={pendingReports}
           officers={officers}
-          isLoading={isLoading}
+          isLoading={supervisorIsLoading}
           handleAssignCase={handleAssignCase}
           handleCreateCase={handleCreateCase}
           handleSubmitToJudiciary={handleSubmitToJudiciary}

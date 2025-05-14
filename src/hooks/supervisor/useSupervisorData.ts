@@ -1,19 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
-import { User, Case, CrimeReport, OfficerStats, UserRole } from "@/types";
-import { useToast } from "@/hooks/use-toast"; // Updated import path
+import { User, Case, CrimeReport, OfficerStats as GenericOfficerStats, UserRole } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { SupervisorStats } from "@/components/supervisor/types";
 
 export function useSupervisorData(user: User | null) {
-  const { toast } = useToast(); // toast usage is fine
+  const { toast } = useToast();
   const [cases, setCases] = useState<Case[]>([]);
   const [pendingReports, setPendingReports] = useState<CrimeReport[]>([]);
   const [officers, setOfficers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<OfficerStats>({
-    activeCases: 0,
+  const [stats, setStats] = useState<SupervisorStats>({
+    totalCases: 0,
     pendingReports: 0,
-    closedCases: 0,
-    totalAssigned: 0,
+    activeCases: 0,
+    completedCases: 0,
+    totalOfficers: 0,
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<keyof Case | keyof CrimeReport | keyof User>("createdAt");
@@ -25,36 +27,42 @@ export function useSupervisorData(user: User | null) {
       return;
     }
     setIsLoading(true);
+    let fetchedStationId: string | null = null;
 
     try {
-      let stationId = user.station_id; // Assuming user object might have station_id directly
-
-      // If not, fetch from users table (common for supervisors who select a station)
-      if (!stationId && user.id) {
+      // Always fetch station_id from the users table if user.id is available
+      if (user.id) {
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('station_id')
           .eq('id', user.id)
           .single();
-        if (userError) throw userError;
-        stationId = userData?.station_id;
+        if (userError) {
+            console.error("Error fetching user's station_id:", userError);
+            // Allow proceeding if station_id is optional for some views, or handle error more strictly
+        }
+        fetchedStationId = userData?.station_id || null;
       }
 
-      if (!stationId) {
-        toast({ title: "No Station ID", description: "Supervisor's station ID is missing.", variant: "destructive" });
+      if (!fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") { // Admins/Commanders might see all
+        toast({ title: "No Station ID", description: "Supervisor's station ID could not be determined.", variant: "destructive" });
         setIsLoading(false);
         return;
       }
 
-      // Fetch Cases
-      const { data: casesData, error: casesError } = await supabase
+      const caseQuery = supabase
         .from('cases')
         .select(`
           *,
           reports:report_id (*),
           users:assigned_officer_id (full_name)
-        `)
-        .eq('station', stationId);
+        `);
+      
+      if (fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
+        caseQuery.eq('station', fetchedStationId);
+      }
+        
+      const { data: casesData, error: casesError } = await caseQuery;
       if (casesError) throw casesError;
 
       const formattedCases: Case[] = (casesData || []).map((c: any) => ({
@@ -62,11 +70,11 @@ export function useSupervisorData(user: User | null) {
         crimeReportId: c.report_id,
         assignedOfficerId: c.assigned_officer_id,
         assignedOfficerName: c.users?.full_name || "Unassigned",
-        progress: c.status, // TODO: Map to CaseProgress
-        status: c.status, // TODO: Map to CaseStatus
+        progress: c.status, 
+        status: c.status, 
         lastUpdated: c.updated_at,
         priority: c.priority,
-        station: c.station,
+        station: c.station, // This is station_id (UUID) from DB
         crimeReport: c.reports ? {
           id: c.reports.id,
           title: c.reports.title,
@@ -81,11 +89,16 @@ export function useSupervisorData(user: User | null) {
       setCases(formattedCases);
 
       // Fetch Pending Reports
-      const { data: reportsData, error: reportsError } = await supabase
+      const reportQuery = supabase
         .from('reports')
         .select('*')
-        .eq('station_id', stationId)
         .eq('status', 'Pending'); // Assuming 'Pending' is the status for reports not yet cases
+      
+      if (fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
+        reportQuery.eq('station_id', fetchedStationId);
+      }
+
+      const { data: reportsData, error: reportsError } = await reportQuery;
       if (reportsError) throw reportsError;
       
       const formattedReports: CrimeReport[] = (reportsData || []).map((r: any) => ({
@@ -102,11 +115,16 @@ export function useSupervisorData(user: User | null) {
       setPendingReports(formattedReports);
 
       // Fetch Officers
-      const { data: officersData, error: officersError } = await supabase
+      const officerQuery = supabase
         .from('users')
         .select('id, full_name, email, role, status, badge_number')
-        .eq('station_id', stationId)
         .eq('role', 'Officer' as UserRole);
+
+      if (fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
+        officerQuery.eq('station_id', fetchedStationId);
+      }
+      
+      const { data: officersData, error: officersError } = await officerQuery;
       if (officersError) throw officersError;
 
       const officersWithCaseCounts = await Promise.all(
@@ -130,12 +148,13 @@ export function useSupervisorData(user: User | null) {
       );
       setOfficers(officersWithCaseCounts);
 
-      // Calculate Stats
+      // Calculate Stats matching SupervisorStats
       setStats({
-        activeCases: formattedCases.filter(c => c.status !== 'Closed' && c.status !== 'Rejected').length,
+        totalCases: formattedCases.length,
         pendingReports: formattedReports.length,
-        closedCases: formattedCases.filter(c => c.status === 'Closed' || c.status === 'Rejected').length,
-        totalAssigned: formattedCases.filter(c => c.assignedOfficerId).length,
+        activeCases: formattedCases.filter(c => c.status !== 'Closed' && c.status !== 'Rejected').length,
+        completedCases: formattedCases.filter(c => c.status === 'Closed' || c.status === 'Rejected').length,
+        totalOfficers: officersWithCaseCounts.length,
       });
 
     } catch (error: any) {
@@ -175,6 +194,27 @@ export function useSupervisorData(user: User | null) {
 
   const handleCreateCase = async (reportId: string, officerId: string, officerName: string): Promise<boolean> => {
     setIsLoading(true);
+    let userStationId: string | null = null;
+    if (user?.id) {
+        const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('station_id')
+            .eq('id', user.id)
+            .single();
+        if (userError) {
+            toast({ title: "Error", description: "Could not fetch user station for case creation.", variant: "destructive" });
+            setIsLoading(false);
+            return false;
+        }
+        userStationId = userData?.station_id;
+    }
+
+    if (!userStationId) {
+        toast({ title: "Error", description: "User station ID is missing for case creation.", variant: "destructive" });
+        setIsLoading(false);
+        return false;
+    }
+
     try {
       const report = pendingReports.find(r => r.id === reportId);
       if (!report) throw new Error("Report not found");
@@ -184,9 +224,9 @@ export function useSupervisorData(user: User | null) {
         .insert({
           report_id: reportId,
           assigned_officer_id: officerId,
-          status: 'Under Investigation', // Initial status
-          priority: 'medium', // Default priority
-          station: user?.station_id, // Ensure station ID is set
+          status: 'Under Investigation', 
+          priority: 'medium', 
+          station: userStationId, // Use the fetched station_id (UUID)
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
@@ -196,12 +236,12 @@ export function useSupervisorData(user: User | null) {
 
       const { error: reportUpdateError } = await supabase
         .from('reports')
-        .update({ status: 'Under Investigation' }) // Update report status
+        .update({ status: 'Under Investigation' }) 
         .eq('id', reportId);
       if (reportUpdateError) throw reportUpdateError;
       
       toast({ title: "Case Created", description: `Case created from report ${report.title.substring(0,20)}... and assigned to ${officerName}.` });
-      await fetchData(); // Refresh data
+      await fetchData(); 
       return true;
     } catch (error: any) {
       toast({ title: "Case Creation Failed", description: error.message, variant: "destructive" });
@@ -253,7 +293,17 @@ export function useSupervisorData(user: User | null) {
       if (typeof valA === 'number' && typeof valB === 'number') {
         return direction === 'asc' ? valA - valB : valB - valA;
       }
-      // For dates or other types, might need more specific comparison
+      if (valA instanceof Date && valB instanceof Date) {
+        return direction === 'asc' ? valA.getTime() - valB.getTime() : valB.getTime() - valA.getTime();
+      }
+      // For dates as strings or other types, might need more specific comparison
+      // Assuming dates are ISO strings if not Date objects
+      if (typeof valA === 'string' && typeof valB === 'string' && !isNaN(new Date(valA).getTime()) && !isNaN(new Date(valB).getTime())) {
+        const dateA = new Date(valA).getTime();
+        const dateB = new Date(valB).getTime();
+        return direction === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+
       if (valA < valB) return direction === 'asc' ? -1 : 1;
       if (valA > valB) return direction === 'asc' ? 1 : -1;
       return 0;
@@ -266,7 +316,6 @@ export function useSupervisorData(user: User | null) {
     sortDirection
   );
   
-  // Ensure sortField is a valid key for CrimeReport before sorting
   const validReportSortField = sortField as keyof CrimeReport;
   const filteredPendingReports = sortData(
     pendingReports.filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase())),
@@ -274,7 +323,6 @@ export function useSupervisorData(user: User | null) {
     sortDirection
   );
   
-  // Ensure sortField is a valid key for User before sorting
   const validOfficerSortField = sortField as keyof User;  
   const filteredOfficers = sortData(
     officers.filter(o => o.name?.toLowerCase().includes(searchTerm.toLowerCase()) || o.email.toLowerCase().includes(searchTerm.toLowerCase())),
@@ -293,10 +341,10 @@ export function useSupervisorData(user: User | null) {
     sortField,
     sortDirection,
     toggleSort,
-    setSortDirection, // expose this if direct setting of sort direction is needed
+    setSortDirection,
     handleAssignCase,
     handleCreateCase,
     handleSubmitToJudiciary,
-    refreshData: fetchData, // expose refresh function
+    refreshData: fetchData,
   };
 }
