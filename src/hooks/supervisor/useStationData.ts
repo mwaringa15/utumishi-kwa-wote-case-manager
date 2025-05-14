@@ -27,7 +27,7 @@ export function useStationData(user: User | null) {
       if (userError || !userData?.station_id) {
         toast({
           title: "Error fetching user data",
-          description: "Could not determine your station. Please ensure you are assigned to one.",
+          description: userError?.message || "Could not determine your station. Please ensure you are assigned to one.",
           variant: "destructive",
         });
         setLoading(false);
@@ -93,7 +93,7 @@ export function useStationData(user: User | null) {
         priority: c.priority,
         created_at: c.created_at,
         updated_at: c.updated_at,
-        station: stationDetails.name, // Use fetched station name
+        station: stationDetails.name, 
         reports: c.reports ? {
             id: c.reports.id,
             title: c.reports.title,
@@ -102,28 +102,34 @@ export function useStationData(user: User | null) {
             created_at: c.reports.created_at,
             location: c.reports.location,
             category: c.reports.category,
-        } : { // Provide a default empty report object if c.reports is null/undefined
-            id: '', title: 'N/A', description: '', status: '', created_at: '',
+        } : { 
+            id: '', title: 'N/A', description: '', status: '', created_at: '', location: '', category: ''
         },
       }));
       
       // 4. Fetch officers for the station
       const { data: officersData, error: officersError } = await supabase
         .from('users')
-        .select('id, full_name, email, role, status, badge_number') // Added email, role, badge_number
+        .select('id, full_name, email, role, status') // Removed badge_number
         .eq('station_id', stationId)
         .eq('role', 'Officer'); 
 
       if (officersError) {
         toast({
           title: "Error fetching officers",
-          description: "Could not load officers for your station.",
+          description: officersError.message || "Could not load officers for your station.",
           variant: "destructive",
         });
+        // Continue if possible, or return if critical
       }
 
       // 5. Count active cases for each officer
       const officersWithCaseCountsPromises = (officersData || []).map(async (officer) => {
+        // Check if officer is valid before proceeding
+        if (!officer || !officer.id) {
+          console.warn("Invalid officer data encountered:", officer);
+          return { ...officer, assignedCases: 0 }; // Return a default structure or skip
+        }
         const { count, error: countError } = await supabase
           .from('cases')
           .select('*', { count: 'exact', head: true })
@@ -140,30 +146,30 @@ export function useStationData(user: User | null) {
       });
       const resolvedOfficersWithCounts = await Promise.all(officersWithCaseCountsPromises);
 
-      const formattedOfficers: StationOfficer[] = resolvedOfficersWithCounts.map(o => ({
+      const formattedOfficers: StationOfficer[] = resolvedOfficersWithCounts.filter(o => o && o.id).map(o => ({ // Added filter for valid officers
         id: o.id,
         name: o.full_name || 'N/A',
         email: o.email || 'N/A',
-        role: o.role || 'Officer', // Role should be 'Officer' based on query
-        station: stationDetails.name, // Use fetched station name
+        role: o.role || 'Officer', 
+        station: stationDetails.name, 
         status: o.status || 'unknown',
-        badgeNumber: o.badge_number,
+        // badgeNumber: o.badge_number, // Removed badgeNumber
         assignedCases: o.assignedCases,
       }));
       
       setStationData({
         station: stationDetails.name,
-        stationId: stationId, // Add stationId to StationData
+        stationId: stationId, 
         unassignedCases: formattedUnassignedCases,
         officers: formattedOfficers,
-        pendingReports: [] // If StationData requires this, initialize appropriately
+        pendingReports: [] 
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in fetchStationData:", error);
       toast({
         title: "Dashboard Error",
-        description: "An unexpected error occurred while loading station data.",
+        description: error.message || "An unexpected error occurred while loading station data.",
         variant: "destructive",
       });
     } finally {
@@ -187,13 +193,18 @@ export function useStationData(user: User | null) {
 
       if (error) throw error;
       
-      await fetchStationData();
+      // Instead of full refetch, update local state if possible or confirm refetch is desired
+      await fetchStationData(); // This refetches all station data
+      toast({
+        title: "Case Assigned",
+        description: "The case has been successfully assigned.",
+      });
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error assigning case:", error);
       toast({
         title: "Assignment Failed",
-        description: "Could not assign the case to the officer.",
+        description: error.message || "Could not assign the case to the officer.",
         variant: "destructive",
       });
       return false;

@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SupervisorDashboardHeader } from "@/components/supervisor/SupervisorDashboardHeader";
 import { StatsOverview } from "@/components/supervisor/StatsOverview";
@@ -14,11 +13,12 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
 import { StationUnassignedCases } from "@/components/supervisor/StationUnassignedCases";
 import { StationOfficers } from "@/components/supervisor/StationOfficers";
-import { SupervisorDashboardProps, SupervisorStats } from "@/components/supervisor/types"; // Added SupervisorStats
+import { SupervisorDashboardProps } from "@/components/supervisor/types";
+import { SupervisorStats } from "@/hooks/supervisor/types";
 import { StationAnalytics } from "@/components/supervisor/StationAnalytics";
 import { SupervisorTabs } from "@/components/supervisor/SupervisorTabs";
 import { useState } from "react";
-import { OfficerStats } from "@/types"; // For mapping if needed
+import { OfficerStats } from "@/types"; // For mapping if needed"
 
 interface SupervisorDashboardContentProps extends SupervisorDashboardProps {
   onAssignCase: (caseId: string, officerId: string) => Promise<boolean>;
@@ -27,19 +27,18 @@ interface SupervisorDashboardContentProps extends SupervisorDashboardProps {
 const SupervisorDashboardContent = ({ 
   user, 
   stationData, 
-  loading: stationLoading, // Renamed to avoid conflict if useSupervisorData has 'loading'
+  loading: stationLoading, 
   onAssignCase 
 }: SupervisorDashboardContentProps) => {
   const { toast } = useToast();
-  const supervisorHookData = useSupervisorData(user); // Store the hook's return
+  const supervisorHookData = useSupervisorData(user); 
 
-  // Destructure specifically, using 'cases' as per hook's return
   const { 
-    cases, // Changed from filteredCases
+    cases, 
     pendingReports,
     officers,
-    isLoading: supervisorIsLoading, // Renamed to avoid conflict
-    stats: supervisorStatsData, // Renamed to avoid conflict
+    isLoading: supervisorIsLoading, 
+    stats: supervisorStatsData, 
     searchTerm,
     sortField,
     sortDirection,
@@ -110,7 +109,7 @@ const SupervisorDashboardContent = ({
           setSearchTerm={setSearchTerm}
           toggleSort={toggleSort}
           setSortDirection={setSortDirection}
-          filteredCases={cases} // Pass 'cases' here
+          filteredCases={cases} 
           pendingReports={pendingReports}
           officers={officers}
           isLoading={supervisorIsLoading}
