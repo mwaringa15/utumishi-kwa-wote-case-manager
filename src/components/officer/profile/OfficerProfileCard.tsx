@@ -1,4 +1,3 @@
-
 import { User, OfficerStatus } from "@/types";
 import { UserCircle, Shield, Mail, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface OfficerProfileCardProps {
   profile: {

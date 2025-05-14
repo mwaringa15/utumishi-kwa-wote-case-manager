@@ -1,9 +1,8 @@
-
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import SupervisorDashboardContent from "@/components/supervisor/SupervisorDashboardContent";
 import { useStationData } from "@/hooks/supervisor/useStationData";
 

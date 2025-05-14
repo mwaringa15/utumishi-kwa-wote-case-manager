@@ -1,6 +1,5 @@
-
 import { StationCase, StationOfficer } from "@/components/supervisor/types";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 

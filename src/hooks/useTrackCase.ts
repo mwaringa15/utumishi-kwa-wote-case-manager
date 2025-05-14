@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useState, useRef, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Case, CaseProgress, CaseStatus, CrimeReport } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { CaseSearchFormValues } from "@/components/case-tracking/CaseSearchForm";
@@ -12,7 +12,6 @@ export function useTrackCase() {
   const lastSearchedId = useRef<string | null>(null);
 
   const handleSearch = async (data: CaseSearchFormValues) => {
-    // If we're already searching for this ID, prevent duplicate requests
     if (isSearching && lastSearchedId.current === data.caseId) {
       return;
     }
@@ -24,7 +23,6 @@ export function useTrackCase() {
     try {
       console.log("Searching for case with ID:", data.caseId);
       
-      // Fetch case data from Supabase
       const { data: caseResult, error: caseError } = await supabase
         .from('cases')
         .select(`
@@ -51,7 +49,6 @@ export function useTrackCase() {
       
       console.log("Case found:", caseResult);
       
-      // Handle the case where report might be null or undefined
       if (!caseResult.report) {
         setError("Case found but report data is missing.");
         setCaseData(null);
@@ -59,13 +56,12 @@ export function useTrackCase() {
         return;
       }
       
-      // Convert the Supabase result to our Case type
       const foundCase: Case = {
         id: caseResult.id,
         crimeReportId: caseResult.report_id,
         assignedOfficerId: caseResult.assigned_officer_id || undefined,
-        progress: caseResult.status as CaseProgress, // Maps to visual progress
-        status: caseResult.status as CaseStatus,     // Actual case status
+        progress: caseResult.status as CaseProgress,
+        status: caseResult.status as CaseStatus,
         lastUpdated: caseResult.updated_at,
         crimeReport: {
           id: caseResult.report.id,
@@ -80,7 +76,6 @@ export function useTrackCase() {
       
       setCaseData(foundCase);
       
-      // Show toast on successful case retrieval
       toast({
         title: "Case found",
         description: `Viewing case ${caseResult.id.substring(0, 8).toUpperCase()}`,

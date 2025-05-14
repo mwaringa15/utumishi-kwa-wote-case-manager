@@ -7,7 +7,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { SupervisorSidebar } from "@/components/supervisor/SupervisorSidebar";
 import { BackButton } from "@/components/ui/back-button";
 import { CasesTab } from "@/components/supervisor/CasesTab";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast"; // Updated import path
 import { supabase } from "@/integrations/supabase/client";
 import { Case, User, UserRole, CaseStatus } from "@/types";
 import { SupervisorCase, SupervisorCrimeReport, SupervisorOfficer } from "@/components/supervisor/types";
@@ -15,7 +15,7 @@ import { SupervisorCase, SupervisorCrimeReport, SupervisorOfficer } from "@/comp
 const SupervisorCasesPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast } = useToast(); // toast usage is fine
   const [isLoading, setIsLoading] = useState(true);
   const [cases, setCases] = useState<Case[]>([]);
   const [officers, setOfficers] = useState<User[]>([]);
@@ -37,7 +37,7 @@ const SupervisorCasesPage = () => {
         
         const stationId = userData?.station_id;
         if (!stationId) {
-          toast({
+          toast({ // toast usage is fine
             title: "Station not found",
             description: "You are not assigned to any station",
             variant: "destructive",
@@ -140,7 +140,7 @@ const SupervisorCasesPage = () => {
         setOfficers(formattedOfficers);
       } catch (error) {
         console.error("Error fetching cases data:", error);
-        toast({
+        toast({ // toast usage is fine
           title: "Error loading data",
           description: "Failed to load cases data. Please try again later.",
           variant: "destructive",
@@ -182,13 +182,13 @@ const SupervisorCasesPage = () => {
       }));
 
       // Show success toast
-      toast({
+      toast({ // toast usage is fine
         title: "Case assigned",
         description: `Case successfully assigned to Officer ${officerName}`,
       });
     } catch (error) {
       console.error("Error assigning case:", error);
-      toast({
+      toast({ // toast usage is fine
         title: "Error assigning case",
         description: "Failed to assign the case to the officer",
         variant: "destructive",
@@ -219,13 +219,13 @@ const SupervisorCasesPage = () => {
       }));
 
       // Show success toast
-      toast({
+      toast({ // toast usage is fine
         title: "Case submitted",
         description: "Case successfully submitted to judiciary for review",
       });
     } catch (error) {
       console.error("Error submitting case to judiciary:", error);
-      toast({
+      toast({ // toast usage is fine
         title: "Error submitting case",
         description: "Failed to submit the case to judiciary",
         variant: "destructive",

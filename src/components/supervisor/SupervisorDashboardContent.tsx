@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SupervisorDashboardHeader } from "@/components/supervisor/SupervisorDashboardHeader";
 import { StatsOverview } from "@/components/supervisor/StatsOverview";
@@ -11,7 +10,7 @@ import { RegionalStats } from "@/components/supervisor/RegionalStats";
 import { OfficerPerformance } from "@/components/supervisor/OfficerPerformance";
 import { SupervisorSidebar } from "@/components/supervisor/SupervisorSidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast"; // Updated import path
 import { StationUnassignedCases } from "@/components/supervisor/StationUnassignedCases";
 import { StationOfficers } from "@/components/supervisor/StationOfficers";
 import { SupervisorDashboardProps } from "@/components/supervisor/types";

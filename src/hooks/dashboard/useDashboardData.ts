@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { Case, CrimeReport, CaseProgress, CaseStatus } from "@/types";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 

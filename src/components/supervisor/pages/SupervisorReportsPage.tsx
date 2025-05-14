@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +7,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { SupervisorSidebar } from "@/components/supervisor/SupervisorSidebar";
 import { BackButton } from "@/components/ui/back-button";
 import { PendingReportsTab } from "@/components/supervisor/PendingReportsTab";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CrimeReport, User, UserRole, CrimeStatus } from "@/types";
 
@@ -122,8 +121,9 @@ const SupervisorReportsPage = () => {
         .insert({
           report_id: reportId,
           assigned_officer_id: officerId,
-          status: 'In Progress',
-          station: stationId
+          status: 'Under Investigation',
+          station: stationId,
+          priority: 'medium'
         })
         .select();
 

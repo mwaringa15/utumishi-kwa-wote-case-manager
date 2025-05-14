@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast"; // Updated import path
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,7 +8,7 @@ import { CrimeReportFormValues } from "./types";
 export function useReportSubmission() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [caseId, setCaseId] = useState<string | null>(null);
-  const { toast } = useToast();
+  const { toast } = useToast(); // toast usage is fine
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -96,7 +95,7 @@ export function useReportSubmission() {
       // Format the case ID for display (first 8 characters in uppercase)
       const displayCaseId = newCaseId.substring(0, 8).toUpperCase();
       
-      toast({
+      toast({ // toast usage is fine
         title: "Report submitted successfully",
         description: `Your case ID is: ${displayCaseId}. Use this ID to track your case status.`,
       });
@@ -120,7 +119,7 @@ export function useReportSubmission() {
       return true;
     } catch (error: any) {
       console.error("Error in report submission process:", error);
-      toast({
+      toast({ // toast usage is fine
         title: "Error submitting report",
         description: error.message || "Please try again later",
         variant: "destructive",
