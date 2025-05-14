@@ -1,8 +1,13 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { User } from "@/types";
 import { StationData, StationCase, StationOfficer } from "@/components/supervisor/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { fetchStationDetails, StationDetailsResult } from "./stationUtils/fetchStationDetails";
+import { fetchUnassignedCases } from "./stationUtils/fetchUnassignedCases";
+import { fetchStationOfficers } from "./stationUtils/fetchStationOfficers";
+import { assignCaseToOfficer as assignCaseUtil } from "./stationUtils/assignCaseToOfficer";
 
 export function useStationData(user: User | null) {
   const [stationData, setStationData] = useState<StationData | null>(null);
@@ -17,156 +22,31 @@ export function useStationData(user: User | null) {
 
     setLoading(true);
     try {
-      // 1. Get the user's station_id
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('station_id')
-        .eq('id', user.id)
-        .single();
+      const stationDetails: StationDetailsResult | null = await fetchStationDetails({ supabase, userId: user.id, toast });
 
-      if (userError || !userData?.station_id) {
-        toast({
-          title: "Error fetching user data",
-          description: userError?.message || "Could not determine your station. Please ensure you are assigned to one.",
-          variant: "destructive",
-        });
+      if (!stationDetails) {
         setLoading(false);
         return;
       }
       
-      const stationId = userData.station_id;
+      const { stationId, stationName } = stationDetails;
 
-      // 2. Fetch station details
-      const { data: stationDetails, error: stationError } = await supabase
-        .from('stations')
-        .select('id, name') // Fetch ID as well for consistency if needed
-        .eq('id', stationId)
-        .single();
-      
-      if (stationError || !stationDetails) {
-        toast({
-          title: "Error fetching station details",
-          description: "Could not load details for your assigned station.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // 3. Fetch unassigned cases for the station
-      const { data: casesData, error: casesError } = await supabase
-        .from('cases')
-        .select(`
-          id, 
-          priority, 
-          created_at, 
-          updated_at,
-          report_id,
-          status,
-          station, 
-          reports (
-            id, 
-            title, 
-            description, 
-            status, 
-            created_at, 
-            location, 
-            category
-          )
-        `)
-        .eq('station', stationId)
-        .is('assigned_officer_id', null) 
-        .order('created_at', { ascending: false });
-
-      if (casesError) {
-        toast({
-          title: "Error fetching cases",
-          description: "Could not load unassigned cases for your station.",
-          variant: "destructive",
-        });
-      }
-      
-      const formattedUnassignedCases: StationCase[] = (casesData || []).map((c: any) => ({
-        id: c.id,
-        report_id: c.report_id,
-        status: c.status,
-        priority: c.priority,
-        created_at: c.created_at,
-        updated_at: c.updated_at,
-        station: stationDetails.name, 
-        reports: c.reports ? {
-            id: c.reports.id,
-            title: c.reports.title,
-            description: c.reports.description,
-            status: c.reports.status,
-            created_at: c.reports.created_at,
-            location: c.reports.location,
-            category: c.reports.category,
-        } : { 
-            id: '', title: 'N/A', description: '', status: '', created_at: '', location: '', category: ''
-        },
-      }));
-      
-      // 4. Fetch officers for the station
-      const { data: officersData, error: officersError } = await supabase
-        .from('users')
-        .select('id, full_name, email, role, status') // Removed badge_number
-        .eq('station_id', stationId)
-        .eq('role', 'Officer'); 
-
-      if (officersError) {
-        toast({
-          title: "Error fetching officers",
-          description: officersError.message || "Could not load officers for your station.",
-          variant: "destructive",
-        });
-        // Continue if possible, or return if critical
-      }
-
-      // 5. Count active cases for each officer
-      const officersWithCaseCountsPromises = (officersData || []).map(async (officer) => {
-        // Check if officer is valid before proceeding
-        if (!officer || !officer.id) {
-          console.warn("Invalid officer data encountered:", officer);
-          return { ...officer, assignedCases: 0 }; // Return a default structure or skip
-        }
-        const { count, error: countError } = await supabase
-          .from('cases')
-          .select('*', { count: 'exact', head: true })
-          .eq('assigned_officer_id', officer.id)
-          .not('status', 'in', '("Closed", "Rejected")'); 
-
-        if (countError) {
-          console.error(`Error fetching case count for officer ${officer.id}:`, countError);
-        }
-        return { 
-          ...officer, 
-          assignedCases: count || 0 
-        };
-      });
-      const resolvedOfficersWithCounts = await Promise.all(officersWithCaseCountsPromises);
-
-      const formattedOfficers: StationOfficer[] = resolvedOfficersWithCounts.filter(o => o && o.id).map(o => ({ // Added filter for valid officers
-        id: o.id,
-        name: o.full_name || 'N/A',
-        email: o.email || 'N/A',
-        role: o.role || 'Officer', 
-        station: stationDetails.name, 
-        status: o.status || 'unknown',
-        // badgeNumber: o.badge_number, // Removed badgeNumber
-        assignedCases: o.assignedCases,
-      }));
+      // Fetch cases and officers in parallel
+      const [unassignedCases, officers] = await Promise.all([
+        fetchUnassignedCases({ supabase, stationId, stationName, toast }),
+        fetchStationOfficers({ supabase, stationId, stationName, toast })
+      ]);
       
       setStationData({
-        station: stationDetails.name,
+        station: stationName,
         stationId: stationId, 
-        unassignedCases: formattedUnassignedCases,
-        officers: formattedOfficers,
-        pendingReports: [] 
+        unassignedCases: unassignedCases,
+        officers: officers,
+        pendingReports: [] // Preserving this from original logic
       });
       
     } catch (error: any) {
-      console.error("Error in fetchStationData:", error);
+      console.error("Error in fetchStationData orchestrator:", error);
       toast({
         title: "Dashboard Error",
         description: error.message || "An unexpected error occurred while loading station data.",
@@ -182,33 +62,11 @@ export function useStationData(user: User | null) {
   }, [fetchStationData]);
 
   const handleAssignCase = async (caseId: string, officerId: string): Promise<boolean> => {
-    try {
-      const { error } = await supabase
-        .from('cases')
-        .update({ 
-          assigned_officer_id: officerId,
-          status: 'Under Investigation' 
-        })
-        .eq('id', caseId);
-
-      if (error) throw error;
-      
-      // Instead of full refetch, update local state if possible or confirm refetch is desired
-      await fetchStationData(); // This refetches all station data
-      toast({
-        title: "Case Assigned",
-        description: "The case has been successfully assigned.",
-      });
-      return true;
-    } catch (error: any) {
-      console.error("Error assigning case:", error);
-      toast({
-        title: "Assignment Failed",
-        description: error.message || "Could not assign the case to the officer.",
-        variant: "destructive",
-      });
-      return false;
+    const success = await assignCaseUtil({ supabase, caseId, officerId, toast });
+    if (success) {
+      await fetchStationData(); // Refresh data after successful assignment
     }
+    return success;
   };
 
   return { stationData, loading, handleAssignCase, refreshStationData: fetchStationData };
