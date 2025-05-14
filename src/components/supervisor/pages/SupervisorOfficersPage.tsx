@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -8,14 +7,14 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { SupervisorSidebar } from "@/components/supervisor/SupervisorSidebar";
 import { BackButton } from "@/components/ui/back-button";
 import { OfficersTab } from "@/components/supervisor/OfficersTab";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast"; // Updated import path
 import { supabase } from "@/integrations/supabase/client";
 import { User, UserRole, OfficerStatus } from "@/types";
 
 const SupervisorOfficersPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast } = useToast(); // This will now use the corrected hook
   const [isLoading, setIsLoading] = useState(true);
   const [officers, setOfficers] = useState<User[]>([]);
   const [stationName, setStationName] = useState<string>("");
@@ -73,7 +72,7 @@ const SupervisorOfficersPage = () => {
             .from('cases')
             .select('*', { count: 'exact', head: true })
             .eq('assigned_officer_id', officer.id)
-            .not('status', 'eq', 'Completed');
+            .not('status', 'eq', 'Completed'); // Assuming 'Completed' means not active
             
           if (!error) {
             officerCaseCounts[officer.id] = count || 0;
@@ -88,7 +87,7 @@ const SupervisorOfficersPage = () => {
           role: "Officer" as UserRole,
           station: stationData?.name || 'Unknown Station',
           status: (officer.status || 'on_duty') as OfficerStatus,
-          badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
+          badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`, // Example badge number
           assignedCases: officerCaseCounts[officer.id] || 0
         }));
 
@@ -110,7 +109,7 @@ const SupervisorOfficersPage = () => {
   
   // If user is not logged in or not authorized, redirect
   if (!user || !["OCS", "Commander", "Administrator", "Supervisor"].includes(user.role)) {
-    navigate('/dashboard');
+    navigate('/dashboard'); // Or a more appropriate unauthorized page
     return null;
   }
 

@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { UserRole, Case, OfficerStatus, CaseStatus as CaseStatusType, CaseProgress as CaseProgressType } from "@/types";
 import { BackButton } from "@/components/ui/back-button";
@@ -77,7 +76,8 @@ export const ProfileContainer = () => {
       full_name: profileData.full_name,
       email: profileData.email,
       role: profileData.role as UserRole,
-      status: profileData.status as OfficerStatus
+      status: profileData.status as OfficerStatus,
+      station: profileData.station_id ? (await supabase.from('stations').select('name').eq('id', profileData.station_id).single()).data?.name : undefined
     });
 
     return profileData;

@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { StatsOverview } from "./StatsOverview";
 import { AssignedCasesTab } from "./AssignedCasesTab";
 import { PendingReportsTab } from "./PendingReportsTab";

@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { Case, CaseProgress, CaseStatus, CrimeReport, User, OfficerStats } from "@/types";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { loadOfficerDashboardData } from "./modules/loadOfficerDashboardData";
 import { updateCaseStatusAndNotify, updateCaseProgressAndNotify } from "./modules/officerCaseActions";
 import { assignReportToOfficerAndNotify } from "./modules/officerReportActions";
@@ -67,4 +66,3 @@ export function useCasesAndReports(user: User | null) {
     handleEvidenceUploaded
   };
 }
-

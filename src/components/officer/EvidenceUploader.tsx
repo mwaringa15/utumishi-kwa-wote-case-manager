@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Upload, X, FileText, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -111,7 +110,7 @@ export function EvidenceUploader({ caseId, onComplete }: EvidenceUploaderProps) 
       </div>
       
       {!file ? (
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+        <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
           <Upload className="mx-auto h-8 w-8 text-gray-400" />
           <p className="mt-2 text-sm text-gray-500">Click to upload or drag and drop</p>
           <p className="mt-1 text-xs text-gray-400">PDF, Video (MP4, MOV), max 100MB</p>
