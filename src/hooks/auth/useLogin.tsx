@@ -72,7 +72,7 @@ export function useLogin() {
         
         // Sync user role using the edge function with station info if provided
         try {
-          const syncData = {
+          const syncData: any = {
             id: user.id,
             email: user.email,
             role: role
@@ -80,7 +80,8 @@ export function useLogin() {
           
           // Include station_id if provided
           if (stationId) {
-            syncData['station_id'] = stationId;
+            console.log(`Adding station ID ${stationId} to user sync data`);
+            syncData.station_id = stationId;
           }
           
           const { data: syncResult, error: syncError } = await supabase.functions.invoke('sync-user', {
@@ -96,6 +97,14 @@ export function useLogin() {
             });
           } else {
             console.log("User synced successfully:", syncResult);
+            
+            // If station was provided, give feedback
+            if (stationId) {
+              toast({
+                title: "Station Assignment Successful",
+                description: "You have been assigned to the selected station.",
+              });
+            }
           }
         } catch (syncErr) {
           console.error("Error invoking sync-user function:", syncErr);

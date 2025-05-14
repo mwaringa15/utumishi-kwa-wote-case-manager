@@ -18,6 +18,7 @@ const SupervisorOfficersPage = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [officers, setOfficers] = useState<User[]>([]);
+  const [stationName, setStationName] = useState<string>("");
   
   useEffect(() => {
     if (!user) return;
@@ -38,14 +39,24 @@ const SupervisorOfficersPage = () => {
         if (!stationId) {
           toast({
             title: "Station not found",
-            description: "You are not assigned to any station",
+            description: "You are not assigned to any station. Please select a station when logging in.",
             variant: "destructive",
           });
           setIsLoading(false);
           return;
         }
 
-        // 2. Get officers for this station
+        // 2. Get the station name
+        const { data: stationData, error: stationError } = await supabase
+          .from('stations')
+          .select('name')
+          .eq('id', stationId)
+          .single();
+
+        if (stationError) throw stationError;
+        setStationName(stationData?.name || "Unknown Station");
+
+        // 3. Get officers for this station
         const { data: officersData, error: officersError } = await supabase
           .from('users')
           .select('id, full_name, email, role, status, station_id')
@@ -53,13 +64,6 @@ const SupervisorOfficersPage = () => {
           .eq('role', 'Officer');
 
         if (officersError) throw officersError;
-
-        // Get the station name
-        const { data: stationData } = await supabase
-          .from('stations')
-          .select('name')
-          .eq('id', stationId)
-          .single();
 
         // Count assigned cases for each officer
         const officerCaseCounts: Record<string, number> = {};
@@ -81,7 +85,7 @@ const SupervisorOfficersPage = () => {
           id: officer.id,
           name: officer.full_name || officer.email.split('@')[0],
           email: officer.email,
-          role: "Officer" as UserRole, // Cast to UserRole enum
+          role: "Officer" as UserRole,
           station: stationData?.name || 'Unknown Station',
           status: (officer.status || 'on_duty') as OfficerStatus,
           badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
@@ -121,7 +125,7 @@ const SupervisorOfficersPage = () => {
             <div className="mb-6">
               <BackButton />
               <h1 className="text-2xl font-bold mt-4">Officer Management</h1>
-              <p className="text-gray-500">View and manage officers in your station</p>
+              <p className="text-gray-500">View and manage officers in {stationName}</p>
             </div>
             
             <OfficersTab 
