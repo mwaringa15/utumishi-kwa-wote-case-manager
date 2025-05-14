@@ -1,5 +1,5 @@
 
-import { User, Users } from "lucide-react";
+import { User as UserIcon, Users, MapPin } from "lucide-react"; // Added MapPin
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { User as UserType } from "@/types";
@@ -32,12 +32,18 @@ export function OfficersTab({ officers, isLoading }: OfficersTabProps) {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center">
                     <div className="bg-gray-200 rounded-full p-3 mr-4">
-                      <User className="h-6 w-6 text-gray-600" />
+                      <UserIcon className="h-6 w-6 text-gray-600" />
                     </div>
                     <div>
                       <h3 className="font-medium text-lg">{officer.name}</h3>
                       <p className="text-gray-500">{officer.email}</p>
-                      <div className="flex items-center mt-1">
+                      {officer.station && (
+                        <div className="flex items-center text-sm text-gray-500 mt-1">
+                          <MapPin className="h-4 w-4 mr-1.5 text-gray-400" />
+                          <span>{officer.station}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center mt-2"> {/* Adjusted margin-top */}
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {officer.badgeNumber}
                         </span>
