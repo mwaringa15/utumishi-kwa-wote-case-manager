@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 // Define cors headers for browser requests
@@ -29,13 +28,27 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
-
-    console.log(`Syncing user: ${id}, email: ${email}, role: ${role}, station_id: ${station_id}`)
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
     // Normalize the role name
-    const normalizedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()
+    // Ensures "OCS" is always "OCS", other roles are TitleCased.
+    let normalizedRole = role;
+    if (typeof role === 'string') {
+      if (role.toLowerCase() === 'ocs') {
+        normalizedRole = 'OCS';
+      } else {
+        normalizedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+      }
+    } else {
+      // Handle cases where role might not be a string, though it's expected to be.
+      // Defaulting to 'Public' or returning an error might be options.
+      // For now, let's log an error if role is not a string and proceed with it as is,
+      // which will likely fail validation or later steps if it's not a valid role string.
+      console.error(`Role is not a string: ${role}. Proceeding with original value.`);
+    }
+
+    console.log(`Syncing user: ${id}, email: ${email}, role: ${normalizedRole}, station_id: ${station_id}`)
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
     // Check if user exists in users table
     const { data: existingUser, error: fetchError } = await supabase
@@ -58,15 +71,19 @@ Deno.serve(async (req) => {
       email: string;
       role: string;
       full_name?: string;
-      station_id?: string;
+      station_id?: string | null; // Allow station_id to be explicitly set to null to clear it
     } = {
       email,
       role: normalizedRole,
     };
 
-    if (station_id) {
-      userData.station_id = station_id;
+    // Handle station_id: allow it to be updated or cleared
+    // If station_id is provided (even as null), include it in userData.
+    // If station_id is undefined in the body, it won't be in userData, preserving existing DB value.
+    if (station_id !== undefined) {
+        userData.station_id = station_id; // This could be a string UUID or null
     }
+
 
     if (!existingUser) {
       // Insert new user
@@ -79,27 +96,32 @@ Deno.serve(async (req) => {
       
       if (insertError) {
         console.error('Error inserting user:', insertError)
+        // Provide more detailed error if it's a constraint violation
+        if (insertError.code === '23514' && insertError.message.includes('users_role_check')) {
+            return new Response(
+                JSON.stringify({ error: `Invalid role specified: ${normalizedRole}. Allowed roles are Public, Officer, OCS, Commander, Administrator, Judiciary, Supervisor.` }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            );
+        }
         return new Response(
-          JSON.stringify({ error: 'Error inserting user' }),
+          JSON.stringify({ error: 'Error inserting user', details: insertError.message }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
       }
     } else {
       // Update existing user
-      // Only include station_id in update if it's explicitly provided
-      // If station_id is not in body, userData will not have station_id property,
-      // so existing station_id in DB will be preserved.
-      // If station_id is in body (even if null or empty string, though front-end sends undefined for empty),
-      // it will be updated. The `if (station_id)` check above handles undefined, null, and empty string by not adding it.
-      // If we want to allow clearing station_id, then `body` should send `station_id: null`.
-      // For now, if `station_id` is a non-empty string, it's updated.
-      const updatePayload: { email: string; role: string; station_id?: string } = {
-        email,
-        role: normalizedRole,
+      // Create updatePayload, only including fields that are actually being changed.
+      const updatePayload: { email: string; role: string; station_id?: string | null } = {
+        email, // email can always be updated
+        role: normalizedRole, // role can always be updated
       };
-      if (station_id) { // Only update station_id if it's provided and truthy
-        updatePayload.station_id = station_id;
+
+      // Only include station_id in update if it's explicitly provided in the body
+      if (station_id !== undefined) {
+        updatePayload.station_id = station_id; // can be string or null
       }
+      // Note: If station_id is not in the body, it's not included in updatePayload,
+      // so existing station_id in DB is preserved.
 
       const { error: updateError } = await supabase
         .from('users')
@@ -108,8 +130,14 @@ Deno.serve(async (req) => {
       
       if (updateError) {
         console.error('Error updating user:', updateError)
+        if (updateError.code === '23514' && updateError.message.includes('users_role_check')) {
+            return new Response(
+                JSON.stringify({ error: `Invalid role specified: ${normalizedRole}. Allowed roles are Public, Officer, OCS, Commander, Administrator, Judiciary, Supervisor.` }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            );
+        }
         return new Response(
-          JSON.stringify({ error: 'Error updating user' }),
+          JSON.stringify({ error: 'Error updating user', details: updateError.message }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
       }
@@ -138,7 +166,12 @@ Deno.serve(async (req) => {
         })
       
       if (roleInsertError) {
-        console.error('Error inserting role:', roleInsertError)
+        // If role insert fails due to user_roles_role_check, it indicates a problem similar to users_role_check
+        if (roleInsertError.code === '23514' && roleInsertError.message.includes('user_roles_role_check')) {
+             console.warn(`Could not insert role ${normalizedRole} into user_roles due to check constraint. This might require a similar fix as users_role_check.`);
+        } else {
+            console.error('Error inserting role into user_roles:', roleInsertError);
+        }
         // Not returning error here
       }
     }
@@ -150,7 +183,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error processing request:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal Server Error' }),
+      JSON.stringify({ error: 'Internal Server Error', details: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }
