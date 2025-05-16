@@ -19,30 +19,10 @@ export function useSupervisorReports(userId: string | undefined) {
     
     setIsLoading(true);
     try {
-      // First try to get station_id from localStorage (if set during login)
+      // First try to get station_id from localStorage (set during login)
       const storedStationId = localStorage.getItem('selected_station_id');
       
-      // Fetch the supervisor's station details
-      const stationDetails = await fetchStationDetails({ 
-        supabase, 
-        userId, 
-        toast 
-      });
-
-      if (!stationDetails) {
-        toast({
-          title: "Station not found",
-          description: "You are not assigned to any station. Please log in again and select a station.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Use stored station ID if available, otherwise use the one from user profile
-      const effectiveStationId = storedStationId || stationDetails.stationId;
-      
-      if (!effectiveStationId && stationDetails.userRole !== "Administrator" && stationDetails.userRole !== "Commander") {
+      if (!storedStationId) {
         toast({
           title: "No Station Selected",
           description: "Please log in again and select a station to view reports.",
@@ -52,16 +32,30 @@ export function useSupervisorReports(userId: string | undefined) {
         return;
       }
       
-      setStationId(effectiveStationId);
-      setStationName(stationDetails.stationName);
+      setStationId(storedStationId);
+      
+      // Get station name directly from stations table
+      const { data: stationData, error: stationError } = await supabase
+        .from('stations')
+        .select('name')
+        .eq('id', storedStationId)
+        .single();
+        
+      if (stationError) {
+        console.error("Error fetching station name:", stationError);
+        // Don't throw here, we can continue with an unknown station name
+        setStationName("Unknown Station");
+      } else {
+        setStationName(stationData.name);
+      }
 
-      console.log(`Fetching reports for station ID: ${effectiveStationId}`);
+      console.log(`Fetching reports for station ID: ${storedStationId}`);
 
       // First fetch all reports for this station
       const { data: reportsData, error: reportsError } = await supabase
         .from('reports')
         .select('*')
-        .eq('station_id', effectiveStationId)
+        .eq('station_id', storedStationId)
         .eq('status', 'Pending');
 
       if (reportsError) {
@@ -92,7 +86,7 @@ export function useSupervisorReports(userId: string | undefined) {
       const { data: officersData, error: officersError } = await supabase
         .from('users')
         .select('id, full_name, email, role, status')
-        .eq('station_id', effectiveStationId)
+        .eq('station_id', storedStationId)
         .eq('role', 'officer');  // Using lowercase role
 
       if (officersError) throw officersError;
