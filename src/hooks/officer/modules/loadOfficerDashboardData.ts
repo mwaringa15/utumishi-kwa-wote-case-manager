@@ -1,5 +1,5 @@
 
-import { Case, CrimeReport, User, OfficerStats } from "@/types";
+import { Case, CaseProgress, CaseStatus, CrimeReport, User, OfficerStats } from "@/types";
 import { UseToastReturn } from "@/hooks/use-toast"; 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -69,8 +69,8 @@ export const loadOfficerDashboardData = async ({
       id: caseItem.id,
       crimeReportId: caseItem.report_id,
       assignedOfficerId: user.id,
-      progress: caseItem.status as CaseProgressType,
-      status: caseItem.status as CaseStatusType,
+      progress: caseItem.status as CaseProgress,
+      status: caseItem.status as CaseStatus,
       lastUpdated: caseItem.updated_at,
       priority: caseItem.priority || 'medium',
       crimeReport: caseItem.reports ? {
