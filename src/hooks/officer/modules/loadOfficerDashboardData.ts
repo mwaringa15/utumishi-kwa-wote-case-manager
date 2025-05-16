@@ -1,6 +1,7 @@
 
 import { Case, CrimeReport, User, OfficerStats } from "@/types";
-import { UseToastReturn } from "@/hooks/use-toast"; // Assuming useToast returns an object with a toast method
+import { UseToastReturn } from "@/hooks/use-toast"; 
+import { supabase } from "@/integrations/supabase/client";
 
 interface LoadDataParams {
   user: User | null;
@@ -26,100 +27,133 @@ export const loadOfficerDashboardData = async ({
 
   setIsLoading(true);
   try {
-    // In a real app, this would fetch data from your Supabase backend
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Get the officer's station ID from localStorage or user profile
+    const stationId = localStorage.getItem('selected_station_id');
+    console.log("Officer dashboard using station ID:", stationId);
+    
+    if (!stationId) {
+      console.warn("No station ID found for officer. Data may be incomplete.");
+    }
 
-    // Mock data - pending reports
-    const mockReports: CrimeReport[] = [
-      {
-        id: "r3",
-        title: "Shoplifting at Central Market",
-        description: "Observed a person taking items without paying at the electronics section around 3 PM.",
-        status: "Submitted",
-        createdById: "user123",
-        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: "r4",
-        title: "Suspicious Activity",
-        description: "Noticed unusual activity around the abandoned building on West Street for the past few nights.",
-        status: "Submitted",
-        createdById: "user456",
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ];
+    // Fetch assigned cases for the officer
+    const { data: casesData, error: casesError } = await supabase
+      .from('cases')
+      .select(`
+        id,
+        report_id,
+        assigned_officer_id,
+        status,
+        priority,
+        created_at,
+        updated_at,
+        reports (
+          id,
+          title,
+          description,
+          category,
+          status,
+          created_at,
+          reporter_id,
+          location
+        )
+      `)
+      .eq('assigned_officer_id', user.id);
+      
+    if (casesError) {
+      console.error("Error fetching assigned cases:", casesError);
+      throw casesError;
+    }
 
-    // Mock data - assigned cases
-    const mockCases: Case[] = [
-      {
-        id: "c3",
-        crimeReportId: "r5",
-        assignedOfficerId: user?.id,
-        progress: "In Progress",
-        status: "Under Investigation",
-        lastUpdated: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        crimeReport: {
-          id: "r5",
-          title: "Vehicle Theft",
-          description: "Car stolen from residential parking. Toyota Camry, license KBZ 123J.",
-          status: "Under Investigation",
-          createdById: "user789",
-          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-      },
-      {
-        id: "c4",
-        crimeReportId: "r6",
-        assignedOfficerId: user?.id,
-        progress: "Pending",
-        status: "Submitted",
-        lastUpdated: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        crimeReport: {
-          id: "r6",
-          title: "Break-in at Business Premises",
-          description: "Store broken into overnight. Security camera shows two individuals.",
-          status: "Under Investigation",
-          createdById: "user101",
-          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-      },
-      {
-        id: "c5",
-        crimeReportId: "r7",
-        assignedOfficerId: user?.id,
-        progress: "Completed",
-        status: "Closed",
-        lastUpdated: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-        crimeReport: {
-          id: "r7",
-          title: "Assault Report",
-          description: "Physical altercation at Downtown Bar on Saturday night.",
-          status: "Closed",
-          createdById: "user202",
-          createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-      },
-    ];
+    // Format cases data
+    const formattedCases: Case[] = casesData.map((caseItem: any) => ({
+      id: caseItem.id,
+      crimeReportId: caseItem.report_id,
+      assignedOfficerId: user.id,
+      progress: caseItem.status as CaseProgressType,
+      status: caseItem.status as CaseStatusType,
+      lastUpdated: caseItem.updated_at,
+      priority: caseItem.priority || 'medium',
+      crimeReport: caseItem.reports ? {
+        id: caseItem.reports.id,
+        title: caseItem.reports.title,
+        description: caseItem.reports.description,
+        status: caseItem.reports.status,
+        createdById: caseItem.reports.reporter_id,
+        createdAt: caseItem.reports.created_at,
+        location: caseItem.reports.location,
+        crimeType: caseItem.reports.category
+      } : undefined
+    }));
 
-    setPendingReports(mockReports);
-    setAssignedCases(mockCases);
+    // Fetch pending reports for the officer's station
+    let reportsQuery = supabase
+      .from('reports')
+      .select('*')
+      .eq('status', 'Pending');
+    
+    // Filter by station if available
+    if (stationId) {
+      reportsQuery = reportsQuery.eq('station_id', stationId);
+    }
+    
+    const { data: pendingReportsData, error: reportsError } = await reportsQuery;
+    
+    if (reportsError) {
+      console.error("Error fetching pending reports:", reportsError);
+      throw reportsError;
+    }
+    
+    // Check which reports already have cases
+    const { data: existingReportIds, error: reportIdError } = await supabase
+      .from('cases')
+      .select('report_id');
+    
+    if (reportIdError) {
+      console.error("Error fetching existing report IDs:", reportIdError);
+      throw reportIdError;
+    }
+    
+    // Extract the report_ids as an array
+    const reportIdsWithCases = existingReportIds.map(item => item.report_id);
+    
+    // Filter out reports that already have cases
+    const reportsWithoutCases = pendingReportsData.filter(report => 
+      !reportIdsWithCases.includes(report.id)
+    );
+    
+    // Format reports data
+    const formattedReports: CrimeReport[] = reportsWithoutCases.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      status: r.status,
+      createdById: r.reporter_id,
+      createdAt: r.created_at,
+      location: r.location,
+      category: r.category,
+      crimeType: r.category,
+    }));
 
-    // Set statistics
+    // Set the data in state
+    setAssignedCases(formattedCases);
+    setPendingReports(formattedReports);
+
+    // Set statistics based on the fetched data
     setStats({
-      activeCases: mockCases.filter(c => c.progress !== "Completed").length,
-      pendingReports: mockReports.length,
-      closedCases: mockCases.filter(c => c.progress === "Completed").length,
-      totalAssigned: mockCases.length,
+      activeCases: formattedCases.filter(c => c.status !== 'Closed' && c.status !== 'Rejected').length,
+      pendingReports: formattedReports.length,
+      closedCases: formattedCases.filter(c => c.status === 'Closed' || c.status === 'Rejected').length,
+      totalAssigned: formattedCases.length,
     });
+
   } catch (error) {
     console.error("Failed to load officer dashboard data", error);
     toast({
       title: "Error loading data",
-      description: "Failed to load case information",
+      description: "Failed to load case information. Please check your station assignment.",
       variant: "destructive",
     });
   } finally {
     setIsLoading(false);
   }
 };
-
