@@ -2,6 +2,7 @@
 import { Case, CaseProgress, CaseStatus, CrimeReport, User, OfficerStats } from "@/types";
 import { UseToastReturn } from "@/hooks/use-toast"; 
 import { supabase } from "@/integrations/supabase/client";
+import { getUserStationId } from "@/hooks/supervisor/modules/getUserStationId";
 
 interface LoadDataParams {
   user: User | null;
@@ -27,7 +28,7 @@ export const loadOfficerDashboardData = async ({
 
   setIsLoading(true);
   try {
-    // Get the officer's station ID from localStorage or user profile
+    // Get the officer's station ID from localStorage
     const stationId = localStorage.getItem('selected_station_id');
     console.log("Officer dashboard using station ID:", stationId);
     
