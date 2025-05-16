@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +11,8 @@ import { PendingReportsTab } from "@/components/supervisor/PendingReportsTab";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CrimeReport, User, UserRole, CrimeStatus } from "@/types";
+import { fetchStationDetails } from "@/hooks/supervisor/stationUtils/fetchStationDetails";
+import { assignCaseToOfficer } from "@/hooks/supervisor/stationUtils/assignCaseToOfficer";
 
 const SupervisorReportsPage = () => {
   const { user } = useAuth();
@@ -18,24 +21,23 @@ const SupervisorReportsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [pendingReports, setPendingReports] = useState<CrimeReport[]>([]);
   const [officers, setOfficers] = useState<User[]>([]);
+  const [stationId, setStationId] = useState<string | null>(null);
+  const [stationName, setStationName] = useState<string>("");
   
   useEffect(() => {
     if (!user) return;
     
-    const fetchReportsData = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        // 1. Get the user's station_id from the users table
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('station_id')
-          .eq('id', user.id)
-          .single();
+        // Fetch the supervisor's station details
+        const stationDetails = await fetchStationDetails({ 
+          supabase, 
+          userId: user.id, 
+          toast 
+        });
 
-        if (userError) throw userError;
-        
-        const stationId = userData?.station_id;
-        if (!stationId) {
+        if (!stationDetails) {
           toast({
             title: "Station not found",
             description: "You are not assigned to any station",
@@ -45,20 +47,23 @@ const SupervisorReportsPage = () => {
           return;
         }
 
-        // 2. Get pending reports for this station
+        setStationId(stationDetails.stationId);
+        setStationName(stationDetails.stationName);
+
+        // Get pending reports for this specific station
         const { data: reportsData, error: reportsError } = await supabase
           .from('reports')
           .select('*')
-          .eq('station_id', stationId)
+          .eq('station_id', stationDetails.stationId)
           .eq('status', 'Pending');
 
         if (reportsError) throw reportsError;
 
-        // 3. Get officers for case assignment
+        // Get officers for case assignment - only get officers from the same station
         const { data: officersData, error: officersError } = await supabase
           .from('users')
           .select('id, full_name, email, role, status')
-          .eq('station_id', stationId)
+          .eq('station_id', stationDetails.stationId)
           .eq('role', 'Officer');
 
         if (officersError) throw officersError;
@@ -68,7 +73,7 @@ const SupervisorReportsPage = () => {
           id: officer.id,
           name: officer.full_name || officer.email.split('@')[0],
           email: officer.email,
-          role: "Officer" as UserRole, // Cast to UserRole enum
+          role: "Officer" as UserRole,
           badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
           assignedCases: 0 // Placeholder
         }));
@@ -78,12 +83,11 @@ const SupervisorReportsPage = () => {
           id: report.id,
           title: report.title,
           description: report.description,
-          status: report.status as CrimeStatus, // Cast to CrimeStatus enum
+          status: report.status as CrimeStatus,
           createdAt: report.created_at,
           crimeType: report.category,
           location: report.location,
-          createdById: report.reporter_id || user.id, // Use reporter_id if available, otherwise fallback to current user
-          // Add other required fields
+          createdById: report.reporter_id || user.id,
           category: report.category
         }));
 
@@ -101,21 +105,22 @@ const SupervisorReportsPage = () => {
       }
     };
 
-    fetchReportsData();
+    fetchData();
   }, [user, toast]);
 
   // Handle case creation
   const handleCreateCase = async (reportId: string, officerId: string, officerName: string) => {
     try {
+      if (!stationId) {
+        toast({
+          title: "Station ID Missing",
+          description: "Cannot create case without a valid station ID",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Create a new case in the database
-      const { data: userData } = await supabase
-        .from('users')
-        .select('station_id')
-        .eq('id', user?.id)
-        .single();
-
-      const stationId = userData?.station_id;
-
       const { data, error } = await supabase
         .from('cases')
         .insert({
@@ -169,8 +174,8 @@ const SupervisorReportsPage = () => {
           <SidebarInset className="p-6">
             <div className="mb-6">
               <BackButton />
-              <h1 className="text-2xl font-bold mt-4">Pending Reports</h1>
-              <p className="text-gray-500">Review and create cases from pending reports</p>
+              <h1 className="text-2xl font-bold mt-4">Reports for {stationName}</h1>
+              <p className="text-gray-500">Review and create cases from pending reports at your station</p>
             </div>
             
             <PendingReportsTab 
