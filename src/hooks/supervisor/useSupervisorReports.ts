@@ -19,51 +19,106 @@ export function useSupervisorReports(userId: string | undefined) {
     
     setIsLoading(true);
     try {
-      // First try to get station_id from localStorage (set during login)
+      // First check localStorage for stored station ID (set during login)
       const storedStationId = localStorage.getItem('selected_station_id');
       
       if (!storedStationId) {
-        toast({
-          title: "No Station Selected",
-          description: "Please log in again and select a station to view reports.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      setStationId(storedStationId);
-      
-      // Get station name directly from stations table
-      const { data: stationData, error: stationError } = await supabase
-        .from('stations')
-        .select('name')
-        .eq('id', storedStationId)
-        .single();
+        // If no stored station ID, try to get it from user profile
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('station_id, role')
+          .eq('id', userId)
+          .single();
         
-      if (stationError) {
-        console.error("Error fetching station name:", stationError);
-        // Don't throw here, we can continue with an unknown station name
-        setStationName("Unknown Station");
+        if (userError) {
+          console.error("Error fetching user data:", userError);
+          toast({
+            title: "User Data Error",
+            description: "Could not fetch your station assignment. Please log in again.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!userData.station_id && userData.role.toLowerCase() !== 'administrator' && userData.role.toLowerCase() !== 'commander' && userData.role.toLowerCase() !== 'ocs') {
+          toast({
+            title: "No Station Assigned",
+            description: "You are not assigned to any station. Please contact an administrator.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        // Use the station ID from user profile if available
+        if (userData.station_id) {
+          setStationId(userData.station_id);
+          
+          // Store it for future use
+          localStorage.setItem('selected_station_id', userData.station_id);
+          
+          // Get station name
+          const { data: stationData, error: stationError } = await supabase
+            .from('stations')
+            .select('name')
+            .eq('id', userData.station_id)
+            .single();
+            
+          if (stationError) {
+            console.error("Error fetching station name:", stationError);
+            setStationName("Unknown Station");
+          } else {
+            setStationName(stationData.name);
+          }
+        } else {
+          // For administrators, commanders, or OCS, set a placeholder
+          setStationId(null);
+          setStationName("All Stations");
+          
+          // For these roles, we'll fetch all reports later
+        }
       } else {
-        setStationName(stationData.name);
+        // Use the stored station ID
+        setStationId(storedStationId);
+        
+        // Get station name
+        const { data: stationData, error: stationError } = await supabase
+          .from('stations')
+          .select('name')
+          .eq('id', storedStationId)
+          .single();
+          
+        if (stationError) {
+          console.error("Error fetching station name:", stationError);
+          setStationName("Unknown Station");
+        } else {
+          setStationName(stationData.name);
+        }
       }
 
-      console.log(`Fetching reports for station ID: ${storedStationId}`);
-
-      // First fetch all reports for this station
-      const { data: reportsData, error: reportsError } = await supabase
+      // Now fetch reports based on station ID
+      let reportsQuery = supabase
         .from('reports')
         .select('*')
-        .eq('station_id', storedStationId)
         .eq('status', 'Pending');
+        
+      // Only filter by station_id if we have one and the user isn't an administrator/commander/OCS
+      if (stationId) {
+        reportsQuery = reportsQuery.eq('station_id', stationId);
+        console.log(`Fetching reports for station ID: ${stationId}`);
+      } else {
+        console.log("Fetching all reports (admin/commander view)");
+      }
+      
+      const { data: reportsData, error: reportsError } = await reportsQuery;
 
       if (reportsError) {
         console.error("Error fetching reports:", reportsError);
         throw reportsError;
       }
 
-      console.log(`Found ${reportsData?.length || 0} pending reports for station`);
+      console.log(`Found ${reportsData?.length || 0} pending reports`);
 
       // Then fetch all existing case report_ids
       const { data: casesData, error: casesError } = await supabase
@@ -83,11 +138,19 @@ export function useSupervisorReports(userId: string | undefined) {
       console.log(`${reportsWithoutCases.length} reports don't have cases yet`);
 
       // Get officers for case assignment - only get officers from the same station
-      const { data: officersData, error: officersError } = await supabase
+      let officersQuery = supabase
         .from('users')
-        .select('id, full_name, email, role, status')
-        .eq('station_id', storedStationId)
-        .eq('role', 'officer');  // Using lowercase role
+        .select('id, full_name, email, role, status');
+        
+      // Only filter by station_id if we have one
+      if (stationId) {
+        officersQuery = officersQuery.eq('station_id', stationId);
+      }
+      
+      // Always filter for officers only
+      officersQuery = officersQuery.eq('role', 'officer');
+      
+      const { data: officersData, error: officersError } = await officersQuery;
 
       if (officersError) throw officersError;
 
@@ -101,12 +164,12 @@ export function useSupervisorReports(userId: string | undefined) {
         assignedCases: 0 // Placeholder
       }));
 
-      // Format reports - explicitly cast the status string to CrimeStatus type
+      // Format reports
       const formattedReports: CrimeReport[] = reportsWithoutCases.map(report => ({
         id: report.id,
         title: report.title,
         description: report.description,
-        status: report.status as CrimeStatus, // Explicit cast to CrimeStatus
+        status: report.status as CrimeStatus,
         createdAt: report.created_at,
         crimeType: report.category,
         location: report.location,
