@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { ToastType } from "@/hooks/supervisor/types";
+import { ToastType } from "@/components/supervisor/types";
 
 interface FetchStationDetailsParams {
   supabase: typeof supabase;
@@ -43,7 +43,7 @@ export async function fetchStationDetails({
     if (!stationId && userRole !== "Administrator" && userRole !== "Commander") {
       toast({
         title: "No Station ID",
-        description: "Your station could not be determined",
+        description: "Your station could not be determined. Please select a station from your profile settings.",
         variant: "destructive",
       });
       return null;

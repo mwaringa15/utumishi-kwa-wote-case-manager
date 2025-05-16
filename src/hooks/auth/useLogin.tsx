@@ -87,6 +87,9 @@ export function useLogin() {
           if (stationId) {
             console.log(`Adding station ID ${stationId} to user sync data`);
             syncData.station_id = stationId;
+            
+            // Store selected station ID in localStorage for persistence
+            localStorage.setItem('selected_station_id', stationId);
           }
           
           const { data: syncResult, error: syncError } = await supabase.functions.invoke('sync-user', {

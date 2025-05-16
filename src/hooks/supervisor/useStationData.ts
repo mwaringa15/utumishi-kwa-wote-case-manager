@@ -37,12 +37,52 @@ export function useStationData(user: User | null) {
         fetchStationOfficers({ supabase, stationId, stationName, toast })
       ]);
       
+      // Count statistics for dashboard
+      const stats = {
+        totalCases: unassignedCases.length,
+        pendingReports: 0, // Will be updated with actual count
+        activeCases: unassignedCases.length,
+        completedCases: 0, // Will be updated with actual count
+        totalOfficers: officers.length
+      };
+      
+      // Fetch pending reports count
+      try {
+        const { count: pendingCount, error: pendingError } = await supabase
+          .from('reports')
+          .select('*', { count: 'exact', head: true })
+          .eq('station_id', stationId)
+          .eq('status', 'Pending');
+          
+        if (!pendingError && pendingCount !== null) {
+          stats.pendingReports = pendingCount;
+        }
+      } catch (error) {
+        console.error("Error fetching pending reports count:", error);
+      }
+      
+      // Fetch completed cases count
+      try {
+        const { count: completedCount, error: completedError } = await supabase
+          .from('cases')
+          .select('*', { count: 'exact', head: true })
+          .eq('station', stationName)
+          .eq('status', 'Completed');
+          
+        if (!completedError && completedCount !== null) {
+          stats.completedCases = completedCount;
+        }
+      } catch (error) {
+        console.error("Error fetching completed cases count:", error);
+      }
+      
       setStationData({
         station: stationName,
         stationId: stationId, 
         unassignedCases: unassignedCases,
         officers: officers,
-        pendingReports: [] // Preserving this from original logic
+        pendingReports: [], // Preserving this from original logic
+        stats: stats // Add stats to stationData
       });
       
     } catch (error: any) {
