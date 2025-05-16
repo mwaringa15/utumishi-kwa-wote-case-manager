@@ -11,6 +11,8 @@ import { PendingReportsTab } from "@/components/supervisor/PendingReportsTab";
 import { useToast } from "@/hooks/use-toast";
 import { useSupervisorReports } from "@/hooks/supervisor/useSupervisorReports";
 import { createCaseFromReport } from "@/hooks/supervisor/stationUtils/createCaseFromReport";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 const SupervisorReportsPage = () => {
   const { user } = useAuth();
@@ -69,15 +71,27 @@ const SupervisorReportsPage = () => {
         <SidebarProvider>
           <SupervisorSidebar />
           <SidebarInset className="p-6">
-            <div className="mb-6">
-              <BackButton />
-              <h1 className="text-2xl font-bold mt-4">Reports for {stationName || "All Stations"}</h1>
-              <p className="text-gray-500">
-                {stationId 
-                  ? `Review and create cases from pending reports at your station` 
-                  : `Please select a station from the login page to view station-specific reports`
-                }
-              </p>
+            <div className="mb-6 flex justify-between items-center">
+              <div>
+                <BackButton />
+                <h1 className="text-2xl font-bold mt-4">Reports for {stationName || "All Stations"}</h1>
+                <p className="text-gray-500">
+                  {stationId 
+                    ? `Review and create cases from pending reports at your station` 
+                    : `Please select a station from the login page to view station-specific reports`
+                  }
+                </p>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                onClick={refreshData} 
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
             </div>
             
             <PendingReportsTab 

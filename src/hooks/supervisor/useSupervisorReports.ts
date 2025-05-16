@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import { CrimeReport, User, CrimeStatus } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchStationDetails } from "@/hooks/supervisor/stationUtils/fetchStationDetails";
 
 export function useSupervisorReports(userId: string | undefined) {
   const { toast } = useToast();
@@ -19,11 +18,36 @@ export function useSupervisorReports(userId: string | undefined) {
     
     setIsLoading(true);
     try {
+      console.log("Fetching reports data for user:", userId);
+      
       // First check localStorage for stored station ID (set during login)
       const storedStationId = localStorage.getItem('selected_station_id');
       
-      if (!storedStationId) {
+      let userRole = '';
+      let effectiveStationId = null;
+      
+      if (storedStationId) {
+        console.log("Using stored station ID:", storedStationId);
+        setStationId(storedStationId);
+        effectiveStationId = storedStationId;
+        
+        // Get station name
+        const { data: stationData, error: stationError } = await supabase
+          .from('stations')
+          .select('name')
+          .eq('id', storedStationId)
+          .single();
+          
+        if (stationError) {
+          console.error("Error fetching station name:", stationError);
+          setStationName("Unknown Station");
+        } else {
+          console.log("Found station name:", stationData.name);
+          setStationName(stationData.name);
+        }
+      } else {
         // If no stored station ID, try to get it from user profile
+        console.log("No stored station ID, fetching from user profile...");
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('station_id, role')
@@ -41,7 +65,14 @@ export function useSupervisorReports(userId: string | undefined) {
           return;
         }
         
-        if (!userData.station_id && userData.role.toLowerCase() !== 'administrator' && userData.role.toLowerCase() !== 'commander' && userData.role.toLowerCase() !== 'ocs') {
+        userRole = userData.role?.toLowerCase() || '';
+        console.log("User role:", userRole);
+        
+        if (!userData.station_id && 
+            userRole !== 'administrator' && 
+            userRole !== 'commander' && 
+            userRole !== 'ocs') {
+          console.error("User has no station assigned and is not an admin role");
           toast({
             title: "No Station Assigned",
             description: "You are not assigned to any station. Please contact an administrator.",
@@ -53,7 +84,9 @@ export function useSupervisorReports(userId: string | undefined) {
         
         // Use the station ID from user profile if available
         if (userData.station_id) {
+          console.log("Using station ID from user profile:", userData.station_id);
           setStationId(userData.station_id);
+          effectiveStationId = userData.station_id;
           
           // Store it for future use
           localStorage.setItem('selected_station_id', userData.station_id);
@@ -69,45 +102,53 @@ export function useSupervisorReports(userId: string | undefined) {
             console.error("Error fetching station name:", stationError);
             setStationName("Unknown Station");
           } else {
+            console.log("Found station name:", stationData.name);
             setStationName(stationData.name);
           }
         } else {
           // For administrators, commanders, or OCS, set a placeholder
+          console.log("User is an admin/commander/OCS, no station filter will be applied");
           setStationId(null);
           setStationName("All Stations");
-          
-          // For these roles, we'll fetch all reports later
-        }
-      } else {
-        // Use the stored station ID
-        setStationId(storedStationId);
-        
-        // Get station name
-        const { data: stationData, error: stationError } = await supabase
-          .from('stations')
-          .select('name')
-          .eq('id', storedStationId)
-          .single();
-          
-        if (stationError) {
-          console.error("Error fetching station name:", stationError);
-          setStationName("Unknown Station");
-        } else {
-          setStationName(stationData.name);
         }
       }
 
       // Now fetch reports based on station ID
+      console.log("Fetching reports with effectiveStationId:", effectiveStationId);
+      
       let reportsQuery = supabase
         .from('reports')
         .select('*')
         .eq('status', 'Pending');
-        
+      
       // Only filter by station_id if we have one and the user isn't an administrator/commander/OCS
-      if (stationId) {
-        reportsQuery = reportsQuery.eq('station_id', stationId);
-        console.log(`Fetching reports for station ID: ${stationId}`);
+      if (effectiveStationId) {
+        console.log(`Applying station filter: ${effectiveStationId}`);
+        reportsQuery = reportsQuery.eq('station_id', effectiveStationId);
       } else {
+        // Check if the user role was fetched earlier or get it now
+        if (!userRole) {
+          const { data: roleData } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', userId)
+            .single();
+            
+          userRole = roleData?.role?.toLowerCase() || '';
+        }
+        
+        // Only admins, commanders, and OCS can see all reports
+        if (userRole !== 'administrator' && userRole !== 'commander' && userRole !== 'ocs') {
+          console.error("User has no station ID and is not authorized to view all reports");
+          toast({
+            title: "Station Required",
+            description: "To view reports, you need to be assigned to a station.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        
         console.log("Fetching all reports (admin/commander view)");
       }
       
@@ -143,12 +184,12 @@ export function useSupervisorReports(userId: string | undefined) {
         .select('id, full_name, email, role, status');
         
       // Only filter by station_id if we have one
-      if (stationId) {
-        officersQuery = officersQuery.eq('station_id', stationId);
+      if (effectiveStationId) {
+        officersQuery = officersQuery.eq('station_id', effectiveStationId);
       }
       
       // Always filter for officers only
-      officersQuery = officersQuery.eq('role', 'officer');
+      officersQuery = officersQuery.eq('role', 'Officer');
       
       const { data: officersData, error: officersError } = await officersQuery;
 
