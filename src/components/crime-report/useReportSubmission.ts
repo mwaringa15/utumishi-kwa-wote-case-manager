@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast"; // Updated import path
 import { supabase } from "@/integrations/supabase/client";
@@ -28,7 +29,7 @@ export function useReportSubmission() {
         contact_phone: data.contactPhone || null,
         additional_info: data.additionalInfo || null,
         reporter_id: user?.id || null, // Allow null if user is not authenticated
-        status: 'Submitted'
+        status: 'Pending' // Changed to 'Pending' so supervisors can review it
       };
       
       console.log("Sending report data to server:", reportData);
@@ -59,7 +60,7 @@ export function useReportSubmission() {
         
       if (caseError) {
         // If no case was created by the trigger, create one now for officers
-        if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator', 'Supervisor'].includes(user.role)) {
+        if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator'].includes(user.role)) {
           console.log("No case found, creating one for officer...");
           
           // Create a case manually
@@ -82,44 +83,60 @@ export function useReportSubmission() {
           newCaseId = newCase.id;
           console.log("Created new case:", newCaseId);
         } else {
-          console.error("Error fetching case ID:", caseError);
-          throw new Error("Report submitted, but couldn't retrieve case ID.");
+          console.log("Report submitted for supervisor review");
+          // For non-officers, just show a success message without case ID
+          toast({
+            title: "Report submitted successfully",
+            description: "Your report has been submitted for review. A supervisor will review it shortly.",
+          });
+          
+          // If user is authenticated, redirect them to dashboard, otherwise to the home page
+          if (user) {
+            navigate("/dashboard");
+          } else {
+            navigate("/");
+          }
+          
+          setIsSubmitting(false);
+          return true;
         }
       } else {
         newCaseId = caseData.id;
       }
       
-      console.log("Retrieved case ID:", newCaseId);
-      setCaseId(newCaseId);
-
-      // Format the case ID for display (first 8 characters in uppercase)
-      const displayCaseId = newCaseId.substring(0, 8).toUpperCase();
-      
-      toast({ // toast usage is fine
-        title: "Report submitted successfully",
-        description: `Your case ID is: ${displayCaseId}. Use this ID to track your case status.`,
-      });
-      
-      // Clear any potentially cached case information in session storage
-      sessionStorage.removeItem('lastViewedCase');
-
-      // Redirect based on user role or email domain
-      if (user?.email?.endsWith('@supervisor.go.ke') || ["Supervisor"].includes(user?.role || "")) {
-        navigate("/supervisor-dashboard");
-      } else if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator'].includes(user.role)) {
-        // Make sure we're using the correct case ID from the newly created case
-        console.log(`Redirecting officer to new case: ${newCaseId}`);
-        // Use replace instead of push to avoid back button issues
-        navigate(`/case/${newCaseId}`, { replace: true });
-      } else {
-        // For public users, navigate to track case page with the new ID
-        navigate(`/track-case?id=${newCaseId}`);
+      if (newCaseId) {
+        console.log("Retrieved case ID:", newCaseId);
+        setCaseId(newCaseId);
+  
+        // Format the case ID for display (first 8 characters in uppercase)
+        const displayCaseId = newCaseId.substring(0, 8).toUpperCase();
+        
+        toast({
+          title: "Report submitted successfully",
+          description: `Your case ID is: ${displayCaseId}. Use this ID to track your case status.`,
+        });
+        
+        // Clear any potentially cached case information in session storage
+        sessionStorage.removeItem('lastViewedCase');
+  
+        // Redirect based on user role
+        if (user?.role?.toLowerCase() === "supervisor") {
+          navigate("/supervisor-dashboard");
+        } else if (user?.role && ['officer', 'ocs', 'commander', 'administrator'].includes(user.role.toLowerCase())) {
+          // Make sure we're using the correct case ID from the newly created case
+          console.log(`Redirecting officer to new case: ${newCaseId}`);
+          // Use replace instead of push to avoid back button issues
+          navigate(`/case/${newCaseId}`, { replace: true });
+        } else {
+          // For public users, navigate to track case page with the new ID
+          navigate(`/track-case?id=${newCaseId}`);
+        }
       }
       
       return true;
     } catch (error: any) {
       console.error("Error in report submission process:", error);
-      toast({ // toast usage is fine
+      toast({
         title: "Error submitting report",
         description: error.message || "Please try again later",
         variant: "destructive",

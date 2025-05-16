@@ -33,7 +33,7 @@ export function useSupervisorData(user: User | null) {
       if (user.id) {
         const { data: userData, error: userError } = await supabase
           .from('users')
-          .select('station_id') // Supabase schema uses 'station_id', not 'station' for the column name in users table
+          .select('station_id')
           .eq('id', user.id)
           .single();
         if (userError) {
@@ -42,7 +42,7 @@ export function useSupervisorData(user: User | null) {
         fetchedStationId = userData?.station_id || null;
       }
 
-      if (!fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") { // Admins/Commanders might see all
+      if (!fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
         toast({ title: "No Station ID", description: "Supervisor's station ID could not be determined.", variant: "destructive" });
         setIsLoading(false);
         return;
@@ -86,10 +86,11 @@ export function useSupervisorData(user: User | null) {
       }));
       setCases(formattedCases);
 
+      // Modified report query to filter by station_id
       const reportQuery = supabase
         .from('reports')
         .select('*')
-        .eq('status', 'Pending'); // Assuming 'Pending' is the status for reports not yet cases
+        .eq('status', 'Pending');
       
       if (fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
         reportQuery.eq('station_id', fetchedStationId);
@@ -107,7 +108,7 @@ export function useSupervisorData(user: User | null) {
         createdAt: r.created_at,
         location: r.location,
         category: r.category,
-        crimeType: r.category, // Ensure this is what's intended, often category and crimeType might differ
+        crimeType: r.category,
       }));
       setPendingReports(formattedReports);
 
