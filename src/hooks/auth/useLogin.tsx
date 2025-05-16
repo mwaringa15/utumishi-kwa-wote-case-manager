@@ -19,6 +19,15 @@ export function useLogin() {
       // Check for demo accounts first
       const demoAccount = checkForDemoAccount(email, password);
       if (demoAccount) {
+        // If it's a supervisor or admin demo account, assign a station
+        if (["Supervisor", "Administrator", "Commander", "OCS"].includes(demoAccount.user.role)) {
+          // For demo accounts, store a default station ID if none was selected
+          if (stationId) {
+            localStorage.setItem('selected_station_id', stationId);
+            console.log("Demo account: stored station ID", stationId);
+          }
+        }
+        
         toast({
           title: "Login successful",
           description: `Welcome back, ${email.split("@")[0]}!`,

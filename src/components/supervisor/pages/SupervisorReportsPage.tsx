@@ -45,6 +45,20 @@ const SupervisorReportsPage = () => {
     }
   }, [user, navigate]);
 
+  // If no station is selected for supervisor role, show warning
+  useEffect(() => {
+    if (user && 
+        user.role.toLowerCase() === "supervisor" && 
+        !stationId && 
+        !isLoading) {
+      toast({
+        title: "No Station Selected",
+        description: "Please log in again and select a station to properly view reports.",
+        variant: "destructive",
+      });
+    }
+  }, [user, stationId, isLoading, toast]);
+
   if (!user) return null;
 
   return (
@@ -61,7 +75,7 @@ const SupervisorReportsPage = () => {
               <p className="text-gray-500">
                 {stationId 
                   ? `Review and create cases from pending reports at your station` 
-                  : `Please select a station from your profile settings to view station-specific reports`
+                  : `Please select a station from the login page to view station-specific reports`
                 }
               </p>
             </div>

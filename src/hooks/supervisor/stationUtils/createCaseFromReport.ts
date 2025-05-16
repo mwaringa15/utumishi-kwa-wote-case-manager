@@ -25,11 +25,18 @@ export const createCaseFromReport = async (
       throw reportError;
     }
     
+    // Use the station_id from the report if available, otherwise use the provided stationId
+    const effectiveStationId = reportData.station_id || stationId;
+    
+    if (!effectiveStationId) {
+      throw new Error("Station ID not found for this report or supervisor");
+    }
+    
     // Retrieve the station name from the stations table
     const { data: stationData, error: stationError } = await supabase
       .from('stations')
       .select('name')
-      .eq('id', reportData.station_id || stationId)
+      .eq('id', effectiveStationId)
       .single();
       
     if (stationError) {
