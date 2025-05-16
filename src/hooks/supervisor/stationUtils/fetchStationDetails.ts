@@ -1,52 +1,87 @@
 
-import { SupabaseClient } from '@supabase/supabase-js';
-import { ToastType } from '@/components/supervisor/types'; // Assuming ToastType is defined here or in a shared types file
+import { supabase } from "@/integrations/supabase/client";
+import { ToastType } from "@/hooks/supervisor/types";
 
-interface FetchStationDetailsArgs {
-  supabase: SupabaseClient<any, "public", any>;
+interface FetchStationDetailsParams {
+  supabase: typeof supabase;
   userId: string;
   toast: ToastType;
 }
 
-export interface StationDetailsResult {
+interface StationDetails {
   stationId: string;
   stationName: string;
+  userRole: string;
 }
 
-export async function fetchStationDetails({ supabase, userId, toast }: FetchStationDetailsArgs): Promise<StationDetailsResult | null> {
-  // 1. Get the user's station_id
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('station_id')
-    .eq('id', userId)
-    .single();
+export async function fetchStationDetails({
+  supabase,
+  userId,
+  toast
+}: FetchStationDetailsParams): Promise<StationDetails | null> {
+  try {
+    // Get the user's station_id and role from users table
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('station_id, role')
+      .eq('id', userId)
+      .single();
 
-  if (userError || !userData?.station_id) {
-    toast({
-      title: "Error fetching user data",
-      description: userError?.message || "Could not determine your station. Please ensure you are assigned to one.",
-      variant: "destructive",
-    });
+    if (userError) {
+      console.error("Error fetching user's station_id:", userError);
+      toast({
+        title: "Error",
+        description: "Could not fetch user data",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    const stationId = userData?.station_id;
+    const userRole = userData?.role;
+
+    if (!stationId && userRole !== "Administrator" && userRole !== "Commander") {
+      toast({
+        title: "No Station ID",
+        description: "Your station could not be determined",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    // If user is an administrator or commander without station_id, we don't need a station name
+    if (!stationId && (userRole === "Administrator" || userRole === "Commander")) {
+      return {
+        stationId: "",
+        stationName: "All Stations",
+        userRole
+      };
+    }
+
+    // Get the station name
+    const { data: stationData, error: stationError } = await supabase
+      .from('stations')
+      .select('name')
+      .eq('id', stationId)
+      .single();
+
+    if (stationError) {
+      console.error("Error fetching station name:", stationError);
+      toast({
+        title: "Error",
+        description: "Could not fetch station details",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    return {
+      stationId: stationId || "",
+      stationName: stationData?.name || "Unknown Station",
+      userRole
+    };
+  } catch (error) {
+    console.error("Error in fetchStationDetails:", error);
     return null;
   }
-  
-  const stationId = userData.station_id;
-
-  // 2. Fetch station details
-  const { data: stationDetailsData, error: stationError } = await supabase
-    .from('stations')
-    .select('id, name')
-    .eq('id', stationId)
-    .single();
-  
-  if (stationError || !stationDetailsData) {
-    toast({
-      title: "Error fetching station details",
-      description: stationError?.message || "Could not load details for your assigned station.",
-      variant: "destructive",
-    });
-    return null;
-  }
-
-  return { stationId, stationName: stationDetailsData.name };
 }

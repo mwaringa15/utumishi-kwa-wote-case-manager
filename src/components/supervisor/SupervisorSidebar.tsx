@@ -56,8 +56,8 @@ export function SupervisorSidebar() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isActive("/cases")}>
-                  <Link to="/cases">
+                <SidebarMenuButton asChild isActive={isActive("/supervisor-dashboard/cases")}>
+                  <Link to="/supervisor-dashboard/cases">
                     <ClipboardList />
                     <span>Cases</span>
                   </Link>
@@ -65,8 +65,8 @@ export function SupervisorSidebar() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isActive("/reports")}>
-                  <Link to="/reports">
+                <SidebarMenuButton asChild isActive={isActive("/supervisor-dashboard/reports")}>
+                  <Link to="/supervisor-dashboard/reports">
                     <AlertCircle />
                     <span>Reports</span>
                   </Link>
@@ -74,8 +74,8 @@ export function SupervisorSidebar() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isActive("/officers")}>
-                  <Link to="/officers">
+                <SidebarMenuButton asChild isActive={isActive("/supervisor-dashboard/officers")}>
+                  <Link to="/supervisor-dashboard/officers">
                     <Users2 />
                     <span>Officers</span>
                   </Link>
@@ -84,8 +84,8 @@ export function SupervisorSidebar() {
               
               {isCommanderOrAdmin && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={isActive("/analytics")}>
-                    <Link to="/analytics">
+                  <SidebarMenuButton asChild isActive={isActive("/supervisor-dashboard/analytics")}>
+                    <Link to="/supervisor-dashboard/analytics">
                       <BarChart3 />
                       <span>Analytics</span>
                     </Link>

@@ -18,9 +18,9 @@ import NotFound from "./pages/NotFound";
 import FAQPage from "./pages/FAQPage";
 import JudiciaryDashboard from "./pages/JudiciaryDashboard";
 import SupervisorDashboard from "./pages/SupervisorDashboard";
-import SupervisorCases from "./pages/SupervisorCases";
-import SupervisorReports from "./pages/SupervisorReports";
-import SupervisorOfficers from "./pages/SupervisorOfficers";
+import SupervisorCases from "./pages/supervisor/SupervisorCases";
+import SupervisorReports from "./pages/supervisor/SupervisorReports";
+import SupervisorOfficers from "./pages/supervisor/SupervisorOfficers";
 import CaseDetails from "./pages/CaseDetails";
 
 // Login and Register pages
@@ -87,7 +87,7 @@ const App = () => (
               />} 
             />
             <Route 
-              path="/cases" 
+              path="/supervisor-dashboard/cases" 
               element={<ProtectedRoute 
                 element={<SupervisorCases />} 
                 allowedRoles={["OCS", "Commander", "Administrator", "Supervisor"]} 
@@ -95,7 +95,7 @@ const App = () => (
               />} 
             />
             <Route 
-              path="/reports" 
+              path="/supervisor-dashboard/reports" 
               element={<ProtectedRoute 
                 element={<SupervisorReports />} 
                 allowedRoles={["OCS", "Commander", "Administrator", "Supervisor"]} 
@@ -103,7 +103,7 @@ const App = () => (
               />} 
             />
             <Route 
-              path="/officers" 
+              path="/supervisor-dashboard/officers" 
               element={<ProtectedRoute 
                 element={<SupervisorOfficers />} 
                 allowedRoles={["OCS", "Commander", "Administrator", "Supervisor"]} 
@@ -120,6 +120,11 @@ const App = () => (
                 redirectTo="/dashboard" 
               />} 
             />
+            
+            {/* Redirect old routes to new paths */}
+            <Route path="/cases" element={<Navigate to="/supervisor-dashboard/cases" replace />} />
+            <Route path="/reports" element={<Navigate to="/supervisor-dashboard/reports" replace />} />
+            <Route path="/officers" element={<Navigate to="/supervisor-dashboard/officers" replace />} />
             
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
