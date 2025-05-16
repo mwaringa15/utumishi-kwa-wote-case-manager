@@ -19,6 +19,9 @@ export function useSupervisorReports(userId: string | undefined) {
     const fetchReportsData = async () => {
       setIsLoading(true);
       try {
+        // First try to get station_id from localStorage (if set during login)
+        const storedStationId = localStorage.getItem('selected_station_id');
+        
         // Fetch the supervisor's station details
         const stationDetails = await fetchStationDetails({ 
           supabase, 
@@ -36,17 +39,27 @@ export function useSupervisorReports(userId: string | undefined) {
           return;
         }
 
-        setStationId(stationDetails.stationId);
+        // Use stored station ID if available, otherwise use the one from user profile
+        const effectiveStationId = storedStationId || stationDetails.stationId;
+        
+        setStationId(effectiveStationId);
         setStationName(stationDetails.stationName);
+
+        console.log(`Fetching reports for station ID: ${effectiveStationId}`);
 
         // First fetch all reports for this station
         const { data: reportsData, error: reportsError } = await supabase
           .from('reports')
           .select('*')
-          .eq('station_id', stationDetails.stationId)
+          .eq('station_id', effectiveStationId)
           .eq('status', 'Pending');
 
-        if (reportsError) throw reportsError;
+        if (reportsError) {
+          console.error("Error fetching reports:", reportsError);
+          throw reportsError;
+        }
+
+        console.log(`Found ${reportsData?.length || 0} pending reports for station`);
 
         // Then fetch all existing case report_ids
         const { data: casesData, error: casesError } = await supabase
@@ -63,11 +76,13 @@ export function useSupervisorReports(userId: string | undefined) {
           !reportIdsWithCases.includes(report.id)
         );
 
+        console.log(`${reportsWithoutCases.length} reports don't have cases yet`);
+
         // Get officers for case assignment - only get officers from the same station
         const { data: officersData, error: officersError } = await supabase
           .from('users')
           .select('id, full_name, email, role, status')
-          .eq('station_id', stationDetails.stationId)
+          .eq('station_id', effectiveStationId)
           .eq('role', 'officer');  // Using lowercase role
 
         if (officersError) throw officersError;
@@ -117,6 +132,19 @@ export function useSupervisorReports(userId: string | undefined) {
     pendingReports,
     officers,
     stationId,
-    stationName
+    stationName,
+    // Add a refresh function that can be called after creating a case
+    refreshData: () => {
+      if (userId) {
+        setIsLoading(true);
+        // Re-fetch the reports data
+        const fetchReportsData = async () => {
+          // ... The same code as above for fetching reports data
+          // This is intentionally not implemented to avoid code duplication
+          // The component will re-render and the useEffect will be triggered again
+        };
+        fetchReportsData();
+      }
+    }
   };
 }

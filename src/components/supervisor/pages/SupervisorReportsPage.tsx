@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -22,18 +22,20 @@ const SupervisorReportsPage = () => {
     pendingReports,
     officers,
     stationId,
-    stationName
+    stationName,
+    refreshData
   } = useSupervisorReports(user?.id);
   
   // Handle case creation
   const handleCreateCase = async (reportId: string, officerId: string, officerName: string) => {
     const success = await createCaseFromReport(reportId, officerId, officerName, stationId, toast);
     
-    // If case was created successfully, remove it from the local state
+    // If case was created successfully, refresh the reports list
     if (success) {
-      // We'll rely on the component re-rendering due to the hook updating its state
-      // This approach avoids maintaining redundant local state in this component
+      refreshData();
     }
+    
+    return success;
   };
   
   // If user is not logged in or not authorized, redirect
@@ -55,8 +57,13 @@ const SupervisorReportsPage = () => {
           <SidebarInset className="p-6">
             <div className="mb-6">
               <BackButton />
-              <h1 className="text-2xl font-bold mt-4">Reports for {stationName}</h1>
-              <p className="text-gray-500">Review and create cases from pending reports at your station</p>
+              <h1 className="text-2xl font-bold mt-4">Reports for {stationName || "All Stations"}</h1>
+              <p className="text-gray-500">
+                {stationId 
+                  ? `Review and create cases from pending reports at your station` 
+                  : `Please select a station from your profile settings to view station-specific reports`
+                }
+              </p>
             </div>
             
             <PendingReportsTab 

@@ -1,60 +1,95 @@
 
-import { ToastType } from "@/hooks/supervisor/types";
 import { supabase } from "@/integrations/supabase/client";
+import { ToastType } from "@/components/supervisor/types";
+import { v4 as uuidv4 } from 'uuid';
 
 export const createCaseFromReport = async (
-  reportId: string, 
-  officerId: string, 
-  officerName: string, 
+  reportId: string,
+  officerId: string,
+  officerName: string,
   stationId: string | null,
   toast: ToastType
 ): Promise<boolean> => {
+  // Generate a unique ID for the case
+  const caseId = uuidv4();
+  
   try {
-    if (!stationId) {
-      toast({
-        title: "Station ID Missing",
-        description: "Cannot create case without a valid station ID",
-        variant: "destructive",
-      });
-      return false;
+    // First, get the report details to retrieve the station
+    const { data: reportData, error: reportError } = await supabase
+      .from('reports')
+      .select('title, station_id')
+      .eq('id', reportId)
+      .single();
+    
+    if (reportError) {
+      throw reportError;
     }
-
-    // Create a new case in the database
+    
+    // Retrieve the station name from the stations table
+    const { data: stationData, error: stationError } = await supabase
+      .from('stations')
+      .select('name')
+      .eq('id', reportData.station_id || stationId)
+      .single();
+      
+    if (stationError) {
+      throw stationError;
+    }
+    
+    // Insert the new case with status "Under Investigation"
     const { data, error } = await supabase
       .from('cases')
       .insert({
+        id: caseId,
         report_id: reportId,
         assigned_officer_id: officerId,
         status: 'Under Investigation',
-        station: stationId,
+        station: stationData.name,
         priority: 'medium'
       })
-      .select();
-
-    if (error) throw error;
-
-    // Update report status
+      .select()
+      .single();
+      
+    if (error) {
+      throw error;
+    }
+    
+    // Update the report status to reflect it's now under investigation
     const { error: updateError } = await supabase
       .from('reports')
       .update({ status: 'Under Investigation' })
       .eq('id', reportId);
-
-    if (updateError) throw updateError;
-
-    // Show success toast
+      
+    if (updateError) {
+      throw updateError;
+    }
+    
+    // Create a case history entry to record the assignment
+    await supabase
+      .from('case_history')
+      .insert({
+        case_id: caseId,
+        updated_by: officerId,
+        status_before: 'Submitted',
+        status_after: 'Under Investigation',
+        update_note: `Case created from report and assigned to officer ${officerName}`
+      });
+    
     toast({
-      title: "Case created",
-      description: `Case successfully created and assigned to Officer ${officerName}`,
+      title: "Case Created",
+      description: `Case successfully created and assigned to ${officerName}`,
     });
-
+    
     return true;
-  } catch (error) {
-    console.error("Error creating case:", error);
+  } catch (error: any) {
+    console.error("Error creating case from report:", error);
+    
     toast({
-      title: "Error creating case",
-      description: "Failed to create the case from this report",
+      title: "Error Creating Case",
+      description: error.message || "An error occurred while creating the case",
       variant: "destructive",
     });
+    
     return false;
   }
 };
