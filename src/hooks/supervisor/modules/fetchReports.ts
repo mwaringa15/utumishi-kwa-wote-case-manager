@@ -9,18 +9,20 @@ export async function fetchReports(stationId: string | null): Promise<CrimeRepor
   try {
     console.log("Fetching reports with stationId:", stationId);
     
-    // Fetch pending reports
+    // With the new RLS policy in place, the query will automatically filter by station
+    // if the user is a supervisor, but we'll still use stationId in the query for consistency
+    // and to handle admin/commander roles that can see all stations.
     let reportsQuery = supabase
       .from('reports')
       .select('*')
       .eq('status', 'Pending');
     
-    // Only filter by station_id if we have one
+    // Only filter by station_id if we have one (for admin/commander roles)
     if (stationId) {
-      console.log(`Applying station filter: ${stationId}`);
+      console.log(`Applying explicit station filter: ${stationId}`);
       reportsQuery = reportsQuery.eq('station_id', stationId);
     } else {
-      console.log("Fetching all reports (admin/commander view)");
+      console.log("No specific station filter applied (admin/commander view)");
     }
     
     const { data: reportsData, error: reportsError } = await reportsQuery;

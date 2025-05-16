@@ -7,25 +7,39 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export async function fetchPendingReports(stationId: string | null): Promise<CrimeReport[]> {
   try {
-    // First get pending reports for this station
+    console.log("Fetching pending reports with stationId:", stationId);
+    
+    // First get pending reports - RLS will automatically filter by station for supervisors
     let reportQuery = supabase
       .from('reports')
       .select('*')
       .eq('status', 'Pending');
     
+    // For admin/commander roles, we still filter by station if provided
     if (stationId) {
       reportQuery = reportQuery.eq('station_id', stationId);
+      console.log(`Explicitly filtering by station: ${stationId}`);
+    } else {
+      console.log("No station filter applied (for admin/commander roles)");
     }
 
     const { data: reportsData, error: reportsError } = await reportQuery;
-    if (reportsError) throw reportsError;
+    if (reportsError) {
+      console.error("Error fetching reports:", reportsError);
+      throw reportsError;
+    }
+    
+    console.log(`Found ${reportsData?.length || 0} pending reports`);
     
     // Then get all report_ids that already have cases
     const { data: existingReportIds, error: reportIdError } = await supabase
       .from('cases')
       .select('report_id');
     
-    if (reportIdError) throw reportIdError;
+    if (reportIdError) {
+      console.error("Error fetching case report IDs:", reportIdError);
+      throw reportIdError;
+    }
     
     // Extract the report_ids as an array
     const reportIdsWithCases = existingReportIds.map(item => item.report_id);
@@ -34,6 +48,8 @@ export async function fetchPendingReports(stationId: string | null): Promise<Cri
     const reportsWithoutCases = reportsData.filter(report => 
       !reportIdsWithCases.includes(report.id)
     );
+    
+    console.log(`${reportsWithoutCases.length} reports don't have cases yet`);
     
     return reportsWithoutCases.map((r: any) => ({
       id: r.id,

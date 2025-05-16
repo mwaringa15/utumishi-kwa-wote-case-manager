@@ -50,6 +50,17 @@ const SupervisorReportsPage = () => {
     }
   }, [user, navigate]);
 
+  // Show warning toast if supervisor has no station selected
+  useEffect(() => {
+    if (user && user.role.toLowerCase() === "supervisor" && !stationId && !isLoading) {
+      toast({
+        title: "No Station Selected",
+        description: "You don't have a station assigned. Please contact an administrator or log in again.",
+        variant: "destructive",
+      });
+    }
+  }, [user, stationId, isLoading, toast]);
+
   if (!user) return null;
 
   return (
@@ -83,13 +94,14 @@ const SupervisorReportsPage = () => {
               </Button>
             </div>
             
-            {/* Show warning if no station is selected for supervisor role */}
+            {/* Show prominent warning if no station is selected for supervisor role */}
             {user.role.toLowerCase() === "supervisor" && !stationId && !isLoading && (
               <Alert variant="destructive" className="mb-6">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>No Station Selected</AlertTitle>
                 <AlertDescription>
-                  Please log in again and select a station to properly view reports.
+                  Due to the new security policy, supervisors can only see reports from their assigned station.
+                  Please log in again and select a station, or contact an administrator to assign you to a station.
                 </AlertDescription>
               </Alert>
             )}
