@@ -27,15 +27,16 @@ export function ProtectedRoute({
     return <Navigate to={redirectTo} replace />;
   }
   
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+  if (allowedRoles.length > 0 && !allowedRoles.map(role => role.toLowerCase()).includes(user.role.toLowerCase())) {
     // Redirect to appropriate dashboard based on role
-    if (user.role === "Officer") {
+    const role = user.role.toLowerCase();
+    if (role === "officer") {
       return <Navigate to="/officer-dashboard" replace />;
-    } else if (user.role === "OCS" || user.role === "Commander" || user.role === "Administrator") {
+    } else if (role === "ocs" || role === "commander" || role === "administrator") {
       return <Navigate to="/supervisor-dashboard" replace />;
-    } else if (user.role === "Judiciary") {
+    } else if (role === "judiciary") {
       return <Navigate to="/judiciary-dashboard" replace />;
-    } else if (user.role === "Supervisor") {
+    } else if (role === "supervisor") {
       return <Navigate to="/supervisor-dashboard" replace />;
     } else {
       return <Navigate to="/dashboard" replace />;

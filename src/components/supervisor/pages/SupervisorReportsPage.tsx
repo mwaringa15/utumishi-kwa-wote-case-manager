@@ -64,7 +64,7 @@ const SupervisorReportsPage = () => {
           .from('users')
           .select('id, full_name, email, role, status')
           .eq('station_id', stationDetails.stationId)
-          .eq('role', 'Officer');
+          .eq('role', 'officer');  // Changed from 'Officer' to 'officer' to match lowercase in DB
 
         if (officersError) throw officersError;
 
@@ -73,7 +73,7 @@ const SupervisorReportsPage = () => {
           id: officer.id,
           name: officer.full_name || officer.email.split('@')[0],
           email: officer.email,
-          role: "Officer" as UserRole,
+          role: "Officer" as UserRole,  // Type casting still uses the enum value
           badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
           assignedCases: 0 // Placeholder
         }));
@@ -159,7 +159,7 @@ const SupervisorReportsPage = () => {
   };
   
   // If user is not logged in or not authorized, redirect
-  if (!user || !["OCS", "Commander", "Administrator", "Supervisor"].includes(user.role)) {
+  if (!user || !["ocs", "commander", "administrator", "supervisor"].includes(user.role.toLowerCase())) {  // Changed to lowercase comparison
     navigate('/dashboard');
     return null;
   }

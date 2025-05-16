@@ -25,16 +25,18 @@ export const determineRoleFromEmail = (email: string): UserRole => {
  * Determines a redirect path based on user role
  */
 export const getRedirectPathForRole = (role: UserRole): string => {
-  switch (role) {
-    case "Officer":
+  const normalizedRole = role.toLowerCase();
+  
+  switch (normalizedRole) {
+    case "officer":
       return "/officer-dashboard";
-    case "OCS":
-    case "Commander":
-    case "Administrator":
+    case "ocs":
+    case "commander":
+    case "administrator":
       return "/supervisor-dashboard";
-    case "Judiciary":
+    case "judiciary":
       return "/judiciary-dashboard";
-    case "Supervisor":
+    case "supervisor":
       return "/supervisor-dashboard";
     default:
       return "/dashboard";
