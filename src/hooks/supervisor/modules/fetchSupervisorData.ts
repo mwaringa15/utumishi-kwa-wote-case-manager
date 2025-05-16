@@ -73,7 +73,7 @@ export async function fetchSupervisorData(
       } : undefined,
     }));
 
-    // Modified report query to filter by station_id and to exclude reports that already have cases
+    // First get pending reports for this station
     const reportQuery = supabase
       .from('reports')
       .select('*')
@@ -83,25 +83,25 @@ export async function fetchSupervisorData(
       reportQuery.eq('station_id', fetchedStationId);
     }
 
-    // Get all report_ids that already have cases
+    const { data: reportsData, error: reportsError } = await reportQuery;
+    if (reportsError) throw reportsError;
+    
+    // Then get all report_ids that already have cases
     const { data: existingReportIds, error: reportIdError } = await supabase
       .from('cases')
       .select('report_id');
     
     if (reportIdError) throw reportIdError;
     
-    // If there are existing cases, exclude their report_ids from the query
-    if (existingReportIds && existingReportIds.length > 0) {
-      const reportIdsWithCases = existingReportIds.map((item: any) => item.report_id);
-      if (reportIdsWithCases.length > 0) {
-        reportQuery.not('id', 'in', reportIdsWithCases);
-      }
-    }
-
-    const { data: reportsData, error: reportsError } = await reportQuery;
-    if (reportsError) throw reportsError;
+    // Extract the report_ids as an array
+    const reportIdsWithCases = existingReportIds.map(item => item.report_id);
     
-    const formattedReports: CrimeReport[] = (reportsData || []).map((r: any) => ({
+    // Filter out reports that already have cases
+    const reportsWithoutCases = reportsData.filter(report => 
+      !reportIdsWithCases.includes(report.id)
+    );
+    
+    const formattedReports: CrimeReport[] = reportsWithoutCases.map((r: any) => ({
       id: r.id,
       title: r.title,
       description: r.description,

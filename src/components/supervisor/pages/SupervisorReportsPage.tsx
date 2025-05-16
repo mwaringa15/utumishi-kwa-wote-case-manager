@@ -50,18 +50,29 @@ const SupervisorReportsPage = () => {
         setStationId(stationDetails.stationId);
         setStationName(stationDetails.stationName);
 
-        // Modified query to get pending reports for this station that don't have associated cases
+        // First fetch all reports for this station
         const { data: reportsData, error: reportsError } = await supabase
           .from('reports')
           .select('*')
           .eq('station_id', stationDetails.stationId)
-          .eq('status', 'Pending')
-          .not('id', 'in', supabase
-            .from('cases')
-            .select('report_id')
-          );
+          .eq('status', 'Pending');
 
         if (reportsError) throw reportsError;
+
+        // Then fetch all existing case report_ids
+        const { data: casesData, error: casesError } = await supabase
+          .from('cases')
+          .select('report_id');
+          
+        if (casesError) throw casesError;
+
+        // Extract the report_ids that already have cases
+        const reportIdsWithCases = casesData.map(item => item.report_id);
+
+        // Filter out reports that already have cases
+        const reportsWithoutCases = reportsData.filter(report => 
+          !reportIdsWithCases.includes(report.id)
+        );
 
         // Get officers for case assignment - only get officers from the same station
         const { data: officersData, error: officersError } = await supabase
@@ -83,7 +94,7 @@ const SupervisorReportsPage = () => {
         }));
 
         // Format reports
-        const formattedReports: CrimeReport[] = reportsData.map(report => ({
+        const formattedReports: CrimeReport[] = reportsWithoutCases.map(report => ({
           id: report.id,
           title: report.title,
           description: report.description,
