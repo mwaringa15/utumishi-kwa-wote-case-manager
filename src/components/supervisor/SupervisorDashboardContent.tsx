@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SupervisorDashboardHeader } from "@/components/supervisor/SupervisorDashboardHeader";
 import { StatsOverview } from "@/components/supervisor/StatsOverview";
