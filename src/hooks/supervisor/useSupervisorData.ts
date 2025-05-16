@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { User, Case, CrimeReport, UserRole } from "@/types";
+import { User, Case, CrimeReport, UserRole, CaseStatus } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { SupervisorStats } from "./types";
 import { fetchSupervisorData } from "./modules/fetchSupervisorData";
@@ -65,7 +65,7 @@ export function useSupervisorData(user: User | null) {
       // Update local state
       const updatedCases = cases.map(c => 
         c.id === caseId 
-          ? { ...c, assignedOfficerId: officerId, assignedOfficerName: officerName, status: 'Under Investigation' } 
+          ? { ...c, assignedOfficerId: officerId, assignedOfficerName: officerName, status: 'Under Investigation' as CaseStatus } 
           : c
       );
       setCases(updatedCases);
@@ -95,7 +95,7 @@ export function useSupervisorData(user: User | null) {
     if (success) {
       const updatedCases = cases.map(c => 
         c.id === caseId 
-          ? { ...c, status: 'Submitted to Judiciary' } 
+          ? { ...c, status: 'Submitted to Judiciary' as CaseStatus } 
           : c
       );
       setCases(updatedCases);

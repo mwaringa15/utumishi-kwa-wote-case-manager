@@ -1,5 +1,5 @@
 
-import { User, Case, CrimeReport } from "@/types";
+import { User, Case, CrimeReport, CaseStatus, CrimeStatus } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { ToastType } from "../types";
 
@@ -57,7 +57,7 @@ export async function fetchSupervisorData(
       assignedOfficerId: c.assigned_officer_id,
       assignedOfficerName: c.users?.full_name || "Unassigned",
       progress: c.status, 
-      status: c.status, 
+      status: c.status as CaseStatus, 
       lastUpdated: c.updated_at,
       priority: c.priority,
       station: c.station,
@@ -65,7 +65,7 @@ export async function fetchSupervisorData(
         id: c.reports.id,
         title: c.reports.title,
         description: c.reports.description,
-        status: c.reports.status,
+        status: c.reports.status as CrimeStatus,
         createdById: c.reports.reporter_id,
         createdAt: c.reports.created_at,
         location: c.reports.location,
@@ -105,7 +105,7 @@ export async function fetchSupervisorData(
       id: r.id,
       title: r.title,
       description: r.description,
-      status: r.status,
+      status: r.status as CrimeStatus,
       createdById: r.reporter_id,
       createdAt: r.created_at,
       location: r.location,

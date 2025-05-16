@@ -1,5 +1,5 @@
 
-import { User, CrimeReport } from "@/types";
+import { User, CrimeReport, CaseStatus } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { ToastType } from "../types";
 
@@ -13,7 +13,7 @@ export async function assignCase(
   try {
     const { error } = await supabase
       .from('cases')
-      .update({ assigned_officer_id: officerId, status: 'Under Investigation', updated_at: new Date().toISOString() })
+      .update({ assigned_officer_id: officerId, status: 'Under Investigation' as CaseStatus, updated_at: new Date().toISOString() })
       .eq('id', caseId);
     if (error) throw error;
     showToast({ title: "Case Assigned", description: `Case ${caseId.substring(0,8)} assigned to ${officerName}.` });
@@ -62,7 +62,7 @@ export async function createCase(
       .insert({
         report_id: reportId,
         assigned_officer_id: officerId,
-        status: 'Under Investigation', 
+        status: 'Under Investigation' as CaseStatus, 
         priority: 'medium', 
         station: userStationId, 
         created_at: new Date().toISOString(),
@@ -75,7 +75,7 @@ export async function createCase(
 
     const { error: reportUpdateError } = await supabase
       .from('reports')
-      .update({ status: 'Under Investigation' }) 
+      .update({ status: 'Under Investigation' as CaseStatus }) 
       .eq('id', reportId);
       
     if (reportUpdateError) throw reportUpdateError;
@@ -95,7 +95,7 @@ export async function submitToJudiciary(
   try {
     const { error } = await supabase
       .from('cases')
-      .update({ status: 'Submitted to Judiciary', updated_at: new Date().toISOString() })
+      .update({ status: 'Submitted to Judiciary' as CaseStatus, updated_at: new Date().toISOString() })
       .eq('id', caseId);
       
     if (error) throw error;
