@@ -1,3 +1,4 @@
+
 // src/types/index.ts
 
 // User types
@@ -18,7 +19,7 @@ export interface User {
 }
 
 // Crime report types
-export type CrimeStatus = "Submitted" | "Under Investigation" | "Closed" | "Rejected" | "Submitted to Judiciary" | "Under Court Process" | "Returned from Judiciary";
+export type CrimeStatus = "Submitted" | "Under Investigation" | "Closed" | "Rejected" | "Submitted to Judiciary" | "Under Court Process" | "Returned from Judiciary" | "Under Review";
 
 export interface CrimeReport {
   id: string;
@@ -38,7 +39,7 @@ export interface CrimeReport {
 }
 
 // Case types
-export type CaseProgress = "Pending" | "In Progress" | "Pending Review" | "Completed";
+export type CaseProgress = "Pending" | "In Progress" | "Pending Review" | "Completed" | "Under Review";
 // Update CaseStatus to match CrimeStatus to fix type compatibility issues
 export type CaseStatus = CrimeStatus;
 

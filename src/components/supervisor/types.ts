@@ -1,3 +1,4 @@
+
 import { Case, CaseStatus, CrimeReport, User, UserRole } from "@/types";
 
 export interface StationCase {
@@ -36,6 +37,13 @@ export interface StationData {
   unassignedCases: StationCase[];
   officers: StationOfficer[];
   pendingReports: any[];
+  stats?: { // Making stats optional to support both existing and new code
+    totalCases: number;
+    pendingReports: number;
+    activeCases: number;
+    completedCases: number;
+    totalOfficers: number;
+  };
 }
 
 export interface SupervisorDashboardProps {

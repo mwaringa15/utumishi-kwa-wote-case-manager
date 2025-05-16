@@ -4,7 +4,7 @@ import { User } from "@/types";
 import { StationData, StationCase, StationOfficer } from "@/components/supervisor/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { fetchStationDetails, StationDetailsResult } from "./stationUtils/fetchStationDetails";
+import { fetchStationDetails } from "./stationUtils/fetchStationDetails";
 import { fetchUnassignedCases } from "./stationUtils/fetchUnassignedCases";
 import { fetchStationOfficers } from "./stationUtils/fetchStationOfficers";
 import { assignCaseToOfficer as assignCaseUtil } from "./stationUtils/assignCaseToOfficer";
@@ -22,7 +22,7 @@ export function useStationData(user: User | null) {
 
     setLoading(true);
     try {
-      const stationDetails: StationDetailsResult | null = await fetchStationDetails({ supabase, userId: user.id, toast });
+      const stationDetails = await fetchStationDetails({ supabase, userId: user.id, toast });
 
       if (!stationDetails) {
         setLoading(false);
