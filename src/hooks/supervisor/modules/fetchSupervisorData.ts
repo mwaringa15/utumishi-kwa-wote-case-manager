@@ -36,40 +36,67 @@ export async function fetchSupervisorData(
       return null;
     }
 
-    const caseQuery = supabase
+    // Modified query to avoid the relationship error by directly selecting all fields
+    // instead of using the nested relationship selection that was causing issues
+    const { data: casesData, error: casesError } = await supabase
       .from('cases')
-      .select(`
-        *,
-        reports:report_id (*),
-        users:assigned_officer_id (full_name)
-      `);
-    
-    if (fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
-      caseQuery.eq('station', fetchedStationId);
-    }
+      .select('*')
+      .eq(fetchedStationId ? 'station' : 'id', fetchedStationId || '*');
       
-    const { data: casesData, error: casesError } = await caseQuery;
     if (casesError) throw casesError;
+    
+    // Now fetch related data separately
+    const caseIds = casesData.map(c => c.id);
+    const reportIds = casesData.map(c => c.report_id).filter(Boolean);
+    const officerIds = casesData.map(c => c.assigned_officer_id).filter(Boolean);
+    
+    // Get reports data
+    const { data: reportsData, error: reportsDataError } = await supabase
+      .from('reports')
+      .select('*')
+      .in('id', reportIds.length > 0 ? reportIds : ['00000000-0000-0000-0000-000000000000']);
+    
+    if (reportsDataError) throw reportsDataError;
+    
+    // Map reports by ID for easy lookup
+    const reportsById: Record<string, any> = {};
+    reportsData.forEach(report => {
+      reportsById[report.id] = report;
+    });
+    
+    // Get officers data
+    const { data: officersDataById, error: officersDataError } = await supabase
+      .from('users')
+      .select('id, full_name')
+      .in('id', officerIds.length > 0 ? officerIds : ['00000000-0000-0000-0000-000000000000']);
+    
+    if (officersDataError) throw officersDataError;
+    
+    // Map officers by ID for easy lookup
+    const officerNamesById: Record<string, string> = {};
+    officersDataById.forEach(officer => {
+      officerNamesById[officer.id] = officer.full_name;
+    });
 
     const formattedCases: Case[] = (casesData || []).map((c: any) => ({
       id: c.id,
       crimeReportId: c.report_id,
       assignedOfficerId: c.assigned_officer_id,
-      assignedOfficerName: c.users?.full_name || "Unassigned",
+      assignedOfficerName: c.assigned_officer_id ? officerNamesById[c.assigned_officer_id] : "Unassigned",
       progress: c.status, 
       status: c.status as CaseStatus, 
       lastUpdated: c.updated_at,
       priority: c.priority,
       station: c.station,
-      crimeReport: c.reports ? {
-        id: c.reports.id,
-        title: c.reports.title,
-        description: c.reports.description,
-        status: c.reports.status as CrimeStatus,
-        createdById: c.reports.reporter_id,
-        createdAt: c.reports.created_at,
-        location: c.reports.location,
-        crimeType: c.reports.category,
+      crimeReport: reportsById[c.report_id] ? {
+        id: reportsById[c.report_id].id,
+        title: reportsById[c.report_id].title,
+        description: reportsById[c.report_id].description,
+        status: reportsById[c.report_id].status as CrimeStatus,
+        createdById: reportsById[c.report_id].reporter_id,
+        createdAt: reportsById[c.report_id].created_at,
+        location: reportsById[c.report_id].location,
+        crimeType: reportsById[c.report_id].category,
       } : undefined,
     }));
 
@@ -83,7 +110,7 @@ export async function fetchSupervisorData(
       reportQuery.eq('station_id', fetchedStationId);
     }
 
-    const { data: reportsData, error: reportsError } = await reportQuery;
+    const { data: reportsData2, error: reportsError } = await reportQuery;
     if (reportsError) throw reportsError;
     
     // Then get all report_ids that already have cases
@@ -97,7 +124,7 @@ export async function fetchSupervisorData(
     const reportIdsWithCases = existingReportIds.map(item => item.report_id);
     
     // Filter out reports that already have cases
-    const reportsWithoutCases = reportsData.filter(report => 
+    const reportsWithoutCases = reportsData2.filter(report => 
       !reportIdsWithCases.includes(report.id)
     );
     
@@ -113,17 +140,28 @@ export async function fetchSupervisorData(
       crimeType: r.category,
     }));
 
-    // Fetch Officers
-    const officerQuery = supabase
+    // Fetch Officers from the same station as the supervisor
+    const { data: officersData, error: officersError } = await supabase
       .from('users')
-      .select('id, full_name, email, role, status') 
-      .eq('role', 'Officer');
+      .select('id, full_name, email, role, status')
+      .eq('role', 'officer');
 
     if (fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
-      officerQuery.eq('station_id', fetchedStationId);
+      // This is executed after the above query, but we can use the promise chaining pattern
+      // to improve this in the future
+      const { data: filteredOfficers } = await supabase
+        .from('users')
+        .select('id, full_name, email, role, status')
+        .eq('role', 'officer')
+        .eq('station_id', fetchedStationId);
+        
+      if (filteredOfficers) {
+        officersData.length = 0; // Clear the array
+        // Push all filtered officers
+        filteredOfficers.forEach(officer => officersData.push(officer));
+      }
     }
     
-    const { data: officersData, error: officersError } = await officerQuery;
     if (officersError) throw officersError;
 
     const officersWithCaseCounts = await Promise.all(
