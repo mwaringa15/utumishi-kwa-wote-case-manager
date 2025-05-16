@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { User } from "@/types";
+import { User, UserRole } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
@@ -25,12 +25,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Auth state changed:", event);
         if (session) {
           const supabaseUser = session.user;
+          // Get the role from email domain and convert to lowercase
+          const lowercaseRole = getRole(supabaseUser.email || "").toLowerCase();
+          
+          // Convert the lowercase string back to UserRole type
+          const userRole = lowercaseRole as UserRole;
+          
           // Map Supabase user to our app's User type
           const appUser: User = {
             id: supabaseUser.id,
             name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
             email: supabaseUser.email || "",
-            role: getRole(supabaseUser.email || "").toLowerCase(),
+            role: userRole,
             createdAt: supabaseUser.created_at
           };
           setUser(appUser);
@@ -45,12 +51,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         const supabaseUser = session.user;
+        // Get the role from email domain and convert to lowercase
+        const lowercaseRole = getRole(supabaseUser.email || "").toLowerCase();
+        
+        // Convert the lowercase string back to UserRole type
+        const userRole = lowercaseRole as UserRole;
+        
         // Map Supabase user to our app's User type
         const appUser: User = {
           id: supabaseUser.id,
           name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
           email: supabaseUser.email || "",
-          role: getRole(supabaseUser.email || "").toLowerCase(),
+          role: userRole,
           createdAt: supabaseUser.created_at
         };
         setUser(appUser);
