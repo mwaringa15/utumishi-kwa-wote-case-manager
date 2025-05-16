@@ -50,12 +50,16 @@ const SupervisorReportsPage = () => {
         setStationId(stationDetails.stationId);
         setStationName(stationDetails.stationName);
 
-        // Get pending reports for this specific station - now filtering by station_id
+        // Modified query to get pending reports for this station that don't have associated cases
         const { data: reportsData, error: reportsError } = await supabase
           .from('reports')
           .select('*')
           .eq('station_id', stationDetails.stationId)
-          .eq('status', 'Pending');
+          .eq('status', 'Pending')
+          .not('id', 'in', supabase
+            .from('cases')
+            .select('report_id')
+          );
 
         if (reportsError) throw reportsError;
 

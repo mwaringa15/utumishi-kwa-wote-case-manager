@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast"; // Updated import path
+import { useToast } from "@/hooks/use-toast"; 
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,7 +9,7 @@ import { CrimeReportFormValues } from "./types";
 export function useReportSubmission() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [caseId, setCaseId] = useState<string | null>(null);
-  const { toast } = useToast(); // toast usage is fine
+  const { toast } = useToast(); 
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -29,7 +29,7 @@ export function useReportSubmission() {
         contact_phone: data.contactPhone || null,
         additional_info: data.additionalInfo || null,
         reporter_id: user?.id || null, // Allow null if user is not authenticated
-        status: 'Pending' // Changed to 'Pending' so supervisors can review it
+        status: 'Pending' // Set to 'Pending' so supervisors can review it
       };
       
       console.log("Sending report data to server:", reportData);
@@ -60,7 +60,7 @@ export function useReportSubmission() {
         
       if (caseError) {
         // If no case was created by the trigger, create one now for officers
-        if (user?.role && ['Officer', 'OCS', 'Commander', 'Administrator'].includes(user.role)) {
+        if (user?.role && ['officer', 'ocs', 'commander', 'administrator'].includes(user.role.toLowerCase())) {
           console.log("No case found, creating one for officer...");
           
           // Create a case manually

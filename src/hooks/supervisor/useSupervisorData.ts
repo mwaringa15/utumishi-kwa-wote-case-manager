@@ -86,7 +86,7 @@ export function useSupervisorData(user: User | null) {
       }));
       setCases(formattedCases);
 
-      // Modified report query to filter by station_id
+      // Modified report query to filter by station_id and to exclude reports that already have cases
       const reportQuery = supabase
         .from('reports')
         .select('*')
@@ -94,6 +94,21 @@ export function useSupervisorData(user: User | null) {
       
       if (fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
         reportQuery.eq('station_id', fetchedStationId);
+      }
+
+      // Get all report_ids that already have cases
+      const { data: existingReportIds, error: reportIdError } = await supabase
+        .from('cases')
+        .select('report_id');
+      
+      if (reportIdError) throw reportIdError;
+      
+      // If there are existing cases, exclude their report_ids from the query
+      if (existingReportIds && existingReportIds.length > 0) {
+        const reportIdsWithCases = existingReportIds.map((item: any) => item.report_id);
+        if (reportIdsWithCases.length > 0) {
+          reportQuery.not('id', 'in', reportIdsWithCases);
+        }
       }
 
       const { data: reportsData, error: reportsError } = await reportQuery;
