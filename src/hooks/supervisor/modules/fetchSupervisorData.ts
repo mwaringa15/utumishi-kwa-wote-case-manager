@@ -72,11 +72,11 @@ export async function fetchSupervisorData(
     });
     
     // Get officers data - using the RLS policy we just created
-    const officersQuery = officerIds.length > 0
+    const caseOfficersQuery = officerIds.length > 0
       ? supabase.from('users').select('id, full_name, email, role, status, station_id').in('id', officerIds)
       : supabase.from('users').select('id, full_name, email, role, status, station_id').limit(1); // Fallback query
     
-    const { data: officersDataById, error: officersDataError } = await officersQuery;
+    const { data: officersDataById, error: officersDataError } = await caseOfficersQuery;
     
     if (officersDataError) throw officersDataError;
     
@@ -151,16 +151,16 @@ export async function fetchSupervisorData(
     }));
 
     // Fetch Officers from the same station as the supervisor - leveraging the RLS policy we just created
-    let officersQuery = supabase
+    let stationOfficersQuery = supabase
       .from('users')
       .select('id, full_name, email, role, status, station_id')
       .eq('role', 'officer');
     
     if (fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
-      officersQuery = officersQuery.eq('station_id', fetchedStationId);
+      stationOfficersQuery = stationOfficersQuery.eq('station_id', fetchedStationId);
     }
 
-    const { data: officersData, error: officersError } = await officersQuery;
+    const { data: officersData, error: officersError } = await stationOfficersQuery;
     
     if (officersError) throw officersError;
 
