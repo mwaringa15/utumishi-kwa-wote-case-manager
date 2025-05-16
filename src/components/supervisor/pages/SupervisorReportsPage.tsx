@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -13,6 +13,9 @@ import { useSupervisorReports } from "@/hooks/supervisor/useSupervisorReports";
 import { createCaseFromReport } from "@/hooks/supervisor/stationUtils/createCaseFromReport";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const SupervisorReportsPage = () => {
   const { user } = useAuth();
@@ -47,20 +50,6 @@ const SupervisorReportsPage = () => {
     }
   }, [user, navigate]);
 
-  // If no station is selected for supervisor role, show warning
-  useEffect(() => {
-    if (user && 
-        user.role.toLowerCase() === "supervisor" && 
-        !stationId && 
-        !isLoading) {
-      toast({
-        title: "No Station Selected",
-        description: "Please log in again and select a station to properly view reports.",
-        variant: "destructive",
-      });
-    }
-  }, [user, stationId, isLoading, toast]);
-
   if (!user) return null;
 
   return (
@@ -94,12 +83,35 @@ const SupervisorReportsPage = () => {
               </Button>
             </div>
             
-            <PendingReportsTab 
-              pendingReports={pendingReports}
-              officers={officers}
-              isLoading={isLoading}
-              handleCreateCase={handleCreateCase}
-            />
+            {/* Show warning if no station is selected for supervisor role */}
+            {user.role.toLowerCase() === "supervisor" && !stationId && !isLoading && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>No Station Selected</AlertTitle>
+                <AlertDescription>
+                  Please log in again and select a station to properly view reports.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {/* Show loading state */}
+            {isLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-12 w-full" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <Skeleton key={i} className="h-64 w-full" />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <PendingReportsTab 
+                pendingReports={pendingReports}
+                officers={officers}
+                isLoading={isLoading}
+                handleCreateCase={handleCreateCase}
+              />
+            )}
           </SidebarInset>
         </SidebarProvider>
       </div>
