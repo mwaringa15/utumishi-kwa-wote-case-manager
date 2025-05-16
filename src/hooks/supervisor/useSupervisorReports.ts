@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { CrimeReport, User } from "@/types";
+import { CrimeReport, User, CrimeStatus } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchStationDetails } from "@/hooks/supervisor/stationUtils/fetchStationDetails";
@@ -82,12 +82,12 @@ export function useSupervisorReports(userId: string | undefined) {
           assignedCases: 0 // Placeholder
         }));
 
-        // Format reports
+        // Format reports - cast the status string to CrimeStatus type
         const formattedReports: CrimeReport[] = reportsWithoutCases.map(report => ({
           id: report.id,
           title: report.title,
           description: report.description,
-          status: report.status,
+          status: report.status as CrimeStatus, // Cast string to CrimeStatus
           createdAt: report.created_at,
           crimeType: report.category,
           location: report.location,
