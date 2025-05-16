@@ -82,12 +82,12 @@ export function useSupervisorReports(userId: string | undefined) {
           assignedCases: 0 // Placeholder
         }));
 
-        // Format reports - cast the status string to CrimeStatus type
+        // Format reports - explicitly cast the status string to CrimeStatus type
         const formattedReports: CrimeReport[] = reportsWithoutCases.map(report => ({
           id: report.id,
           title: report.title,
           description: report.description,
-          status: report.status as CrimeStatus, // Cast string to CrimeStatus
+          status: report.status as CrimeStatus, // Explicit cast to CrimeStatus
           createdAt: report.created_at,
           crimeType: report.category,
           location: report.location,

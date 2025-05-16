@@ -38,10 +38,14 @@ export async function fetchSupervisorData(
 
     // Modified query to avoid the relationship error by directly selecting all fields
     // instead of using the nested relationship selection that was causing issues
-    const { data: casesData, error: casesError } = await supabase
-      .from('cases')
-      .select('*')
-      .eq(fetchedStationId ? 'station' : 'id', fetchedStationId || '*');
+    let casesQuery = supabase.from('cases').select('*');
+    
+    // Apply station filter if needed
+    if (fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
+      casesQuery = casesQuery.eq('station', fetchedStationId);
+    }
+    
+    const { data: casesData, error: casesError } = await casesQuery;
       
     if (casesError) throw casesError;
     
@@ -51,38 +55,44 @@ export async function fetchSupervisorData(
     const officerIds = casesData.map(c => c.assigned_officer_id).filter(Boolean);
     
     // Get reports data
-    const { data: reportsData, error: reportsDataError } = await supabase
-      .from('reports')
-      .select('*')
-      .in('id', reportIds.length > 0 ? reportIds : ['00000000-0000-0000-0000-000000000000']);
+    const reportsQuery = reportIds.length > 0
+      ? supabase.from('reports').select('*').in('id', reportIds)
+      : supabase.from('reports').select('*').limit(1); // Fallback query with limit 1
+    
+    const { data: reportsData, error: reportsDataError } = await reportsQuery;
     
     if (reportsDataError) throw reportsDataError;
     
     // Map reports by ID for easy lookup
     const reportsById: Record<string, any> = {};
     reportsData.forEach(report => {
-      reportsById[report.id] = report;
+      if (report.id) {
+        reportsById[report.id] = report;
+      }
     });
     
-    // Get officers data
-    const { data: officersDataById, error: officersDataError } = await supabase
-      .from('users')
-      .select('id, full_name')
-      .in('id', officerIds.length > 0 ? officerIds : ['00000000-0000-0000-0000-000000000000']);
+    // Get officers data - using the RLS policy we just created
+    const officersQuery = officerIds.length > 0
+      ? supabase.from('users').select('id, full_name, email, role, status, station_id').in('id', officerIds)
+      : supabase.from('users').select('id, full_name, email, role, status, station_id').limit(1); // Fallback query
+    
+    const { data: officersDataById, error: officersDataError } = await officersQuery;
     
     if (officersDataError) throw officersDataError;
     
     // Map officers by ID for easy lookup
     const officerNamesById: Record<string, string> = {};
     officersDataById.forEach(officer => {
-      officerNamesById[officer.id] = officer.full_name;
+      if (officer.id) {
+        officerNamesById[officer.id] = officer.full_name;
+      }
     });
 
     const formattedCases: Case[] = (casesData || []).map((c: any) => ({
       id: c.id,
       crimeReportId: c.report_id,
       assignedOfficerId: c.assigned_officer_id,
-      assignedOfficerName: c.assigned_officer_id ? officerNamesById[c.assigned_officer_id] : "Unassigned",
+      assignedOfficerName: c.assigned_officer_id ? officerNamesById[c.assigned_officer_id] || "Unknown" : "Unassigned",
       progress: c.status, 
       status: c.status as CaseStatus, 
       lastUpdated: c.updated_at,
@@ -101,13 +111,13 @@ export async function fetchSupervisorData(
     }));
 
     // First get pending reports for this station
-    const reportQuery = supabase
+    let reportQuery = supabase
       .from('reports')
       .select('*')
       .eq('status', 'Pending');
     
     if (fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
-      reportQuery.eq('station_id', fetchedStationId);
+      reportQuery = reportQuery.eq('station_id', fetchedStationId);
     }
 
     const { data: reportsData2, error: reportsError } = await reportQuery;
@@ -140,27 +150,17 @@ export async function fetchSupervisorData(
       crimeType: r.category,
     }));
 
-    // Fetch Officers from the same station as the supervisor
-    const { data: officersData, error: officersError } = await supabase
+    // Fetch Officers from the same station as the supervisor - leveraging the RLS policy we just created
+    let officersQuery = supabase
       .from('users')
-      .select('id, full_name, email, role, status')
+      .select('id, full_name, email, role, status, station_id')
       .eq('role', 'officer');
-
+    
     if (fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
-      // This is executed after the above query, but we can use the promise chaining pattern
-      // to improve this in the future
-      const { data: filteredOfficers } = await supabase
-        .from('users')
-        .select('id, full_name, email, role, status')
-        .eq('role', 'officer')
-        .eq('station_id', fetchedStationId);
-        
-      if (filteredOfficers) {
-        officersData.length = 0; // Clear the array
-        // Push all filtered officers
-        filteredOfficers.forEach(officer => officersData.push(officer));
-      }
+      officersQuery = officersQuery.eq('station_id', fetchedStationId);
     }
+
+    const { data: officersData, error: officersError } = await officersQuery;
     
     if (officersError) throw officersError;
 
