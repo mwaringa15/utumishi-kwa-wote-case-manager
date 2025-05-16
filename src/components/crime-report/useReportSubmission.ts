@@ -18,6 +18,10 @@ export function useReportSubmission() {
     console.log("Submitting form data:", data);
     
     try {
+      if (!data.stationId) {
+        throw new Error("Please select a police station");
+      }
+
       // Create the report object
       const reportData = {
         title: data.title,
@@ -25,14 +29,14 @@ export function useReportSubmission() {
         location: data.location,
         incident_date: data.incidentDate,
         category: data.category,
-        station_id: data.stationId,
+        station_id: data.stationId, // Make sure the stationId is included
         contact_phone: data.contactPhone || null,
         additional_info: data.additionalInfo || null,
         reporter_id: user?.id || null, // Allow null if user is not authenticated
         status: 'Pending' // Set to 'Pending' so supervisors can review it
       };
       
-      console.log("Sending report data to server:", reportData);
+      console.log("Sending report data to server with station_id:", reportData.station_id);
       
       // Insert the report - the case will be created automatically via our database trigger
       const { data: reportResponse, error: reportError } = await supabase

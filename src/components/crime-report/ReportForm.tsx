@@ -24,13 +24,14 @@ export function ReportForm({ onComplete }: ReportFormProps) {
       location: "",
       incidentDate: new Date().toISOString().split("T")[0],
       category: "",
-      stationId: "",
+      stationId: "", // Initialize empty but required
       contactPhone: "",
       additionalInfo: "",
     },
   });
 
   const onSubmit = async (data: CrimeReportFormValues) => {
+    console.log("Form submission with station ID:", data.stationId);
     const success = await handleSubmit(data);
     if (success) {
       form.reset();
