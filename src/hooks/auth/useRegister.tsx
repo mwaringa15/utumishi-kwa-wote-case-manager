@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,13 +41,16 @@ export function useRegister() {
         // Determine role based on email domain
         let role = determineRoleFromEmail(userData.email);
         
+        // Ensure the role is always stored as lowercase
+        const normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
+        
         // Sync user role using the edge function
         try {
           const { data: syncData, error: syncError } = await supabase.functions.invoke('sync-user', {
             body: {
               id: user.id,
               email: user.email,
-              role: role
+              role: normalizedRole
             }
           });
           

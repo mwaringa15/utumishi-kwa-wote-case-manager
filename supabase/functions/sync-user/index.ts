@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 // Define cors headers for browser requests
@@ -29,23 +30,9 @@ Deno.serve(async (req) => {
       )
     }
     
-    // Normalize the role name
-    // Ensures "OCS" is always "OCS", other roles are TitleCased.
-    let normalizedRole = role;
-    if (typeof role === 'string') {
-      if (role.toLowerCase() === 'ocs') {
-        normalizedRole = 'OCS';
-      } else {
-        normalizedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-      }
-    } else {
-      // Handle cases where role might not be a string, though it's expected to be.
-      // Defaulting to 'Public' or returning an error might be options.
-      // For now, let's log an error if role is not a string and proceed with it as is,
-      // which will likely fail validation or later steps if it's not a valid role string.
-      console.error(`Role is not a string: ${role}. Proceeding with original value.`);
-    }
-
+    // Always normalize the role to lowercase
+    let normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
+    
     console.log(`Syncing user: ${id}, email: ${email}, role: ${normalizedRole}, station_id: ${station_id}`)
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -99,7 +86,7 @@ Deno.serve(async (req) => {
         // Provide more detailed error if it's a constraint violation
         if (insertError.code === '23514' && insertError.message.includes('users_role_check')) {
             return new Response(
-                JSON.stringify({ error: `Invalid role specified: ${normalizedRole}. Allowed roles are Public, Officer, OCS, Commander, Administrator, Judiciary, Supervisor.` }),
+                JSON.stringify({ error: `Invalid role specified: ${normalizedRole}. Allowed roles are public, officer, ocs, commander, administrator, judiciary, supervisor.` }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
             );
         }
@@ -132,7 +119,7 @@ Deno.serve(async (req) => {
         console.error('Error updating user:', updateError)
         if (updateError.code === '23514' && updateError.message.includes('users_role_check')) {
             return new Response(
-                JSON.stringify({ error: `Invalid role specified: ${normalizedRole}. Allowed roles are Public, Officer, OCS, Commander, Administrator, Judiciary, Supervisor.` }),
+                JSON.stringify({ error: `Invalid role specified: ${normalizedRole}. Allowed roles are public, officer, ocs, commander, administrator, judiciary, supervisor.` }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
             );
         }

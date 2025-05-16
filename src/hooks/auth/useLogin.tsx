@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,32 +50,37 @@ export function useLogin() {
       if (user) {
         // Determine role based on email domain
         const role = determineRoleFromEmail(email);
+        
+        // Ensure the role is always stored as lowercase
+        const normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
+        
         let redirectPath = "/dashboard";
         
-        if (role === "Officer") {
+        // Use lowercase role for path determination
+        if (normalizedRole === "officer") {
           console.log("Police officer login detected");
           redirectPath = "/officer-dashboard";
-        } else if (role === "Judiciary") {
+        } else if (normalizedRole === "judiciary") {
           console.log("Judiciary login detected");
           redirectPath = "/judiciary-dashboard";
-        } else if (role === "Supervisor") {
+        } else if (normalizedRole === "supervisor") {
           console.log("Supervisor login detected");
           redirectPath = "/supervisor-dashboard";
-        } else if (role === "Administrator" || role === "Commander" || role === "OCS") {
+        } else if (normalizedRole === "administrator" || normalizedRole === "commander" || normalizedRole === "ocs") {
           console.log("Admin/Commander/OCS login detected");
           redirectPath = "/supervisor-dashboard";
         } else {
           console.log("Public user login detected");
         }
         
-        console.log(`User role determined as: ${role}, redirecting to: ${redirectPath}`);
+        console.log(`User role determined as: ${normalizedRole}, redirecting to: ${redirectPath}`);
         
         // Sync user role using the edge function with station info if provided
         try {
           const syncData: any = {
             id: user.id,
             email: user.email,
-            role: role
+            role: normalizedRole
           };
           
           // Include station_id if provided
@@ -119,7 +125,7 @@ export function useLogin() {
           description: `Welcome back, ${user.email?.split("@")[0]}!`,
         });
         
-        return { user: { ...user, role }, redirectPath };
+        return { user: { ...user, role: normalizedRole }, redirectPath };
       }
       
     } catch (error: any) {

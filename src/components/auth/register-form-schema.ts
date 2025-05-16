@@ -28,19 +28,24 @@ export interface RegisterFormProps {
 }
 
 export const determineUserRole = (email: string): UserRole => {
+  let role: UserRole;
+  
   if (email.endsWith("@police.go.ke")) {
-    return "Officer";
+    role = "Officer";
   } else if (email.endsWith("@admin.police.go.ke")) {
-    return "Administrator";
+    role = "Administrator";
   } else if (email.endsWith("@commander.police.go.ke")) {
-    return "Commander";
+    role = "Commander";
   } else if (email.endsWith("@ocs.police.go.ke")) {
-    return "OCS";
+    role = "OCS";
   } else if (email.endsWith("@judiciary.go.ke")) {
-    return "Judiciary";
+    role = "Judiciary";
   } else if (email.endsWith("@supervisor.go.ke")) {
-    return "Supervisor"; // Using Supervisor role for supervisor emails
+    role = "Supervisor";
   } else {
-    return "Public";
+    role = "Public";
   }
+  
+  // Return the role as is - the normalization to lowercase will happen in the hooks
+  return role;
 };

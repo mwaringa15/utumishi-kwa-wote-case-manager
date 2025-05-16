@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: supabaseUser.id,
             name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
             email: supabaseUser.email || "",
-            role: getRole(supabaseUser.email || ""),
+            role: getRole(supabaseUser.email || "").toLowerCase(),
             createdAt: supabaseUser.created_at
           };
           setUser(appUser);
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: supabaseUser.id,
           name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
           email: supabaseUser.email || "",
-          role: getRole(supabaseUser.email || ""),
+          role: getRole(supabaseUser.email || "").toLowerCase(),
           createdAt: supabaseUser.created_at
         };
         setUser(appUser);
