@@ -10,6 +10,11 @@ interface FetchStationOfficersArgs {
 }
 
 export async function fetchStationOfficers({ supabase, stationId, stationName, toast }: FetchStationOfficersArgs): Promise<StationOfficer[]> {
+  if (!stationId) {
+    console.log("No station ID provided for fetchStationOfficers");
+    return [];
+  }
+
   const { data: officersData, error: officersError } = await supabase
     .from('users')
     .select('id, full_name, email, role, status')

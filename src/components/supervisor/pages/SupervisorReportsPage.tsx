@@ -100,7 +100,7 @@ const SupervisorReportsPage = () => {
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>No Station Selected</AlertTitle>
                 <AlertDescription>
-                  Due to the new security policy, supervisors can only see reports from their assigned station.
+                  Due to the security policy, supervisors can only see reports from their assigned station.
                   Please log in again and select a station, or contact an administrator to assign you to a station.
                 </AlertDescription>
               </Alert>

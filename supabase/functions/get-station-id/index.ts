@@ -42,7 +42,7 @@ serve(async (req) => {
     // Get the user's station ID from the users table
     const { data: userData, error: userError } = await supabaseClient
       .from('users')
-      .select('station_id')
+      .select('station_id, role')
       .eq('id', user.id)
       .single();
 
@@ -54,7 +54,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         station_id: userData?.station_id || null,
-        user_id: user.id
+        user_id: user.id,
+        role: userData?.role || null
       }),
       {
         headers: { 'Content-Type': 'application/json' },

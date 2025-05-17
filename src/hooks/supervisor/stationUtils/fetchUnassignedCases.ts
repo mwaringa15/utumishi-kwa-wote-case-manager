@@ -10,6 +10,11 @@ interface FetchUnassignedCasesArgs {
 }
 
 export async function fetchUnassignedCases({ supabase, stationId, stationName, toast }: FetchUnassignedCasesArgs): Promise<StationCase[]> {
+  if (!stationId) {
+    console.log("No station ID provided for fetchUnassignedCases");
+    return [];
+  }
+
   const { data: casesData, error: casesError } = await supabase
     .from('cases')
     .select(`

@@ -36,10 +36,9 @@ export async function fetchStationDetails({
         
       if (stationError) {
         console.error("Error fetching station name:", stationError);
-        // Even if there's an error getting the name, we can continue with the ID
       }
       
-      // Get the user's role (this should be safe as it doesn't depend on recursive policies)
+      // Get the user's role
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('role')
@@ -48,7 +47,6 @@ export async function fetchStationDetails({
       
       if (userError) {
         console.error("Error fetching user role:", userError);
-        // We can continue with a default role if needed
       }
       
       // Return the station details using the stored station ID
@@ -59,16 +57,15 @@ export async function fetchStationDetails({
       };
     }
     
-    // If no stored station ID is found and user is admin/commander, return appropriate values
-    // Get role without fetching station_id to avoid recursion
-    const { data: roleData, error: roleError } = await supabase
+    // If no stored station ID is found, try to get it from user profile
+    const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('role')
+      .select('role, station_id')
       .eq('id', userId)
       .single();
       
-    if (roleError) {
-      console.error("Error fetching user role:", roleError);
+    if (userError) {
+      console.error("Error fetching user data:", userError);
       toast({
         title: "Error",
         description: "Could not fetch user data",
@@ -77,7 +74,31 @@ export async function fetchStationDetails({
       return null;
     }
     
-    const userRole = roleData?.role;
+    const userRole = userData?.role;
+    const profileStationId = userData?.station_id;
+    
+    // If user has a station_id in their profile, use it and store it for future use
+    if (profileStationId) {
+      console.log("Retrieved station_id from user profile:", profileStationId);
+      localStorage.setItem('selected_station_id', profileStationId);
+      
+      // Get station name
+      const { data: stationData, error: stationError } = await supabase
+        .from('stations')
+        .select('name')
+        .eq('id', profileStationId)
+        .single();
+        
+      if (stationError) {
+        console.error("Error fetching station name:", stationError);
+      }
+      
+      return {
+        stationId: profileStationId,
+        stationName: stationData?.name || "Unknown Station",
+        userRole
+      };
+    }
     
     // For administrators and commanders, we can operate without a specific station
     if (userRole === "Administrator" || userRole === "Commander" || userRole === "OCS") {
@@ -88,12 +109,14 @@ export async function fetchStationDetails({
       };
     }
     
-    // For all other users without a stored station ID, show a toast suggesting to select one
-    toast({
-      title: "No Station Selected",
-      description: "Please log in again and select a station to view reports",
-      variant: "destructive",
-    });
+    // For supervisors without a stored station ID, show a toast suggesting to select one
+    if (userRole === "Supervisor") {
+      toast({
+        title: "No Station Selected",
+        description: "Please log in again and select a station to view reports",
+        variant: "destructive",
+      });
+    }
     
     return null;
   } catch (error) {
