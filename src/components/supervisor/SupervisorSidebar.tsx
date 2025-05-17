@@ -17,7 +17,8 @@ export function SupervisorSidebar() {
       label: 'Dashboard', 
       icon: BarChart3, 
       path: '/supervisor-dashboard',
-      active: isActive('/supervisor-dashboard')  
+      active: isActive('/supervisor-dashboard') && !isActive('/supervisor-dashboard/cases') && 
+             !isActive('/supervisor-dashboard/reports') && !isActive('/supervisor-dashboard/officers')
     },
     { 
       label: 'Cases', 
