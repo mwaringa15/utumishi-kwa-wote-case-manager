@@ -306,12 +306,12 @@ const CaseDetails = () => {
     if (!user) return false;
     
     // Officers can edit cases assigned to them
-    if (user.role === "Officer" && caseData?.assignedOfficerId === user.id) {
+    if (user.role === "officer" && caseData?.assignedOfficerId === user.id) {
       return true;
     }
     
     // Supervisors can edit all cases
-    if (["OCS", "Commander", "Administrator"].includes(user.role)) {
+    if (user.role === "supervisor") {
       return true;
     }
     
