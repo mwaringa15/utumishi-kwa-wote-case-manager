@@ -84,7 +84,7 @@ export function OfficersTab({ officers, isLoading }: OfficersTabProps) {
                   </div>
                 </CardContent>
               </Card>
-            ))
+            ))}
           </div>
         ) : (
           <div className="text-center py-8">
