@@ -20,13 +20,15 @@ interface PendingReportsTabProps {
   officers: UserType[];
   isLoading: boolean;
   handleCreateCase: (reportId: string, officerId: string, officerName: string) => void;
+  stationId?: string | null;
 }
 
 export function PendingReportsTab({ 
   pendingReports, 
   officers, 
   isLoading,
-  handleCreateCase 
+  handleCreateCase,
+  stationId
 }: PendingReportsTabProps) {
   const [localSearch, setLocalSearch] = useState("");
   
@@ -59,99 +61,119 @@ export function PendingReportsTab({
         <div className="p-6 text-center">
           <div className="animate-pulse text-gray-400">Loading reports...</div>
         </div>
-      ) : filteredReports.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-          {filteredReports.map(report => (
-            <Card key={report.id} className="overflow-hidden hover:shadow-md transition-shadow">
-              <CardContent className="p-0">
-                <div className="bg-gray-50 px-4 py-3 border-b">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-gray-900 line-clamp-1">{report.title}</h3>
-                      <p className="text-xs text-gray-500">{report.id}</p>
-                    </div>
-                    <Badge className="bg-amber-100 text-amber-800 border-amber-200">
-                      {report.status}
-                    </Badge>
-                  </div>
-                </div>
-                
-                <div className="px-4 py-3">
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                      <div className="text-gray-500 w-24">Type:</div>
-                      <div className="font-medium">{report.crimeType || "N/A"}</div>
-                    </div>
-                    
-                    <div className="flex items-start text-sm">
-                      <div className="text-gray-500 w-24 mt-1"><MapPin className="h-4 w-4 inline mr-1" /></div>
-                      <div className="line-clamp-1">{report.location || "Unknown location"}</div>
-                    </div>
-                    
-                    <div className="flex items-center text-sm">
-                      <div className="text-gray-500 w-24"><CalendarClock className="h-4 w-4 inline mr-1" /></div>
-                      <div>{new Date(report.createdAt).toLocaleDateString()}</div>
+      ) : stationId ? (
+        filteredReports.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+            {filteredReports.map(report => (
+              <Card key={report.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                <CardContent className="p-0">
+                  <div className="bg-gray-50 px-4 py-3 border-b">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium text-gray-900 line-clamp-1">{report.title}</h3>
+                        <p className="text-xs text-gray-500">{report.id}</p>
+                      </div>
+                      <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                        {report.status}
+                      </Badge>
                     </div>
                   </div>
                   
-                  <div className="mt-4 flex justify-between">
-                    <Button variant="outline" size="sm">View Details</Button>
+                  <div className="px-4 py-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm">
+                        <div className="text-gray-500 w-24">Type:</div>
+                        <div className="font-medium">{report.crimeType || "N/A"}</div>
+                      </div>
+                      
+                      <div className="flex items-start text-sm">
+                        <div className="text-gray-500 w-24 mt-1"><MapPin className="h-4 w-4 inline mr-1" /></div>
+                        <div className="line-clamp-1">{report.location || "Unknown location"}</div>
+                      </div>
+                      
+                      <div className="flex items-center text-sm">
+                        <div className="text-gray-500 w-24"><CalendarClock className="h-4 w-4 inline mr-1" /></div>
+                        <div>{new Date(report.createdAt).toLocaleDateString()}</div>
+                      </div>
+                    </div>
                     
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          size="sm"
-                          className="bg-kenya-green hover:bg-kenya-green/90"
-                        >
-                          Create Case
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Create Case & Assign Officer</DialogTitle>
-                          <DialogDescription>
-                            Select an officer to handle this case.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="py-4">
-                          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
-                            {officers.map((officer) => (
-                              <div 
-                                key={officer.id} 
-                                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
-                              >
-                                <div className="flex items-center">
-                                  <div className="bg-gray-200 rounded-full p-2 mr-3">
-                                    <User className="h-5 w-5 text-gray-600" />
-                                  </div>
-                                  <div>
-                                    <div className="font-medium">{officer.name}</div>
-                                    <div className="text-sm text-gray-500">
-                                      Badge: {officer.badgeNumber} | Cases: {officer.assignedCases}
-                                    </div>
-                                  </div>
-                                </div>
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => handleCreateCase(report.id, officer.id, officer.name)}
-                                >
-                                  Assign
-                                </Button>
+                    <div className="mt-4 flex justify-between">
+                      <Button variant="outline" size="sm">View Details</Button>
+                      
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            size="sm"
+                            className="bg-kenya-green hover:bg-kenya-green/90"
+                          >
+                            Create Case
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Create Case & Assign Officer</DialogTitle>
+                            <DialogDescription>
+                              Select an officer to handle this case.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="py-4">
+                            {officers.length === 0 ? (
+                              <div className="p-4 text-center bg-amber-50 border border-amber-100 rounded-lg">
+                                <p className="text-amber-800">No officers available at this station.</p>
+                                <p className="text-sm text-amber-700 mt-1">Officer assignment is required to create a case.</p>
                               </div>
-                            ))}
+                            ) : (
+                              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                                {officers.map((officer) => (
+                                  <div 
+                                    key={officer.id} 
+                                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                                  >
+                                    <div className="flex items-center">
+                                      <div className="bg-gray-200 rounded-full p-2 mr-3">
+                                        <User className="h-5 w-5 text-gray-600" />
+                                      </div>
+                                      <div>
+                                        <div className="font-medium">{officer.name}</div>
+                                        <div className="text-sm text-gray-500">
+                                          Badge: {officer.badgeNumber} | Cases: {officer.assignedCases}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => handleCreateCase(report.id, officer.id, officer.name)}
+                                    >
+                                      Assign
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="p-8 text-center">
+            <p className="text-gray-500">No pending reports found</p>
+          </div>
+        )
       ) : (
-        <div className="p-8 text-center">
-          <p className="text-gray-500">No pending reports found</p>
+        <div className="p-8 text-center bg-gray-50">
+          <div className="mb-3">
+            <AlertCircle className="h-10 w-10 text-amber-500 mx-auto" />
+          </div>
+          <h3 className="text-lg font-medium mb-2">Station Selection Required</h3>
+          <p className="text-gray-600 max-w-md mx-auto">
+            You need to be assigned to a police station to view and process reports.
+            Please log out and log in again with a station selection to continue.
+          </p>
         </div>
       )}
     </div>

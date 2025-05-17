@@ -122,6 +122,7 @@ const SupervisorReportsPage = () => {
                 officers={officers}
                 isLoading={isLoading}
                 handleCreateCase={handleCreateCase}
+                stationId={stationId}
               />
             )}
           </SidebarInset>
