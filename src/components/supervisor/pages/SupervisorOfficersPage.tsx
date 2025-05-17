@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -60,7 +61,7 @@ const SupervisorOfficersPage = () => {
           .from('users')
           .select('id, full_name, email, role, status, station_id')
           .eq('station_id', stationId)
-          .eq('role', 'Officer');
+          .eq('role', 'officer');
 
         if (officersError) throw officersError;
 
@@ -84,7 +85,7 @@ const SupervisorOfficersPage = () => {
           id: officer.id,
           name: officer.full_name || officer.email.split('@')[0],
           email: officer.email,
-          role: "Officer" as UserRole,
+          role: "officer" as UserRole,
           station: stationData?.name || 'Unknown Station',
           status: (officer.status || 'on_duty') as OfficerStatus,
           badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`, // Example badge number
@@ -108,7 +109,7 @@ const SupervisorOfficersPage = () => {
   }, [user, toast]);
   
   // If user is not logged in or not authorized, redirect
-  if (!user || !["OCS", "Commander", "Administrator", "Supervisor"].includes(user.role)) {
+  if (!user || user.role !== "supervisor") {
     navigate('/dashboard'); // Or a more appropriate unauthorized page
     return null;
   }

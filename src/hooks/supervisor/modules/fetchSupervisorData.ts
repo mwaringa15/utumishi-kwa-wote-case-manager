@@ -26,7 +26,7 @@ export async function fetchSupervisorData(
     // Get the station ID for the current user
     const fetchedStationId = await getUserStationId(user.id);
 
-    if (!fetchedStationId && user.role !== "Administrator" && user.role !== "Commander") {
+    if (!fetchedStationId && user.role !== "supervisor") {
       showToast({ 
         title: "No Station ID", 
         description: "Supervisor's station ID could not be determined.", 

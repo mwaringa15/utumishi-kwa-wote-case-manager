@@ -18,7 +18,7 @@ export async function fetchOfficers(stationId: string | null): Promise<User[]> {
     }
     
     // Always filter for officers only
-    officersQuery = officersQuery.eq('role', 'Officer');
+    officersQuery = officersQuery.eq('role', 'officer');
     
     const { data: officersData, error: officersError } = await officersQuery;
 
@@ -32,7 +32,7 @@ export async function fetchOfficers(stationId: string | null): Promise<User[]> {
       id: officer.id,
       name: officer.full_name || officer.email.split('@')[0],
       email: officer.email,
-      role: "Officer",
+      role: "officer",
       badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
       assignedCases: 0 // Placeholder
     }));

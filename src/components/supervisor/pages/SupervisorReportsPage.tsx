@@ -45,14 +45,14 @@ const SupervisorReportsPage = () => {
   
   // If user is not logged in or not authorized, redirect
   useEffect(() => {
-    if (!user || !["ocs", "commander", "administrator", "supervisor"].includes(user.role.toLowerCase())) {
+    if (!user || user.role !== "supervisor") {
       navigate('/dashboard');
     }
   }, [user, navigate]);
 
   // Show warning toast if supervisor has no station selected
   useEffect(() => {
-    if (user && user.role.toLowerCase() === "supervisor" && !stationId && !isLoading) {
+    if (user && user.role === "supervisor" && !stationId && !isLoading) {
       toast({
         title: "No Station Selected",
         description: "You don't have a station assigned. Please contact an administrator or log in again.",
@@ -95,7 +95,7 @@ const SupervisorReportsPage = () => {
             </div>
             
             {/* Show prominent warning if no station is selected for supervisor role */}
-            {user.role.toLowerCase() === "supervisor" && !stationId && !isLoading && (
+            {user.role === "supervisor" && !stationId && !isLoading && (
               <Alert variant="destructive" className="mb-6">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>No Station Selected</AlertTitle>

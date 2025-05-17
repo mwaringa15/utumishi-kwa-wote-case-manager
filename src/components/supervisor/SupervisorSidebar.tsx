@@ -22,10 +22,8 @@ export function SupervisorSidebar() {
   // Check if the current path is active
   const isActive = (path: string) => location.pathname === path;
   
-  // Check if the user is a Commander, Administrator, or OCS to show analytics
-  const isCommanderOrAdmin = user?.role === "Commander" || 
-                             user?.role === "Administrator" || 
-                             user?.role === "OCS";
+  // Only show analytics for supervisor role
+  const showAnalytics = user?.role === "supervisor";
 
   return (
     <Sidebar>
@@ -82,7 +80,7 @@ export function SupervisorSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              {isCommanderOrAdmin && (
+              {showAnalytics && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={isActive("/supervisor-dashboard/analytics")}>
                     <Link to="/supervisor-dashboard/analytics">

@@ -76,7 +76,7 @@ serve(async (req) => {
     console.log("Normalized role:", normalizedRole);
 
     // Map any old role names to the new simplified roles
-    if (normalizedRole === 'administrator' || normalizedRole === 'ocs' || normalizedRole === 'commander') {
+    if (["administrator", "ocs", "commander"].includes(normalizedRole)) {
       normalizedRole = 'supervisor';
       console.log(`Mapping old role ${role} to supervisor`);
     }

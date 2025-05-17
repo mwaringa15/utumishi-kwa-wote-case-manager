@@ -74,7 +74,7 @@ serve(async (req) => {
 
     // Map old role names if they exist in the database
     let finalRole = normalizedRole;
-    if (normalizedRole === 'administrator' || normalizedRole === 'ocs' || normalizedRole === 'commander') {
+    if (["administrator", "ocs", "commander"].includes(normalizedRole)) {
       finalRole = 'supervisor';
       console.log(`Mapping old role ${normalizedRole} to supervisor`);
     }
