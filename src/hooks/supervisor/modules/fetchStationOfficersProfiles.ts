@@ -29,11 +29,12 @@ export async function fetchStationOfficersProfiles(stationId: string): Promise<O
     
     const stationName = stationData?.name || "Unknown Station";
     
-    // Get officers from the same station
+    // Get officers from the same station, but exclude supervisors and other admin roles
     const { data: officersData, error: officersError } = await supabase
       .from('users')
       .select('id, full_name, email, role, status')
-      .eq('station_id', stationId);
+      .eq('station_id', stationId)
+      .eq('role', 'officer'); // Only fetch users with 'officer' role
       
     if (officersError) {
       console.error("Error fetching officers:", officersError);
