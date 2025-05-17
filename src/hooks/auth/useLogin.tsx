@@ -16,8 +16,11 @@ export function useLogin() {
     try {
       console.log("Login attempt for:", email, "with station:", stationId);
       
+      // Convert email to lowercase for consistent processing
+      const lowercaseEmail = email.toLowerCase();
+      
       // Check for demo accounts first
-      const demoAccount = checkForDemoAccount(email, password);
+      const demoAccount = checkForDemoAccount(lowercaseEmail, password);
       if (demoAccount) {
         // If it's a supervisor demo account, assign a station
         if (["supervisor"].includes(demoAccount.user.role)) {
@@ -30,7 +33,7 @@ export function useLogin() {
         
         toast({
           title: "Login successful",
-          description: `Welcome back, ${email.split("@")[0]}!`,
+          description: `Welcome back, ${lowercaseEmail.split("@")[0]}!`,
         });
         
         console.log("Successful demo login for user");
@@ -45,7 +48,7 @@ export function useLogin() {
       
       // Regular authentication flow
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: lowercaseEmail,
         password
       });
       
@@ -58,7 +61,7 @@ export function useLogin() {
       
       if (user) {
         // Determine role based on email domain - ensure lowercase
-        const role = determineRoleFromEmail(email);
+        const role = determineRoleFromEmail(lowercaseEmail);
         
         console.log(`User role determined as: ${role}`);
         
@@ -82,7 +85,7 @@ export function useLogin() {
         try {
           const syncData: any = {
             id: user.id,
-            email: user.email,
+            email: lowercaseEmail,
             role: role
           };
           

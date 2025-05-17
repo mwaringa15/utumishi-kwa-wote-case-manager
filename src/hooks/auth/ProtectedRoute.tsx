@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "./useAuth";
 import { UserRole } from "@/types";
+import { getRedirectPathForRole } from "./utils/role-utils";
 
 interface ProtectedRouteProps {
   element: JSX.Element;
@@ -27,18 +28,16 @@ export function ProtectedRoute({
     return <Navigate to={redirectTo} replace />;
   }
   
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    // Redirect to appropriate dashboard based on role
-    const role = user.role;
-    if (role === "officer") {
-      return <Navigate to="/officer-dashboard" replace />;
-    } else if (role === "judiciary") {
-      return <Navigate to="/judiciary-dashboard" replace />;
-    } else if (role === "supervisor") {
-      return <Navigate to="/supervisor-dashboard" replace />;
-    } else {
-      return <Navigate to="/dashboard" replace />;
-    }
+  // Normalize current user role to lowercase
+  const currentRole = user.role.toLowerCase() as UserRole;
+  
+  // Normalize allowed roles to lowercase for comparison
+  const normalizedAllowedRoles = allowedRoles.map(role => role.toLowerCase() as UserRole);
+  
+  if (normalizedAllowedRoles.length > 0 && !normalizedAllowedRoles.includes(currentRole)) {
+    // Get proper redirect path based on user's role
+    const redirectPath = getRedirectPathForRole(currentRole);
+    return <Navigate to={redirectPath} replace />;
   }
   
   return element;
