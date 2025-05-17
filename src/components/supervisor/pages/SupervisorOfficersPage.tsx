@@ -9,17 +9,13 @@ import { SupervisorSidebar } from "@/components/supervisor/SupervisorSidebar";
 import { BackButton } from "@/components/ui/back-button";
 import { OfficersTab } from "@/components/supervisor/OfficersTab";
 import { useToast } from "@/hooks/use-toast";
-import { useStationData } from "@/hooks/supervisor/useStationData";
-import { fetchOfficers } from "@/hooks/supervisor/modules/fetchOfficers";
-import { useState, useEffect as useReactEffect } from "react";
+import { useSupervisorOfficers } from "@/hooks/supervisor/useSupervisorOfficers";
 
 const SupervisorOfficersPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { stationData, loading } = useStationData(user);
-  const [isLoading, setIsLoading] = useState(true);
-  const [officers, setOfficers] = useState([]);
+  const { officers, isLoading, stationName } = useSupervisorOfficers(user?.id);
 
   // If user is not logged in or not authorized, redirect
   useEffect(() => {
@@ -27,32 +23,6 @@ const SupervisorOfficersPage = () => {
       navigate('/dashboard');
     }
   }, [user, navigate]);
-
-  // Load officers directly using the fetchOfficers function
-  useReactEffect(() => {
-    const getOfficers = async () => {
-      setIsLoading(true);
-      try {
-        // Get station ID either from stationData or localStorage
-        const stationId = stationData?.stationId || localStorage.getItem('selected_station_id');
-        if (stationId) {
-          const officersData = await fetchOfficers(stationId);
-          setOfficers(officersData);
-        }
-      } catch (error) {
-        console.error("Error fetching officers:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch officers for this station",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getOfficers();
-  }, [stationData, toast]);
 
   if (!user) return null;
 
@@ -67,12 +37,12 @@ const SupervisorOfficersPage = () => {
             <div className="mb-6">
               <BackButton />
               <h1 className="text-2xl font-bold mt-4">Officer Management</h1>
-              <p className="text-gray-500">View and manage officers in {stationData?.station || 'Loading...'}</p>
+              <p className="text-gray-500">View and manage officers in {stationName || 'Loading...'}</p>
             </div>
             
             <OfficersTab 
               officers={officers}
-              isLoading={isLoading || loading}
+              isLoading={isLoading}
             />
           </SidebarInset>
         </SidebarProvider>

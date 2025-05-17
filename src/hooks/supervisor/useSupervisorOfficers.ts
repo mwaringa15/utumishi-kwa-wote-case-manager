@@ -1,8 +1,10 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { User, UserRole, OfficerStatus } from "@/types";
+import { User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { getUserStationData } from "./modules/getUserStationData";
+import { fetchStationOfficers } from "./modules/fetchStationOfficers";
+import { fetchAllOfficers } from "./modules/fetchAllOfficers";
 
 export function useSupervisorOfficers(userId?: string) {
   const { toast } = useToast();
@@ -12,178 +14,36 @@ export function useSupervisorOfficers(userId?: string) {
   const [stationId, setStationId] = useState<string | null>(null);
   
   const fetchOfficersData = useCallback(async () => {
-    if (!userId) return;
-    
     setIsLoading(true);
     try {
-      // First check localStorage for stored station ID
-      const storedStationId = localStorage.getItem('selected_station_id');
-      let effectiveStationId = storedStationId;
-      let stationNameToSet = "";
+      // Get user's station data
+      const stationData = await getUserStationData(userId);
       
-      if (!effectiveStationId) {
-        // If no stored station ID, try to get it from user profile
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('station_id, role')
-          .eq('id', userId)
-          .single();
-        
-        if (userError) {
-          console.error("Error fetching user data:", userError);
-          toast({
-            title: "User Data Error",
-            description: "Could not fetch your station assignment. Please log in again.",
-            variant: "destructive",
-          });
-          setIsLoading(false);
-          return;
-        }
-        
-        if (!userData.station_id && userData.role.toLowerCase() !== 'administrator') {
-          toast({
-            title: "No Station Assigned",
-            description: "You are not assigned to any station. Please contact an administrator.",
-            variant: "destructive",
-          });
-          setIsLoading(false);
-          return;
-        }
-        
-        // Use the station ID from user profile if available
-        effectiveStationId = userData.station_id;
+      if ('error' in stationData) {
+        toast({
+          title: "Station Data Error",
+          description: stationData.error,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
       }
       
-      if (effectiveStationId) {
-        // Store it for future use
-        localStorage.setItem('selected_station_id', effectiveStationId);
-        setStationId(effectiveStationId);
-        
-        // Get station name
-        const { data: stationData, error: stationError } = await supabase
-          .from('stations')
-          .select('name')
-          .eq('id', effectiveStationId)
-          .single();
-          
-        if (stationError) {
-          console.error("Error fetching station name:", stationError);
-          stationNameToSet = "Unknown Station";
-        } else {
-          stationNameToSet = stationData.name;
-        }
-        
-        setStationName(stationNameToSet);
-        
-        // Get officers for this station
-        const { data: officersData, error: officersError } = await supabase
-          .from('users')
-          .select('id, full_name, email, role, status, station_id')
-          .eq('station_id', effectiveStationId)
-          .eq('role', 'officer');
-
-        if (officersError) {
-          console.error("Error fetching officers:", officersError);
-          toast({
-            title: "Error Loading Officers",
-            description: "Could not load officers for this station.",
-            variant: "destructive",
-          });
-          setOfficers([]);
-          setIsLoading(false);
-          return;
-        }
-        
-        // Count assigned cases for each officer
-        const officerCaseCounts: Record<string, number> = {};
-        
-        for (const officer of officersData) {
-          const { count, error } = await supabase
-            .from('cases')
-            .select('*', { count: 'exact', head: true })
-            .eq('assigned_officer_id', officer.id)
-            .not('status', 'eq', 'Completed'); // Only count active cases
-            
-          if (!error) {
-            officerCaseCounts[officer.id] = count || 0;
-          }
-        }
-
-        // Format officers data with station information
-        const formattedOfficers: User[] = officersData.map(officer => ({
-          id: officer.id,
-          name: officer.full_name || officer.email.split('@')[0],
-          email: officer.email,
-          role: "officer" as UserRole,
-          station: stationNameToSet, // Add station name to each officer
-          status: (officer.status || 'on_duty') as OfficerStatus,
-          badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
-          assignedCases: officerCaseCounts[officer.id] || 0
-        }));
-
-        setOfficers(formattedOfficers);
+      setStationId(stationData.stationId);
+      setStationName(stationData.stationName);
+      
+      // Fetch officers data based on station
+      let officersData: User[] = [];
+      
+      if (stationData.stationId) {
+        // Fetch officers for specific station
+        officersData = await fetchStationOfficers(stationData.stationId, stationData.stationName);
       } else {
-        // Handle admin case or missing station
-        setStationName("All Stations");
-        
-        // For administrators, fetch all officers
-        const { data: officersData, error: officersError } = await supabase
-          .from('users')
-          .select('id, full_name, email, role, status, station_id')
-          .eq('role', 'officer');
-
-        if (officersError) {
-          console.error("Error fetching all officers:", officersError);
-          setOfficers([]);
-          setIsLoading(false);
-          return;
-        }
-        
-        // Get station names for all officers
-        const stationIds = [...new Set(officersData.filter(officer => officer.station_id).map(officer => officer.station_id))];
-        const stationNames: Record<string, string> = {};
-        
-        for (const stId of stationIds) {
-          const { data, error } = await supabase
-            .from('stations')
-            .select('id, name')
-            .eq('id', stId)
-            .single();
-            
-          if (!error && data) {
-            stationNames[stId] = data.name;
-          }
-        }
-        
-        // Count assigned cases for each officer
-        const officerCaseCounts: Record<string, number> = {};
-        
-        for (const officer of officersData) {
-          const { count, error } = await supabase
-            .from('cases')
-            .select('*', { count: 'exact', head: true })
-            .eq('assigned_officer_id', officer.id)
-            .not('status', 'eq', 'Completed');
-            
-          if (!error) {
-            officerCaseCounts[officer.id] = count || 0;
-          }
-        }
-
-        // Format officers data with their respective station names
-        const formattedOfficers: User[] = officersData.map(officer => ({
-          id: officer.id,
-          name: officer.full_name || officer.email.split('@')[0],
-          email: officer.email,
-          role: "officer" as UserRole,
-          station: officer.station_id ? stationNames[officer.station_id] || "Unknown Station" : "Unassigned",
-          status: (officer.status || 'on_duty') as OfficerStatus,
-          badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
-          assignedCases: officerCaseCounts[officer.id] || 0
-        }));
-
-        setOfficers(formattedOfficers);
+        // Fetch all officers (for administrators)
+        officersData = await fetchAllOfficers();
       }
+      
+      setOfficers(officersData);
     } catch (error: any) {
       console.error("Error fetching officers data:", error);
       toast({
