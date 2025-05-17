@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -16,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { User } from "@/types";
+import { User, UserRole } from "@/types";
 
 const SupervisorOfficersPage = () => {
   const { user } = useAuth();
@@ -139,11 +138,12 @@ const SupervisorOfficersPage = () => {
         if (availableOfficersError) throw availableOfficersError;
         
         if (availableOfficersData) {
-          const formattedAvailableOfficers = availableOfficersData.map(officer => ({
-            id: officer.id,
+          // Correctly convert the data to match User type
+          const formattedAvailableOfficers: User[] = availableOfficersData.map(officer => ({
+            id: officer.id || '',
             name: officer.full_name || officer.email,
             email: officer.email,
-            role: officer.role,
+            role: officer.role as UserRole,
             status: officer.status,
             station: stationName
           }));

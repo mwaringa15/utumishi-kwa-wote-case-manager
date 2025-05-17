@@ -3,7 +3,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { BarChart3, Users, FileText, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sidebar, SidebarHeader, SidebarSection, SidebarFooter } from "@/components/ui/sidebar";
+import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter } from "@/components/ui/sidebar";
 
 export function SupervisorSidebar() {
   const location = useLocation();
@@ -45,7 +45,7 @@ export function SupervisorSidebar() {
         <div className="text-lg font-semibold">Supervisor</div>
       </SidebarHeader>
       
-      <SidebarSection>
+      <SidebarContent>
         <nav className="flex flex-col gap-1">
           {navItems.map((item) => (
             <Button
@@ -61,7 +61,7 @@ export function SupervisorSidebar() {
             </Button>
           ))}
         </nav>
-      </SidebarSection>
+      </SidebarContent>
       
       <SidebarFooter>
         <div className="text-xs text-muted-foreground">
