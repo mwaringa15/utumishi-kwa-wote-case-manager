@@ -7,23 +7,29 @@ import { User, UserRole, OfficerStatus } from "@/types";
  */
 export async function fetchStationOfficers(stationId: string | null, stationName: string): Promise<User[]> {
   try {
-    // Get officers from the same station
-    let officersQuery = supabase
-      .from('users')
-      .select('id, full_name, email, role, status, station_id');
-      
-    // Only filter by station_id if we have one
-    if (stationId) {
-      officersQuery = officersQuery.eq('station_id', stationId);
+    console.log("Fetching officers for station ID:", stationId, "Station Name:", stationName);
+    
+    if (!stationId) {
+      console.error("No station ID provided for fetchStationOfficers");
+      return [];
     }
-    
-    // Always filter for officers only
-    officersQuery = officersQuery.eq('role', 'officer');
-    
-    const { data: officersData, error: officersError } = await officersQuery;
 
+    // Get officers from the same station
+    const { data: officersData, error: officersError } = await supabase
+      .from('users')
+      .select('id, full_name, email, role, status, station_id')
+      .eq('station_id', stationId)
+      .eq('role', 'officer');
+      
     if (officersError) {
       console.error("Error fetching officers:", officersError);
+      return [];
+    }
+
+    console.log("Raw officers data:", officersData);
+
+    if (!officersData || officersData.length === 0) {
+      console.log("No officers found for station:", stationId);
       return [];
     }
 
@@ -54,6 +60,7 @@ export async function fetchStationOfficers(stationId: string | null, stationName
       assignedCases: officerCaseCounts[officer.id] || 0
     }));
 
+    console.log("Formatted officers:", formattedOfficers);
     return formattedOfficers;
   } catch (error) {
     console.error("Error fetching station officers:", error);

@@ -15,7 +15,12 @@ const SupervisorOfficersPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { officers, isLoading, stationName } = useSupervisorOfficers(user?.id);
+  const { 
+    officers, 
+    isLoading, 
+    stationName,
+    refreshData 
+  } = useSupervisorOfficers(user?.id);
 
   // If user is not logged in or not authorized, redirect
   useEffect(() => {
@@ -23,6 +28,14 @@ const SupervisorOfficersPage = () => {
       navigate('/dashboard');
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    // Ensure we have the latest data when this page loads
+    refreshData();
+    // Log the current data for debugging
+    console.log("SupervisorOfficersPage - officers:", officers);
+    console.log("SupervisorOfficersPage - stationName:", stationName);
+  }, [refreshData]);
 
   if (!user) return null;
 

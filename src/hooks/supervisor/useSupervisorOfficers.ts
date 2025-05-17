@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getUserStationData } from "./modules/getUserStationData";
 import { fetchStationOfficers } from "./modules/fetchStationOfficers";
 import { fetchAllOfficers } from "./modules/fetchAllOfficers";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useSupervisorOfficers(userId?: string) {
   const { toast } = useToast();
@@ -16,6 +17,8 @@ export function useSupervisorOfficers(userId?: string) {
   const fetchOfficersData = useCallback(async () => {
     setIsLoading(true);
     try {
+      console.log("Fetching officers data for user ID:", userId);
+      
       // Get user's station data
       const stationData = await getUserStationData(userId);
       
@@ -32,6 +35,8 @@ export function useSupervisorOfficers(userId?: string) {
       setStationId(stationData.stationId);
       setStationName(stationData.stationName);
       
+      console.log("Station data retrieved:", stationData);
+      
       // Fetch officers data based on station
       let officersData: User[] = [];
       
@@ -43,6 +48,7 @@ export function useSupervisorOfficers(userId?: string) {
         officersData = await fetchAllOfficers();
       }
       
+      console.log("Fetched officers:", officersData);
       setOfficers(officersData);
     } catch (error: any) {
       console.error("Error fetching officers data:", error);
