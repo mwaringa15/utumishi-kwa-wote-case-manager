@@ -91,7 +91,14 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
       
       if (onLogin) {
         await onLogin(data.email, data.password, data.stationId || undefined);
-        // Note: We're not manually navigating here - that should be handled by the parent component
+        
+        // Store the selected station name for display
+        if (data.stationId) {
+          const selectedStation = stations.find(station => station.id === data.stationId);
+          if (selectedStation) {
+            localStorage.setItem('selected_station_name', selectedStation.name);
+          }
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -172,6 +179,9 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
                     </SelectContent>
                   </Select>
                 </FormControl>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Officers and supervisors must select their station to view their assigned cases and reports
+                </div>
                 <FormMessage />
               </FormItem>
             )}

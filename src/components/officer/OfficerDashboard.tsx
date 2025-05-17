@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -16,7 +17,11 @@ import CrimeReportForm from "@/components/CrimeReportForm";
 import { BackButton } from "@/components/ui/back-button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-const OfficerDashboard = () => {
+interface OfficerDashboardProps {
+  stationName?: string;
+}
+
+const OfficerDashboard = ({ stationName = "Unknown Station" }: OfficerDashboardProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -46,10 +51,12 @@ const OfficerDashboard = () => {
       <div className="container mx-auto px-4 py-8 flex-grow">
         <BackButton />
 
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
           <div>
             <h1 className="text-2xl font-bold text-kenya-black mb-1">Officer Dashboard</h1>
-            <p className="text-gray-600">Welcome, Officer {user?.name}</p>
+            <p className="text-gray-600">
+              Welcome, Officer {user?.name}{stationName ? ` - ${stationName}` : ''}
+            </p>
           </div>
           <div className="mt-4 sm:mt-0 flex gap-3">
             <Button 

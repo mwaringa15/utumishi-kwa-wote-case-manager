@@ -23,10 +23,31 @@ export function useLogin() {
       const demoAccount = checkForDemoAccount(lowercaseEmail, password);
       if (demoAccount) {
         // If it's a supervisor demo account, assign a station
-        if (["supervisor"].includes(demoAccount.user.role)) {
+        if (["supervisor", "officer"].includes(demoAccount.user.role)) {
           // For demo accounts, store a default station ID if none was selected
           if (stationId) {
             localStorage.setItem('selected_station_id', stationId);
+            
+            // Get station name for display
+            try {
+              const { data } = await supabase
+                .from('stations')
+                .select('name')
+                .eq('id', stationId)
+                .single();
+                
+              if (data) {
+                localStorage.setItem('selected_station_name', data.name);
+                
+                toast({
+                  title: "Station Selected",
+                  description: `You are now assigned to ${data.name}`,
+                });
+              }
+            } catch (err) {
+              console.error("Error fetching station name:", err);
+            }
+            
             console.log("Demo account: stored station ID", stationId);
           }
         }
@@ -80,6 +101,24 @@ export function useLogin() {
             
             // Store selected station ID in localStorage for persistence
             localStorage.setItem('selected_station_id', stationId);
+            
+            // Get station name for display
+            const { data: stationData } = await supabase
+              .from('stations')
+              .select('name')
+              .eq('id', stationId)
+              .single();
+              
+            if (stationData) {
+              localStorage.setItem('selected_station_name', stationData.name);
+              
+              if (role === 'officer') {
+                toast({
+                  title: "Station Assignment",
+                  description: `You are now assigned to ${stationData.name} station`,
+                });
+              }
+            }
           }
           
           const { data: syncResult, error: syncError } = await supabase.functions.invoke('sync-user', {
