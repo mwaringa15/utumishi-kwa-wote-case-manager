@@ -32,10 +32,24 @@ export function useStationData(user: User | null) {
       const { stationId, stationName } = stationDetails;
 
       // Fetch cases and officers in parallel
-      const [unassignedCases, officers] = await Promise.all([
+      const [unassignedCases, officersData] = await Promise.all([
         fetchUnassignedCases({ supabase, stationId, stationName, toast }),
         fetchStationOfficers({ supabase, stationId, stationName, toast })
       ]);
+      
+      // Convert User[] to StationOfficer[] - ensuring each officer has a non-optional id
+      const officers: StationOfficer[] = officersData
+        .filter(officer => officer && officer.id) // Filter out any officers without an id
+        .map(officer => ({
+          id: officer.id as string, // Cast to string since we filtered out undefined ids
+          name: officer.name,
+          email: officer.email,
+          role: officer.role,
+          station: officer.station || stationName,
+          status: officer.status || 'unknown',
+          assignedCases: officer.assignedCases || 0,
+          badgeNumber: officer.badgeNumber
+        }));
       
       // Count statistics for dashboard
       const stats = {
@@ -80,7 +94,7 @@ export function useStationData(user: User | null) {
         station: stationName,
         stationId: stationId, 
         unassignedCases: unassignedCases,
-        officers: officers,
+        officers: officers, // Now using properly converted officers array
         pendingReports: [], // Preserving this from original logic
         stats: stats // Add stats to stationData
       });
