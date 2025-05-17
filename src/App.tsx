@@ -1,11 +1,12 @@
+
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/contexts/AuthContext";
-import Home from "@/pages/Home";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
+import { AuthProvider } from "./contexts/AuthContext";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import ReportCrime from "@/pages/ReportCrime";
 import OfficerDashboard from "@/pages/OfficerDashboard";
@@ -14,12 +15,12 @@ import SupervisorDashboard from "@/pages/SupervisorDashboard";
 import SupervisorOfficers from "@/pages/SupervisorOfficers";
 import SupervisorReports from "@/pages/SupervisorReports";
 import SupervisorCases from "@/pages/SupervisorCases";
-import OfficerCaseDetails from "@/pages/OfficerCaseDetails";
-import JudiciaryCase from "@/pages/JudiciaryCase";
+import OfficerCaseDetails from "./pages/OfficerCaseDetails";
+import JudiciaryCase from "./pages/JudiciaryCase";
 import NotFound from "@/pages/NotFound";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import PublicRoute from "@/components/PublicRoute";
-import RoleBasedRoute from "@/components/RoleBasedRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
+import RoleBasedRoute from "./components/RoleBasedRoute";
 
 function App() {
   return (
