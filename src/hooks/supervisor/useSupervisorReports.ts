@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { CrimeReport, User, OfficerStatus, CrimeStatus } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchStationOfficers } from "./stationUtils/fetchStationOfficers";
 
 export function useSupervisorReports(userId: string | undefined) {
   const { toast } = useToast();
@@ -95,49 +96,21 @@ export function useSupervisorReports(userId: string | undefined) {
           setPendingReports(formattedReports);
         }
         
-        // Step 3: Fetch officers for this station
-        const { data: officersData, error: officersError } = await supabase
-          .from('users')
-          .select('id, full_name, email, role, status')
-          .eq('station_id', effectiveStationId)
-          .eq('role', 'officer');
-          
-        if (officersError) {
-          console.error("Error fetching officers:", officersError);
-          toast({
-            title: "Error Loading Officers",
-            description: "Could not load officers for your station.",
-            variant: "destructive",
+        // Step 3: Fetch officers with counts using the dedicated utility function
+        try {
+          console.log("Fetching officers for station:", effectiveStationId, stationNameToSet);
+          const stationOfficers = await fetchStationOfficers({ 
+            supabase, 
+            stationId: effectiveStationId, 
+            stationName: stationNameToSet, 
+            toast 
           });
+          
+          console.log("Fetched officers:", stationOfficers);
+          setOfficers(stationOfficers);
+        } catch (error) {
+          console.error("Error in fetchStationOfficers:", error);
           setOfficers([]);
-        } else if (officersData) {
-          // Count assigned cases for each officer
-          const officerCaseCounts: Record<string, number> = {};
-          
-          for (const officer of officersData) {
-            const { count, error } = await supabase
-              .from('cases')
-              .select('*', { count: 'exact', head: true })
-              .eq('assigned_officer_id', officer.id)
-              .not('status', 'eq', 'Completed');
-              
-            if (!error) {
-              officerCaseCounts[officer.id] = count || 0;
-            }
-          }
-          
-          // Format officers
-          const formattedOfficers: User[] = officersData.map(officer => ({
-            id: officer.id,
-            name: officer.full_name || officer.email.split('@')[0],
-            email: officer.email,
-            role: "officer",
-            status: (officer.status || 'on_duty') as OfficerStatus,
-            badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
-            assignedCases: officerCaseCounts[officer.id] || 0,
-          }));
-          
-          setOfficers(formattedOfficers);
         }
       } else {
         setStationName("No Station Selected");

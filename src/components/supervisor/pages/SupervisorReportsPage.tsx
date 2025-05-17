@@ -31,8 +31,13 @@ const SupervisorReportsPage = () => {
     refreshData
   } = useSupervisorReports(user?.id);
   
+  // Debug output
+  console.log("SupervisorReportsPage - officers:", officers);
+  console.log("SupervisorReportsPage - stationId:", stationId);
+  
   // Handle case creation
   const handleCreateCase = async (reportId: string, officerId: string, officerName: string) => {
+    console.log("Creating case:", { reportId, officerId, officerName, stationId });
     const success = await createCaseFromReport(reportId, officerId, officerName, stationId, toast);
     
     // If case was created successfully, refresh the reports list

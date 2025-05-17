@@ -31,11 +31,16 @@ export function PendingReportsTab({
   stationId
 }: PendingReportsTabProps) {
   const [localSearch, setLocalSearch] = useState("");
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  
+  // Debug officers data to console
+  console.log("Officers in PendingReportsTab:", officers);
+  console.log("Station ID in PendingReportsTab:", stationId);
   
   // Local filter based on search term
   const filteredReports = pendingReports.filter(report => 
     report.id.toLowerCase().includes(localSearch.toLowerCase()) ||
-    report.title.toLowerCase().includes(localSearch.toLowerCase()) ||
+    report.title?.toLowerCase().includes(localSearch.toLowerCase()) ||
     report.crimeType?.toLowerCase().includes(localSearch.toLowerCase()) ||
     report.location?.toLowerCase().includes(localSearch.toLowerCase())
   );
@@ -105,6 +110,7 @@ export function PendingReportsTab({
                           <Button 
                             size="sm"
                             className="bg-kenya-green hover:bg-kenya-green/90"
+                            onClick={() => setSelectedReportId(report.id)}
                           >
                             Create Case
                           </Button>
@@ -117,12 +123,7 @@ export function PendingReportsTab({
                             </DialogDescription>
                           </DialogHeader>
                           <div className="py-4">
-                            {officers.length === 0 ? (
-                              <div className="p-4 text-center bg-amber-50 border border-amber-100 rounded-lg">
-                                <p className="text-amber-800">No officers available at this station.</p>
-                                <p className="text-sm text-amber-700 mt-1">Officer assignment is required to create a case.</p>
-                              </div>
-                            ) : (
+                            {officers && officers.length > 0 ? (
                               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
                                 {officers.map((officer) => (
                                   <div 
@@ -142,12 +143,21 @@ export function PendingReportsTab({
                                     </div>
                                     <Button 
                                       size="sm" 
-                                      onClick={() => handleCreateCase(report.id, officer.id, officer.name)}
+                                      onClick={() => {
+                                        if (selectedReportId) {
+                                          handleCreateCase(selectedReportId, officer.id, officer.name);
+                                        }
+                                      }}
                                     >
                                       Assign
                                     </Button>
                                   </div>
                                 ))}
+                              </div>
+                            ) : (
+                              <div className="p-4 text-center bg-amber-50 border border-amber-100 rounded-lg">
+                                <p className="text-amber-800">No officers available at this station.</p>
+                                <p className="text-sm text-amber-700 mt-1">Officer assignment is required to create a case.</p>
                               </div>
                             )}
                           </div>

@@ -1,6 +1,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { StationOfficer, ToastType } from '@/components/supervisor/types';
+import { User } from '@/types';
 
 interface FetchStationOfficersArgs {
   supabase: SupabaseClient<any, "public", any>;
@@ -15,13 +16,16 @@ export async function fetchStationOfficers({ supabase, stationId, stationName, t
     return [];
   }
 
+  console.log("Fetching officers for station:", stationId, stationName);
+
   const { data: officersData, error: officersError } = await supabase
     .from('users')
     .select('id, full_name, email, role, status')
     .eq('station_id', stationId)
-    .eq('role', 'Officer'); 
+    .eq('role', 'officer'); 
 
   if (officersError) {
+    console.error("Error fetching officers:", officersError);
     toast({
       title: "Error fetching officers",
       description: officersError.message || "Could not load officers for your station.",
@@ -30,11 +34,20 @@ export async function fetchStationOfficers({ supabase, stationId, stationName, t
     return [];
   }
 
-  const officersWithCaseCountsPromises = (officersData || []).map(async (officer) => {
+  console.log("Raw officer data:", officersData);
+
+  if (!officersData || officersData.length === 0) {
+    console.log("No officers found for station:", stationId);
+    return [];
+  }
+
+  const officersWithCaseCountsPromises = officersData.map(async (officer) => {
     if (!officer || !officer.id) {
       console.warn("Invalid officer data encountered:", officer);
       return { ...officer, id: '', full_name: 'Invalid Officer', email: '', role: 'Officer', status: 'unknown', assignedCases: 0 };
     }
+    
+    // Get count of active cases for this officer
     const { count, error: countError } = await supabase
       .from('cases')
       .select('*', { count: 'exact', head: true })
@@ -44,22 +57,35 @@ export async function fetchStationOfficers({ supabase, stationId, stationName, t
     if (countError) {
       console.error(`Error fetching case count for officer ${officer.id}:`, countError);
     }
+    
     return { 
       ...officer, 
       assignedCases: count || 0 
     };
   });
-  const resolvedOfficersWithCounts = await Promise.all(officersWithCaseCountsPromises);
-
-  const formattedOfficers: StationOfficer[] = resolvedOfficersWithCounts.filter(o => o && o.id).map(o => ({
-    id: o.id,
-    name: o.full_name || 'N/A',
-    email: o.email || 'N/A',
-    role: o.role || 'Officer', 
-    station: stationName, 
-    status: o.status || 'unknown',
-    assignedCases: o.assignedCases,
-  }));
   
-  return formattedOfficers;
+  try {
+    const resolvedOfficersWithCounts = await Promise.all(officersWithCaseCountsPromises);
+    
+    console.log("Officers with counts:", resolvedOfficersWithCounts);
+
+    const formattedOfficers: StationOfficer[] = resolvedOfficersWithCounts
+      .filter(o => o && o.id)
+      .map(o => ({
+        id: o.id,
+        name: o.full_name || 'N/A',
+        email: o.email || 'N/A',
+        role: o.role || 'Officer', 
+        station: stationName, 
+        status: o.status || 'unknown',
+        assignedCases: o.assignedCases,
+        badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
+      }));
+
+    console.log("Formatted officers:", formattedOfficers);
+    return formattedOfficers;
+  } catch (error) {
+    console.error("Error processing officers:", error);
+    return [];
+  }
 }
