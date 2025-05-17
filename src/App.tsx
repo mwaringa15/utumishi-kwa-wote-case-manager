@@ -18,6 +18,7 @@ import SupervisorCases from "@/pages/SupervisorCases";
 import OfficerCaseDetails from "./pages/OfficerCaseDetails";
 import JudiciaryCase from "./pages/JudiciaryCase";
 import TrackCase from "./pages/TrackCase";
+import OfficerProfile from "./pages/OfficerProfile";
 import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -42,6 +43,7 @@ function App() {
             {/* Role-Based Routes */}
             <Route path="/officer-dashboard" element={<RoleBasedRoute allowedRoles={["officer"]}><OfficerDashboard /></RoleBasedRoute>} />
             <Route path="/officer-dashboard/case/:id" element={<RoleBasedRoute allowedRoles={["officer"]}><OfficerCaseDetails /></RoleBasedRoute>} />
+            <Route path="/officer-profile" element={<RoleBasedRoute allowedRoles={["officer"]}><OfficerProfile /></RoleBasedRoute>} />
             
             <Route path="/judiciary-dashboard" element={<RoleBasedRoute allowedRoles={["judiciary"]}><JudiciaryDashboard /></RoleBasedRoute>} />
             <Route path="/judiciary-dashboard/case/:id" element={<RoleBasedRoute allowedRoles={["judiciary"]}><JudiciaryCase /></RoleBasedRoute>} />

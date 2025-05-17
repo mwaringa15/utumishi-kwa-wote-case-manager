@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -70,6 +71,20 @@ export const ProfileContainer = () => {
       throw profileError;
     }
 
+    // Get station name if station_id exists
+    let stationName;
+    if (profileData.station_id) {
+      const { data: stationData, error: stationError } = await supabase
+        .from('stations')
+        .select('name')
+        .eq('id', profileData.station_id)
+        .single();
+      
+      if (!stationError && stationData) {
+        stationName = stationData.name;
+      }
+    }
+
     // Cast the role and status to the correct types
     setProfile({
       id: profileData.id,
@@ -77,7 +92,7 @@ export const ProfileContainer = () => {
       email: profileData.email,
       role: profileData.role as UserRole,
       status: profileData.status as OfficerStatus,
-      station: profileData.station_id ? (await supabase.from('stations').select('name').eq('id', profileData.station_id).single()).data?.name : undefined
+      station: stationName
     });
 
     return profileData;

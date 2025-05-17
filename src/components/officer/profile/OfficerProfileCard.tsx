@@ -1,4 +1,5 @@
-import { User, OfficerStatus } from "@/types";
+
+import { OfficerStatus } from "@/types";
 import { UserCircle, Shield, Mail, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,20 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { OfficerProfile } from "./ProfileContainer";
 
 interface OfficerProfileCardProps {
-  profile: {
-    id?: string;
-    full_name: string;
-    email: string;
-    role: string;
-    station?: string;
-    status: OfficerStatus;
-  };
-  onStatusUpdate: (newStatus: OfficerStatus) => void;
+  profile: OfficerProfile;
+  onStatusUpdate: (newStatus: OfficerStatus) => Promise<void>;
   statusLoading: boolean;
 }
 
