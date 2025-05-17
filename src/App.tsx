@@ -1,138 +1,61 @@
-
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/hooks/auth/AuthProvider";
-import { ProtectedRoute } from "@/hooks/auth/ProtectedRoute";
+import { AuthProvider } from "@/contexts/AuthContext";
+import Home from "@/pages/Home";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import Dashboard from "@/pages/Dashboard";
+import ReportCrime from "@/pages/ReportCrime";
+import OfficerDashboard from "@/pages/OfficerDashboard";
+import JudiciaryDashboard from "@/pages/JudiciaryDashboard";
+import SupervisorDashboard from "@/pages/SupervisorDashboard";
+import SupervisorOfficers from "@/pages/SupervisorOfficers";
+import SupervisorReports from "@/pages/SupervisorReports";
+import SupervisorCases from "@/pages/SupervisorCases";
+import OfficerCaseDetails from "@/pages/OfficerCaseDetails";
+import JudiciaryCase from "@/pages/JudiciaryCase";
+import NotFound from "@/pages/NotFound";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import PublicRoute from "@/components/PublicRoute";
+import RoleBasedRoute from "@/components/RoleBasedRoute";
 
-// Pages
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import OfficerDashboard from "./pages/OfficerDashboard";
-import OfficerProfile from "./pages/OfficerProfile";
-import ReportCrime from "./pages/ReportCrime";
-import TrackCase from "./pages/TrackCase";
-import NotFound from "./pages/NotFound";
-import FAQPage from "./pages/FAQPage";
-import JudiciaryDashboard from "./pages/JudiciaryDashboard";
-import SupervisorDashboard from "./pages/SupervisorDashboard";
-import SupervisorCases from "./pages/supervisor/SupervisorCases";
-import SupervisorReports from "./pages/supervisor/SupervisorReports";
-import SupervisorOfficers from "./pages/supervisor/SupervisorOfficers";
-import CaseDetails from "./pages/CaseDetails";
-
-// Login and Register pages
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+function App() {
+  return (
+    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+        <Router>
           <Routes>
             {/* Public Routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/report-crime" element={<ReportCrime />} />
-            <Route path="/track-case" element={<TrackCase />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/faq" element={<FAQPage />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
             
-            {/* Protected Routes - Public User */}
-            <Route 
-              path="/dashboard" 
-              element={<ProtectedRoute element={<Dashboard />} redirectTo="/login" />} 
-            />
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/report-crime" element={<ProtectedRoute><ReportCrime /></ProtectedRoute>} />
             
-            {/* Protected Routes - Officer */}
-            <Route 
-              path="/officer-dashboard" 
-              element={<ProtectedRoute 
-                element={<OfficerDashboard />} 
-                allowedRoles={["officer"]} 
-                redirectTo="/dashboard" 
-              />} 
-            />
-            <Route 
-              path="/officer-profile" 
-              element={<ProtectedRoute 
-                element={<OfficerProfile />} 
-                allowedRoles={["officer"]} 
-                redirectTo="/dashboard" 
-              />} 
-            />
-            <Route 
-              path="/case/:id" 
-              element={<ProtectedRoute 
-                element={<CaseDetails />} 
-                allowedRoles={["officer", "judiciary"]} 
-                redirectTo="/dashboard" 
-              />} 
-            />
+            {/* Role-Based Routes */}
+            <Route path="/officer-dashboard" element={<RoleBasedRoute allowedRoles={["officer"]}><OfficerDashboard /></RoleBasedRoute>} />
+            <Route path="/officer-dashboard/case/:id" element={<RoleBasedRoute allowedRoles={["officer"]}><OfficerCaseDetails /></RoleBasedRoute>} />
             
-            {/* Protected Routes - Supervisor */}
-            <Route 
-              path="/supervisor-dashboard" 
-              element={<ProtectedRoute 
-                element={<SupervisorDashboard />} 
-                allowedRoles={["supervisor"]} 
-                redirectTo="/dashboard" 
-              />} 
-            />
-            <Route 
-              path="/supervisor-dashboard/cases" 
-              element={<ProtectedRoute 
-                element={<SupervisorCases />} 
-                allowedRoles={["supervisor"]} 
-                redirectTo="/dashboard" 
-              />} 
-            />
-            <Route 
-              path="/supervisor-dashboard/reports" 
-              element={<ProtectedRoute 
-                element={<SupervisorReports />} 
-                allowedRoles={["supervisor"]} 
-                redirectTo="/dashboard" 
-              />} 
-            />
-            <Route 
-              path="/supervisor-dashboard/officers" 
-              element={<ProtectedRoute 
-                element={<SupervisorOfficers />} 
-                allowedRoles={["supervisor"]} 
-                redirectTo="/dashboard" 
-              />} 
-            />
+            <Route path="/judiciary-dashboard" element={<RoleBasedRoute allowedRoles={["judiciary"]}><JudiciaryDashboard /></RoleBasedRoute>} />
+            <Route path="/judiciary-dashboard/case/:id" element={<RoleBasedRoute allowedRoles={["judiciary"]}><JudiciaryCase /></RoleBasedRoute>} />
             
-            {/* Protected Routes - Judiciary */}
-            <Route 
-              path="/judiciary-dashboard" 
-              element={<ProtectedRoute 
-                element={<JudiciaryDashboard />} 
-                allowedRoles={["judiciary"]} 
-                redirectTo="/dashboard" 
-              />} 
-            />
-            
-            {/* Redirect old routes to new paths */}
-            <Route path="/cases" element={<Navigate to="/supervisor-dashboard/cases" replace />} />
-            <Route path="/reports" element={<Navigate to="/supervisor-dashboard/reports" replace />} />
-            <Route path="/officers" element={<Navigate to="/supervisor-dashboard/officers" replace />} />
+            <Route path="/supervisor-dashboard" element={<RoleBasedRoute allowedRoles={["supervisor", "ocs", "commander", "administrator"]}><SupervisorDashboard /></RoleBasedRoute>} />
+            <Route path="/supervisor-dashboard/officers" element={<RoleBasedRoute allowedRoles={["supervisor", "ocs", "commander", "administrator"]}><SupervisorOfficers /></RoleBasedRoute>} />
+            <Route path="/supervisor-dashboard/reports" element={<RoleBasedRoute allowedRoles={["supervisor", "ocs", "commander", "administrator"]}><SupervisorReports /></RoleBasedRoute>} />
+            <Route path="/supervisor-dashboard/cases" element={<RoleBasedRoute allowedRoles={["supervisor", "ocs", "commander", "administrator"]}><SupervisorCases /></RoleBasedRoute>} />
             
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
+        </Router>
+        <Toaster />
       </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </ThemeProvider>
+  );
+}
 
 export default App;
