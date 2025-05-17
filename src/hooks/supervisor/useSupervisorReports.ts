@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { CrimeReport, User, OfficerStatus } from "@/types";
+import { CrimeReport, User, OfficerStatus, CrimeStatus } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -85,7 +85,7 @@ export function useSupervisorReports(userId: string | undefined) {
             id: report.id,
             title: report.title,
             description: report.description,
-            status: report.status,
+            status: report.status as CrimeStatus, // Cast to CrimeStatus type
             createdAt: report.created_at,
             location: report.location,
             crimeType: report.category,
