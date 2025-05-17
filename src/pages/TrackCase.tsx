@@ -22,7 +22,7 @@ const TrackCase = () => {
       // Only search if we have a valid ID
       handleSearch({ caseId: id });
     }
-  }, [searchParams.get("id")]); // Only re-run if the ID in the URL changes
+  }, [searchParams, handleSearch]); // Include handleSearch in the dependency array
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

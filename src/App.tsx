@@ -17,6 +17,7 @@ import SupervisorReports from "@/pages/SupervisorReports";
 import SupervisorCases from "@/pages/SupervisorCases";
 import OfficerCaseDetails from "./pages/OfficerCaseDetails";
 import JudiciaryCase from "./pages/JudiciaryCase";
+import TrackCase from "./pages/TrackCase";
 import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -32,6 +33,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+            <Route path="/track-case" element={<TrackCase />} />
             
             {/* Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
