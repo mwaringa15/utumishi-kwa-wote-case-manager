@@ -1,5 +1,5 @@
 
-import { User as UserIcon, Users, MapPin, PhoneCall } from "lucide-react";
+import { User as UserIcon, Users, MapPin, PhoneCall, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -13,21 +13,52 @@ import {
 import { User, OfficerStatus } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OfficerProfile } from "@/components/officer/profile/ProfileContainer";
+import { OfficerProfileCard } from "@/components/officer/profile/OfficerProfileCard";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface OfficersTabProps {
   officers: User[];
+  officerProfiles?: OfficerProfile[];
   isLoading: boolean;
+  stationName?: string;
 }
 
-export function OfficersTab({ officers, isLoading }: OfficersTabProps) {
+export function OfficersTab({ officers, officerProfiles = [], isLoading, stationName }: OfficersTabProps) {
+  const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  
+  // Use officer profiles if available, otherwise fall back to regular officers
+  const displayOfficers = officerProfiles.length > 0
+    ? officerProfiles
+    : officers.map(o => ({
+        id: o.id,
+        full_name: o.name,
+        email: o.email,
+        role: o.role,
+        status: o.status as OfficerStatus,
+        station: o.station
+      }));
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Police Officers</h2>
-        <Button>
-          <Users className="h-4 w-4 mr-2" />
-          Manage Officers
-        </Button>
+        <h2 className="text-xl font-semibold">
+          {stationName 
+            ? `Police Officers in ${stationName}` 
+            : 'Police Officers'}
+        </h2>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={() => setViewMode('cards')}>
+            <Users className="h-4 w-4 mr-2" />
+            Cards
+          </Button>
+          <Button variant="outline" onClick={() => setViewMode('table')}>
+            <Users className="h-4 w-4 mr-2" />
+            Table
+          </Button>
+        </div>
       </div>
       
       {isLoading ? (
@@ -52,117 +83,97 @@ export function OfficersTab({ officers, isLoading }: OfficersTabProps) {
           ))}
         </div>
       ) : (
-        officers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {officers.map((officer) => (
-              <Card key={officer.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center">
-                      <div className="bg-gray-200 rounded-full p-3 mr-4">
-                        <UserIcon className="h-6 w-6 text-gray-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-lg">{officer.name}</h3>
-                        <p className="text-gray-500">{officer.email}</p>
-                        {officer.station && (
-                          <div className="flex items-center text-sm text-gray-500 mt-1">
-                            <MapPin className="h-4 w-4 mr-1.5 text-gray-400" />
-                            <span>{officer.station}</span>
+        displayOfficers.length > 0 ? (
+          <>
+            {/* Card view */}
+            {viewMode === 'cards' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {displayOfficers.map((officer) => (
+                  <div key={officer.id} className="relative">
+                    <OfficerProfileCard 
+                      profile={officer}
+                      onStatusUpdate={async () => {}}
+                      statusLoading={false}
+                      viewMode="compact"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="absolute top-4 right-4"
+                      onClick={() => {
+                        // If this is an actual officer, you could navigate to their profile
+                        console.log("View officer:", officer.id);
+                      }}
+                    >
+                      <Eye className="h-3 w-3 mr-2" />
+                      Details
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Table view */}
+            {viewMode === 'table' && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Station</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {displayOfficers.map((officer) => (
+                    <TableRow key={officer.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center">
+                          <div className="bg-gray-200 rounded-full p-1 mr-2">
+                            <UserIcon className="h-4 w-4 text-gray-600" />
                           </div>
-                        )}
-                        <div className="flex items-center mt-2">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {officer.badgeNumber || 'No Badge'}
-                          </span>
-                          <span className="mx-2 text-gray-300">•</span>
-                          <span className="text-sm text-gray-600">
-                            {officer.assignedCases} active cases
-                          </span>
+                          <div>{officer.full_name}</div>
                         </div>
+                      </TableCell>
+                      <TableCell>{officer.email}</TableCell>
+                      <TableCell>{officer.station || "Not assigned"}</TableCell>
+                      <TableCell>
                         <Badge 
-                          className={`mt-2 ${
+                          className={
                             officer.status === "on_duty" ? "bg-green-100 text-green-800" :
                             officer.status === "on_leave" ? "bg-amber-100 text-amber-800" :
                             "bg-gray-100 text-gray-800"
-                          }`}
+                          }
                         >
                           {officer.status === "on_duty" ? "On Duty" : 
                           officer.status === "on_leave" ? "On Leave" : 
                           "Off Duty"}
                         </Badge>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 flex justify-end space-x-2">
-                    <Button variant="outline" size="sm">
-                      View Cases
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                      </TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            console.log("View officer details:", officer.id);
+                          }}
+                        >
+                          <Eye className="h-3 w-3 mr-2" />
+                          View Details
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </>
         ) : (
           <div className="text-center py-8">
             <p className="text-gray-500">No officers found for this station</p>
           </div>
         )
-      )}
-      
-      {/* Table view for larger screens */}
-      {!isLoading && officers.length > 0 && (
-        <div className="hidden xl:block mt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Badge Number</TableHead>
-                <TableHead>Station</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Active Cases</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {officers.map((officer) => (
-                <TableRow key={officer.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center">
-                      <div className="bg-gray-200 rounded-full p-1 mr-2">
-                        <UserIcon className="h-4 w-4 text-gray-600" />
-                      </div>
-                      <div>
-                        {officer.name}
-                        <div className="text-xs text-gray-500">{officer.email}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{officer.badgeNumber}</TableCell>
-                  <TableCell>{officer.station || "Not assigned"}</TableCell>
-                  <TableCell>
-                    <Badge 
-                      className={
-                        officer.status === "on_duty" ? "bg-green-100 text-green-800" :
-                        officer.status === "on_leave" ? "bg-amber-100 text-amber-800" :
-                        "bg-gray-100 text-gray-800"
-                      }
-                    >
-                      {officer.status === "on_duty" ? "On Duty" : 
-                      officer.status === "on_leave" ? "On Leave" : 
-                      "Off Duty"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{officer.assignedCases}</TableCell>
-                  <TableCell>
-                    <Button variant="outline" size="sm">View Cases</Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
       )}
     </div>
   );
