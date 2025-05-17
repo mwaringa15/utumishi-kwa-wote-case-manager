@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { User, UserRole } from "@/types";
+import { User, UserRole, OfficerStatus } from "@/types";
 
 /**
  * Fetches officers for a station with their case counts
@@ -69,7 +69,7 @@ export async function fetchOfficers(stationId: string | null): Promise<User[]> {
       email: officer.email,
       role: "officer" as UserRole,
       station: officer.station_id ? stationNames[officer.station_id] || "Unknown Station" : "Unassigned",
-      status: officer.status || 'on_duty',
+      status: (officer.status || 'on_duty') as OfficerStatus, // Cast to OfficerStatus
       badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
       assignedCases: officerCaseCounts[officer.id] || 0
     }));

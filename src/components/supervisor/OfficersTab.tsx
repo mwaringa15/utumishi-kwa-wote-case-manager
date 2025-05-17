@@ -10,12 +10,12 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { User as UserType } from "@/types";
+import { User, OfficerStatus } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface OfficersTabProps {
-  officers: UserType[];
+  officers: User[];
   isLoading: boolean;
 }
 
