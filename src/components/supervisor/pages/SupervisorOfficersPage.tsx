@@ -39,13 +39,18 @@ const SupervisorOfficersPage = () => {
 
     // Get supervisor's station ID from localStorage or fetch it
     const getStationId = async () => {
-      const storedStationId = localStorage.getItem('selected_station_id');
+      setIsLoading(true);
       
-      if (storedStationId) {
-        setStationId(storedStationId);
-      } else if (user) {
-        // Fetch from user profile
-        try {
+      try {
+        console.log("Initial station ID check:", { 
+          userId: user?.id, 
+          storedStationId: localStorage.getItem('selected_station_id') 
+        });
+        
+        let effectiveStationId = localStorage.getItem('selected_station_id');
+        
+        if (!effectiveStationId && user) {
+          // Fetch from user profile
           const { data: userData, error } = await supabase
             .from('users')
             .select('station_id')
@@ -55,28 +60,41 @@ const SupervisorOfficersPage = () => {
           if (error) throw error;
           
           if (userData?.station_id) {
-            setStationId(userData.station_id);
+            effectiveStationId = userData.station_id;
             localStorage.setItem('selected_station_id', userData.station_id);
           }
-        } catch (error) {
-          console.error("Error fetching station ID:", error);
         }
+        
+        console.log("Effective station ID:", effectiveStationId);
+        setStationId(effectiveStationId);
+        
+        // Get station name
+        if (effectiveStationId) {
+          const { data: stationData, error: stationError } = await supabase
+            .from('stations')
+            .select('name')
+            .eq('id', effectiveStationId)
+            .single();
+            
+          if (stationError) throw stationError;
+          
+          if (stationData) {
+            console.log("Station name found:", stationData.name);
+            setStationName(stationData.name);
+          }
+        }
+      } catch (error) {
+        console.error("Error getting station ID:", error);
+        toast({
+          title: "Error",
+          description: "Failed to get station information",
+          variant: "destructive",
+        });
       }
     };
     
     getStationId();
-  }, [user, navigate]);
-
-  // Set station name from the hook once available
-  useEffect(() => {
-    if (hookStationName) {
-      setStationName(hookStationName);
-    }
-    
-    if (hookStationId && !stationId) {
-      setStationId(hookStationId);
-    }
-  }, [hookStationName, hookStationId, stationId]);
+  }, [user, navigate, toast]);
 
   // Fetch officer profiles once we have the station ID
   useEffect(() => {
