@@ -1,177 +1,119 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+// Follow this setup guide to integrate the Deno language server with your editor:
+// https://deno.land/manual/getting_started/setup_your_environment
+// This enables autocomplete, go to definition, etc.
 
-// Define cors headers for browser requests
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0"
 
-// Create Supabase client
-const supabaseUrl = 'https://gaimrkcezqbugsxngaca.supabase.co'
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+console.log("Hello from sync-user!")
 
-// Handle preflight CORS
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
+serve(async (req) => {
   try {
-    // Parse the request body
-    const body = await req.json()
-    const { id, email, role, station_id } = body // Added station_id
+    // Create a Supabase client with the Auth context of the logged in user.
+    const supabaseClient = createClient(
+      // Supabase API URL - env var exported by default.
+      Deno.env.get('SUPABASE_URL') ?? '',
+      // Supabase API ANON KEY - env var exported by default.
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      // Create client with Auth context of the user that called the function.
+      // This way your row-level-security (RLS) policies are applied.
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    )
+
+    // Now we can get the session or user object
+    const {
+      data: { user },
+    } = await supabaseClient.auth.getUser()
+
+    // Extract the body payload
+    const body = await req.json();
+    const { id, email, role, station_id } = body;
     
-    if (!id || !email || !role) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: id, email, or role' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      )
-    }
-    
-    // Always normalize the role to lowercase
-    let normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
-    
-    console.log(`Syncing user: ${id}, email: ${email}, role: ${normalizedRole}, station_id: ${station_id}`)
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
-    
-    // Check if user exists in users table
-    const { data: existingUser, error: fetchError } = await supabase
+    console.log("Received payload:", { id, email, role, station_id });
+
+    // Use a service_role client for operations that require elevated privileges
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
+
+    // Get the existing user profile if it exists
+    const { data: existingUser, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('id', id)
-      .single()
-      
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is the "no rows returned" error
-      console.error('Error fetching user:', fetchError)
-      return new Response(
-        JSON.stringify({ error: 'Error fetching user' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      )
-    }
-    
-    // Prepare user data for insert/update
-    const userData: {
-      id?: string;
-      email: string;
-      role: string;
-      full_name?: string;
-      station_id?: string | null; // Allow station_id to be explicitly set to null to clear it
-    } = {
-      email,
-      role: normalizedRole,
-    };
+      .single();
 
-    // Handle station_id: allow it to be updated or cleared
-    // If station_id is provided (even as null), include it in userData.
-    // If station_id is undefined in the body, it won't be in userData, preserving existing DB value.
-    if (station_id !== undefined) {
-        userData.station_id = station_id; // This could be a string UUID or null
+    if (userError && userError.code !== 'PGRST116') {
+      console.error("Error checking existing user:", userError);
+      throw userError;
     }
 
+    console.log("Existing user check:", existingUser ? "Found" : "Not found");
 
+    let result;
     if (!existingUser) {
-      // Insert new user
-      userData.id = id;
-      userData.full_name = email.split('@')[0]; // Default name from email
-      
-      const { error: insertError } = await supabase
+      // Insert a new user profile
+      console.log("Creating new user profile with station_id:", station_id);
+      result = await supabase
         .from('users')
-        .insert(userData)
-      
-      if (insertError) {
-        console.error('Error inserting user:', insertError)
-        // Provide more detailed error if it's a constraint violation
-        if (insertError.code === '23514' && insertError.message.includes('users_role_check')) {
-            return new Response(
-                JSON.stringify({ error: `Invalid role specified: ${normalizedRole}. Allowed roles are public, officer, ocs, commander, administrator, judiciary, supervisor.` }),
-                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-            );
-        }
-        return new Response(
-          JSON.stringify({ error: 'Error inserting user', details: insertError.message }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-        )
-      }
-    } else {
-      // Update existing user
-      // Create updatePayload, only including fields that are actually being changed.
-      const updatePayload: { email: string; role: string; station_id?: string | null } = {
-        email, // email can always be updated
-        role: normalizedRole, // role can always be updated
-      };
-
-      // Only include station_id in update if it's explicitly provided in the body
-      if (station_id !== undefined) {
-        updatePayload.station_id = station_id; // can be string or null
-      }
-      // Note: If station_id is not in the body, it's not included in updatePayload,
-      // so existing station_id in DB is preserved.
-
-      const { error: updateError } = await supabase
-        .from('users')
-        .update(updatePayload)
-        .eq('id', id)
-      
-      if (updateError) {
-        console.error('Error updating user:', updateError)
-        if (updateError.code === '23514' && updateError.message.includes('users_role_check')) {
-            return new Response(
-                JSON.stringify({ error: `Invalid role specified: ${normalizedRole}. Allowed roles are public, officer, ocs, commander, administrator, judiciary, supervisor.` }),
-                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-            );
-        }
-        return new Response(
-          JSON.stringify({ error: 'Error updating user', details: updateError.message }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-        )
-      }
-    }
-    
-    // Check if role exists in user_roles table
-    const { data: existingRole, error: roleError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', id)
-      .eq('role', normalizedRole)
-      .single()
-      
-    if (roleError && roleError.code !== 'PGRST116') {
-      console.error('Error fetching role:', roleError)
-      // Not returning error here, as role sync is secondary to user profile update
-    }
-    
-    // Insert role if it doesn't exist
-    if (!existingRole) {
-      const { error: roleInsertError } = await supabase
-        .from('user_roles')
         .insert({
-          user_id: id,
-          role: normalizedRole
-        })
+          id,
+          email,
+          role,
+          station_id, // Include station_id when creating the user
+          full_name: email.split('@')[0] // Simple name extraction from email
+        });
+    } else {
+      // Update existing user profile
+      console.log("Updating existing user profile");
+      // Only update station_id if it's provided
+      const updateData: any = { 
+        email, 
+        role 
+      };
       
-      if (roleInsertError) {
-        // If role insert fails due to user_roles_role_check, it indicates a problem similar to users_role_check
-        if (roleInsertError.code === '23514' && roleInsertError.message.includes('user_roles_role_check')) {
-             console.warn(`Could not insert role ${normalizedRole} into user_roles due to check constraint. This might require a similar fix as users_role_check.`);
-        } else {
-            console.error('Error inserting role into user_roles:', roleInsertError);
-        }
-        // Not returning error here
+      if (station_id !== undefined) {
+        updateData.station_id = station_id;
       }
+      
+      result = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', id);
+    }
+
+    if (result.error) {
+      console.error("Error syncing user:", result.error);
+      throw result.error;
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: 'User synced successfully' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      JSON.stringify({
+        message: `User ${id} has been synced successfully`,
+        user_id: id,
+        email: email,
+        role: role,
+        station_id: station_id
+      }),
+      {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200,
+      },
     )
   } catch (error) {
-    console.error('Error processing request:', error)
+    console.error("Error in sync-user function:", error);
     return new Response(
-      JSON.stringify({ error: 'Internal Server Error', details: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { 'Content-Type': 'application/json' },
+        status: 400,
+      },
     )
   }
 })
