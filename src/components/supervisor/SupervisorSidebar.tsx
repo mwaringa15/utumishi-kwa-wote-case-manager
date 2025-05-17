@@ -1,105 +1,71 @@
 
-import { HomeIcon, ClipboardList, Users2, AlertCircle, BarChart3 } from "lucide-react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { 
-  Sidebar, 
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu, 
-  SidebarMenuItem, 
-  SidebarMenuButton,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel
-} from "@/components/ui/sidebar";
+import { BarChart3, Users, FileText, Folder } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sidebar, SidebarHeader, SidebarSection, SidebarFooter } from "@/components/ui/sidebar";
 
 export function SupervisorSidebar() {
   const location = useLocation();
-  const { user } = useAuth();
   
-  // Check if the current path is active
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
   
-  // Only show analytics for supervisor role
-  const showAnalytics = user?.role === "supervisor";
+  const navItems = [
+    { 
+      label: 'Dashboard', 
+      icon: BarChart3, 
+      path: '/supervisor-dashboard',
+      active: isActive('/supervisor-dashboard')  
+    },
+    { 
+      label: 'Cases', 
+      icon: Folder, 
+      path: '/supervisor-dashboard/cases',
+      active: isActive('/supervisor-dashboard/cases')  
+    },
+    { 
+      label: 'Reports', 
+      icon: FileText, 
+      path: '/supervisor-dashboard/reports',
+      active: isActive('/supervisor-dashboard/reports')  
+    },
+    { 
+      label: 'Officers', 
+      icon: Users, 
+      path: '/supervisor-dashboard/officers',
+      active: isActive('/supervisor-dashboard/officers')  
+    }
+  ];
 
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center px-3 py-2">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-kenya-green text-white">
-            <ClipboardList className="h-5 w-5" />
-          </div>
-          <div className="ml-3 flex flex-col">
-            <span className="text-sm font-medium">Police System</span>
-            <span className="text-xs text-muted-foreground">{user?.role}</span>
-          </div>
-        </div>
+        <div className="text-lg font-semibold">Supervisor</div>
       </SidebarHeader>
       
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Overview</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isActive("/supervisor-dashboard")}>
-                  <Link to="/supervisor-dashboard">
-                    <HomeIcon />
-                    <span>Dashboard</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isActive("/supervisor-dashboard/cases")}>
-                  <Link to="/supervisor-dashboard/cases">
-                    <ClipboardList />
-                    <span>Cases</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isActive("/supervisor-dashboard/reports")}>
-                  <Link to="/supervisor-dashboard/reports">
-                    <AlertCircle />
-                    <span>Reports</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isActive("/supervisor-dashboard/officers")}>
-                  <Link to="/supervisor-dashboard/officers">
-                    <Users2 />
-                    <span>Officers</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              {showAnalytics && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={isActive("/supervisor-dashboard/analytics")}>
-                    <Link to="/supervisor-dashboard/analytics">
-                      <BarChart3 />
-                      <span>Analytics</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+      <SidebarSection>
+        <nav className="flex flex-col gap-1">
+          {navItems.map((item) => (
+            <Button
+              key={item.path}
+              variant={item.active ? "secondary" : "ghost"}
+              className="justify-start"
+              asChild
+            >
+              <Link to={item.path}>
+                <item.icon className="mr-2 h-4 w-4" />
+                {item.label}
+              </Link>
+            </Button>
+          ))}
+        </nav>
+      </SidebarSection>
       
       <SidebarFooter>
-        <div className="py-2 px-3">
-          <p className="text-xs text-muted-foreground">
-            © Kenya Police Service {new Date().getFullYear()}
-          </p>
+        <div className="text-xs text-muted-foreground">
+          Police Station Management
         </div>
       </SidebarFooter>
     </Sidebar>
