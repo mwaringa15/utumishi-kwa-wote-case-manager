@@ -3,10 +3,10 @@
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
 
-console.log("Hello from get-station-id function!")
+console.log("Hello from get-station-id function!");
 
 serve(async (req) => {
   try {
@@ -24,80 +24,97 @@ serve(async (req) => {
         status: 204,
       });
     }
-    
-    // Create a Supabase client with the Auth context of the logged in user.
+
+    // Create a Supabase client with the Auth context of the logged in user
     const supabaseClient = createClient(
-      // Supabase API URL - env var exported by default.
+      // Supabase API URL - env var exported by default
       Deno.env.get('SUPABASE_URL') ?? '',
-      // Supabase API ANON KEY - env var exported by default.
+      // Supabase API ANON KEY - env var exported by default
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      // Create client with Auth context of the user that called the function.
+      // Create client with Auth context of the user that called the function
       {
         global: {
           headers: { Authorization: req.headers.get('Authorization')! },
         },
       }
-    )
+    );
 
-    // Get the current user
+    // Get the user
     const {
       data: { user },
-    } = await supabaseClient.auth.getUser()
+    } = await supabaseClient.auth.getUser();
 
     if (!user) {
       return new Response(
-        JSON.stringify({ error: 'Not authenticated' }),
-        {
-          headers: corsHeaders,
-          status: 401,
-        },
-      )
+        JSON.stringify({ error: "Not authorized" }),
+        { headers: corsHeaders, status: 401 }
+      );
     }
 
-    // Get the user's station ID from the users table
-    const { data: userData, error: userError } = await supabaseClient
+    // Use service_role client to get user data since it's more reliable
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
+
+    // Get the user's role and station from the users table
+    const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('station_id, role')
+      .select('role, station_id')
       .eq('id', user.id)
       .single();
 
-    if (userError) {
-      console.error("Error fetching user's station_id:", userError);
-      throw userError;
+    if (userError && userError.code !== 'PGRST116') {
+      console.error("Error fetching user data:", userError);
+      return new Response(
+        JSON.stringify({ error: "Error fetching user data" }),
+        { headers: corsHeaders, status: 400 }
+      );
     }
 
-    console.log(`User ${user.id} has station_id: ${userData?.station_id || 'null'} and role: ${userData?.role || 'null'}`);
-    
-    // Make sure to normalize the role to lowercase for consistency
-    const normalizedRole = userData?.role ? userData.role.toLowerCase() : "public";
-    console.log(`Normalized role: ${normalizedRole}`);
+    // If we found user data, return it
+    if (userData) {
+      return new Response(
+        JSON.stringify({
+          user_id: user.id,
+          email: user.email,
+          role: userData.role.toLowerCase(), // Ensure lowercase
+          station_id: userData.station_id
+        }),
+        { headers: corsHeaders, status: 200 }
+      );
+    }
 
-    // Map old role names if they exist in the database
-    let finalRole = normalizedRole;
-    if (["administrator", "ocs", "commander"].includes(normalizedRole)) {
-      finalRole = 'supervisor';
-      console.log(`Mapping old role ${normalizedRole} to supervisor`);
+    // If no user data found, determine role from email
+    const email = user.email || "";
+    let role = "public";
+    
+    if (email.endsWith("@police.go.ke")) {
+      role = "officer";
+    } else if (email.endsWith("@judiciary.go.ke")) {
+      role = "judiciary";
+    } else if (email.endsWith("@supervisor.go.ke")) {
+      role = "supervisor";
     }
 
     return new Response(
       JSON.stringify({
-        station_id: userData?.station_id || null,
         user_id: user.id,
-        role: finalRole  // Return the normalized role
+        email: user.email,
+        role: role,
+        station_id: null
       }),
-      {
-        headers: corsHeaders,
-        status: 200,
-      },
-    )
+      { headers: corsHeaders, status: 200 }
+    );
+
   } catch (error) {
     console.error("Error in get-station-id function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
         headers: { 'Content-Type': 'application/json' },
-        status: 400,
+        status: 500,
       },
-    )
+    );
   }
-})
+});

@@ -134,6 +134,7 @@ export function useLogin() {
           description: `Welcome back, ${user.email?.split("@")[0]}!`,
         });
         
+        // Make sure we also return the user role along with redirectPath
         return { user: { ...user, role }, redirectPath };
       }
       

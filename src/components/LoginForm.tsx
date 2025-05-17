@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
@@ -36,7 +36,7 @@ type Station = {
 };
 
 interface LoginFormProps {
-  onLogin?: (email: string, password: string, stationId?: string) => Promise<{ user: any, redirectPath: string } | undefined>;
+  onLogin: (email: string, password: string, stationId?: string) => Promise<any>;
 }
 
 const LoginForm = ({ onLogin }: LoginFormProps) => {
@@ -44,7 +44,6 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
   const [stations, setStations] = useState<Station[]>([]);
   const [stationsLoading, setStationsLoading] = useState(true);
   const { toast } = useToast();
-  const navigate = useNavigate();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -91,13 +90,8 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
       console.log("Login attempt:", data);
       
       if (onLogin) {
-        const result = await onLogin(data.email, data.password, data.stationId || undefined);
-        
-        if (result && result.redirectPath) {
-          console.log("Login successful, redirecting to:", result.redirectPath);
-          // Navigate to the appropriate dashboard based on the returned path
-          navigate(result.redirectPath);
-        }
+        await onLogin(data.email, data.password, data.stationId || undefined);
+        // Note: We're not manually navigating here - that should be handled by the parent component
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -220,6 +214,6 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
       </Form>
     </div>
   );
-}
+};
 
 export default LoginForm;

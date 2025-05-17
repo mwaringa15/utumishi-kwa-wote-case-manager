@@ -2,19 +2,18 @@
 import { useLogin } from "./useLogin";
 import { useLogout } from "./useLogout";
 import { useRegister } from "./useRegister";
-import { UserRole } from "@/types";
 
 export function useAuthActions() {
-  const { isLoading: isLoginLoading, login } = useLogin();
-  const { isLoading: isLogoutLoading, logout } = useLogout();
-  const { isLoading: isRegisterLoading, register } = useRegister();
-
-  const isLoading = isLoginLoading || isLogoutLoading || isRegisterLoading;
-
+  const { login, isLoading: isLoginLoading } = useLogin();
+  const { logout, isLoading: isLogoutLoading } = useLogout();
+  const { register, isLoading: isRegisterLoading } = useRegister();
+  
   return {
-    isLoading,
     login,
     logout,
-    register
+    register,
+    isLoginLoading,
+    isLogoutLoading,
+    isRegisterLoading
   };
 }

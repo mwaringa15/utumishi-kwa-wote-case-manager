@@ -2,10 +2,13 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Cleans up all Supabase auth tokens in localStorage to prevent
- * authentication limbo states
+ * Thoroughly clean up all Supabase auth state in local storage
+ * to prevent auth issues when logging in/out
  */
 export const cleanupAuthState = () => {
+  // Remove standard auth tokens
+  localStorage.removeItem('supabase.auth.token');
+  
   // Remove all Supabase auth keys from localStorage
   Object.keys(localStorage).forEach((key) => {
     if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
@@ -13,33 +16,26 @@ export const cleanupAuthState = () => {
     }
   });
   
-  // Also try to clean sessionStorage if available
+  // Remove from sessionStorage if in use
   try {
     Object.keys(sessionStorage || {}).forEach((key) => {
       if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
         sessionStorage.removeItem(key);
       }
     });
-  } catch (err) {
-    // Ignore errors accessing sessionStorage
-    console.log("Could not access sessionStorage");
+  } catch (e) {
+    // Ignore errors if sessionStorage is not available
   }
 };
 
 /**
- * Attempts a global sign out from Supabase
- * Returns true if successful, false otherwise
+ * Attempt a global sign out - we ignore any errors since this is a best-effort operation
  */
-export const attemptGlobalSignOut = async (): Promise<boolean> => {
+export const attemptGlobalSignOut = async () => {
   try {
-    const { error } = await supabase.auth.signOut({ scope: 'global' });
-    if (error) {
-      console.error("Error during global sign out:", error.message);
-      return false;
-    }
-    return true;
+    await supabase.auth.signOut({ scope: 'global' });
   } catch (err) {
-    console.error("Exception during global sign out:", err);
-    return false;
+    console.warn("Global sign out attempt failed:", err);
+    // We ignore errors here since this is just a best-effort operation
   }
 };
