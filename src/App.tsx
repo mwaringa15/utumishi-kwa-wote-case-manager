@@ -44,10 +44,10 @@ function App() {
             <Route path="/judiciary-dashboard" element={<RoleBasedRoute allowedRoles={["judiciary"]}><JudiciaryDashboard /></RoleBasedRoute>} />
             <Route path="/judiciary-dashboard/case/:id" element={<RoleBasedRoute allowedRoles={["judiciary"]}><JudiciaryCase /></RoleBasedRoute>} />
             
-            <Route path="/supervisor-dashboard" element={<RoleBasedRoute allowedRoles={["supervisor", "ocs", "commander", "administrator"]}><SupervisorDashboard /></RoleBasedRoute>} />
-            <Route path="/supervisor-dashboard/officers" element={<RoleBasedRoute allowedRoles={["supervisor", "ocs", "commander", "administrator"]}><SupervisorOfficers /></RoleBasedRoute>} />
-            <Route path="/supervisor-dashboard/reports" element={<RoleBasedRoute allowedRoles={["supervisor", "ocs", "commander", "administrator"]}><SupervisorReports /></RoleBasedRoute>} />
-            <Route path="/supervisor-dashboard/cases" element={<RoleBasedRoute allowedRoles={["supervisor", "ocs", "commander", "administrator"]}><SupervisorCases /></RoleBasedRoute>} />
+            <Route path="/supervisor-dashboard" element={<RoleBasedRoute allowedRoles={["supervisor"]}><SupervisorDashboard /></RoleBasedRoute>} />
+            <Route path="/supervisor-dashboard/officers" element={<RoleBasedRoute allowedRoles={["supervisor"]}><SupervisorOfficers /></RoleBasedRoute>} />
+            <Route path="/supervisor-dashboard/reports" element={<RoleBasedRoute allowedRoles={["supervisor"]}><SupervisorReports /></RoleBasedRoute>} />
+            <Route path="/supervisor-dashboard/cases" element={<RoleBasedRoute allowedRoles={["supervisor"]}><SupervisorCases /></RoleBasedRoute>} />
             
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
