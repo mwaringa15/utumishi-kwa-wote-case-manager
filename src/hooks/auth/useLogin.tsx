@@ -63,6 +63,8 @@ export function useLogin() {
         // Ensure the role is always stored as lowercase
         const normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
         
+        console.log(`User role determined as: ${normalizedRole}`);
+        
         let redirectPath = "/dashboard";
         
         // Use lowercase role for path determination
@@ -72,17 +74,15 @@ export function useLogin() {
         } else if (normalizedRole === "judiciary") {
           console.log("Judiciary login detected");
           redirectPath = "/judiciary-dashboard";
-        } else if (normalizedRole === "supervisor") {
-          console.log("Supervisor login detected");
-          redirectPath = "/supervisor-dashboard";
-        } else if (normalizedRole === "administrator" || normalizedRole === "commander" || normalizedRole === "ocs") {
-          console.log("Admin/Commander/OCS login detected");
+        } else if (normalizedRole === "supervisor" || 
+                  normalizedRole === "administrator" || 
+                  normalizedRole === "commander" || 
+                  normalizedRole === "ocs") {
+          console.log("Supervisor/Admin/Commander/OCS login detected");
           redirectPath = "/supervisor-dashboard";
         } else {
           console.log("Public user login detected");
         }
-        
-        console.log(`User role determined as: ${normalizedRole}, redirecting to: ${redirectPath}`);
         
         // Sync user role using the edge function with station info if provided
         try {

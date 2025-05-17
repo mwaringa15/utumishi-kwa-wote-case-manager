@@ -10,6 +10,21 @@ console.log("Hello from sync-user!")
 
 serve(async (req) => {
   try {
+    // Set up CORS headers for browser clients
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      'Content-Type': 'application/json'
+    };
+
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+      return new Response(null, {
+        headers: corsHeaders,
+        status: 204,
+      });
+    }
+
     // Create a Supabase client with the Auth context of the logged in user.
     const supabaseClient = createClient(
       // Supabase API URL - env var exported by default.
@@ -17,7 +32,6 @@ serve(async (req) => {
       // Supabase API ANON KEY - env var exported by default.
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       // Create client with Auth context of the user that called the function.
-      // This way your row-level-security (RLS) policies are applied.
       {
         global: {
           headers: { Authorization: req.headers.get('Authorization')! },
@@ -30,11 +44,32 @@ serve(async (req) => {
       data: { user },
     } = await supabaseClient.auth.getUser()
 
-    // Extract the body payload
-    const body = await req.json();
-    const { id, email, role, station_id } = body;
+    // Extract the body payload - handle potential parsing errors
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        { headers: corsHeaders, status: 400 }
+      );
+    }
+
+    // Validate required fields are present
+    const { id, email, role } = body;
+    // station_id is optional
+    const station_id = body.station_id;
     
     console.log("Received payload:", { id, email, role, station_id });
+
+    if (!id || !email || !role) {
+      console.error("Missing required fields in payload");
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: id, email, and role are required" }),
+        { headers: corsHeaders, status: 400 }
+      );
+    }
 
     // Use a service_role client for operations that require elevated privileges
     const supabase = createClient(
@@ -66,7 +101,7 @@ serve(async (req) => {
           id,
           email,
           role,
-          station_id, // Include station_id when creating the user
+          station_id: station_id || null, // Use null if not provided
           full_name: email.split('@')[0] // Simple name extraction from email
         });
     } else {
@@ -102,7 +137,7 @@ serve(async (req) => {
         station_id: station_id
       }),
       {
-        headers: { 'Content-Type': 'application/json' },
+        headers: corsHeaders,
         status: 200,
       },
     )

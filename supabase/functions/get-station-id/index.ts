@@ -10,6 +10,21 @@ console.log("Hello from get-station-id function!")
 
 serve(async (req) => {
   try {
+    // Set up CORS headers for browser clients
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      'Content-Type': 'application/json'
+    };
+
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+      return new Response(null, {
+        headers: corsHeaders,
+        status: 204,
+      });
+    }
+    
     // Create a Supabase client with the Auth context of the logged in user.
     const supabaseClient = createClient(
       // Supabase API URL - env var exported by default.
@@ -33,7 +48,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Not authenticated' }),
         {
-          headers: { 'Content-Type': 'application/json' },
+          headers: corsHeaders,
           status: 401,
         },
       )
@@ -51,6 +66,8 @@ serve(async (req) => {
       throw userError;
     }
 
+    console.log(`User ${user.id} has station_id: ${userData?.station_id || 'null'} and role: ${userData?.role || 'null'}`);
+
     return new Response(
       JSON.stringify({
         station_id: userData?.station_id || null,
@@ -58,7 +75,7 @@ serve(async (req) => {
         role: userData?.role || null
       }),
       {
-        headers: { 'Content-Type': 'application/json' },
+        headers: corsHeaders,
         status: 200,
       },
     )
