@@ -71,11 +71,18 @@ serve(async (req) => {
     // Make sure to normalize the role to lowercase for consistency
     const normalizedRole = userData?.role ? userData.role.toLowerCase() : null;
 
+    // Map old role names if they exist in the database
+    let finalRole = normalizedRole;
+    if (normalizedRole === 'administrator' || normalizedRole === 'ocs' || normalizedRole === 'commander') {
+      finalRole = 'supervisor';
+      console.log(`Mapping old role ${normalizedRole} to supervisor`);
+    }
+
     return new Response(
       JSON.stringify({
         station_id: userData?.station_id || null,
         user_id: user.id,
-        role: normalizedRole  // Return the normalized role
+        role: finalRole  // Return the normalized role
       }),
       {
         headers: corsHeaders,

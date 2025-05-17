@@ -16,7 +16,7 @@ export function useRegister() {
     nationalId?: string; 
     phone?: string; 
     role?: UserRole;
-    stationId?: string;  // Added stationId parameter
+    stationId?: string;
   }) => {
     setIsLoading(true);
     
@@ -42,17 +42,14 @@ export function useRegister() {
         // Determine role based on email domain
         let role = determineRoleFromEmail(userData.email);
         
-        // Ensure the role is always stored as lowercase
-        const normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
-        
         // Sync user role using the edge function
         try {
           const { data: syncData, error: syncError } = await supabase.functions.invoke('sync-user', {
             body: {
               id: user.id,
               email: user.email,
-              role: normalizedRole,
-              station_id: userData.stationId || null  // Pass stationId to sync-user function
+              role: role,
+              station_id: userData.stationId || null
             }
           });
           

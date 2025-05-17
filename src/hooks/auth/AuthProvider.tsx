@@ -56,8 +56,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               console.error("Error in fetchUserData:", err);
               
               // Fallback to role determination based on email domain
-              const lowercaseRole = getRole(supabaseUser.email || "").toLowerCase();
-              const userRole = lowercaseRole as UserRole;
+              const email = supabaseUser.email || "";
+              let userRole: UserRole = "public";
+              
+              if (email.endsWith("@police.go.ke")) {
+                userRole = "officer";
+              } else if (email.endsWith("@judiciary.go.ke")) {
+                userRole = "judiciary";
+              } else if (email.endsWith("@supervisor.go.ke")) {
+                userRole = "supervisor";
+              }
               
               const appUser: User = {
                 id: supabaseUser.id,
@@ -118,8 +126,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error("Error in initial fetchUserData:", err);
             
             // Fallback to role determination based on email domain
-            const lowercaseRole = getRole(supabaseUser.email || "").toLowerCase();
-            const userRole = lowercaseRole as UserRole;
+            const email = supabaseUser.email || "";
+            let userRole: UserRole = "public";
+            
+            if (email.endsWith("@police.go.ke")) {
+              userRole = "officer";
+            } else if (email.endsWith("@judiciary.go.ke")) {
+              userRole = "judiciary";
+            } else if (email.endsWith("@supervisor.go.ke")) {
+              userRole = "supervisor";
+            }
             
             const appUser: User = {
               id: supabaseUser.id,
@@ -156,12 +172,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 function getRole(email: string): User["role"] {
   if (email.endsWith("@police.go.ke")) {
     return "officer";
-  } else if (email.endsWith("@admin.police.go.ke")) {
-    return "administrator";
-  } else if (email.endsWith("@commander.police.go.ke")) {
-    return "commander";
-  } else if (email.endsWith("@ocs.police.go.ke")) {
-    return "ocs";
   } else if (email.endsWith("@judiciary.go.ke")) {
     return "judiciary";
   } else if (email.endsWith("@supervisor.go.ke")) {

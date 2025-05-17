@@ -19,8 +19,8 @@ export function useLogin() {
       // Check for demo accounts first
       const demoAccount = checkForDemoAccount(email, password);
       if (demoAccount) {
-        // If it's a supervisor or admin demo account, assign a station
-        if (["Supervisor", "Administrator", "Commander", "OCS"].includes(demoAccount.user.role)) {
+        // If it's a supervisor demo account, assign a station
+        if (["supervisor"].includes(demoAccount.user.role)) {
           // For demo accounts, store a default station ID if none was selected
           if (stationId) {
             localStorage.setItem('selected_station_id', stationId);
@@ -60,25 +60,19 @@ export function useLogin() {
         // Determine role based on email domain
         const role = determineRoleFromEmail(email);
         
-        // Ensure the role is always stored as lowercase for consistent comparison
-        const normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
-        
-        console.log(`User role determined as: ${normalizedRole}`);
+        console.log(`User role determined as: ${role}`);
         
         let redirectPath = "/dashboard";
         
-        // Use lowercase role for path determination
-        if (normalizedRole === "officer") {
+        // Use role for path determination
+        if (role === "officer") {
           console.log("Police officer login detected");
           redirectPath = "/officer-dashboard";
-        } else if (normalizedRole === "judiciary") {
+        } else if (role === "judiciary") {
           console.log("Judiciary login detected");
           redirectPath = "/judiciary-dashboard";
-        } else if (normalizedRole === "supervisor" || 
-                  normalizedRole === "administrator" || 
-                  normalizedRole === "commander" || 
-                  normalizedRole === "ocs") {
-          console.log("Supervisor/Admin/Commander/OCS login detected");
+        } else if (role === "supervisor") {
+          console.log("Supervisor login detected");
           redirectPath = "/supervisor-dashboard";
         } else {
           console.log("Public user login detected");
@@ -89,7 +83,7 @@ export function useLogin() {
           const syncData: any = {
             id: user.id,
             email: user.email,
-            role: normalizedRole // Send the normalized role
+            role: role
           };
           
           // Include station_id if provided
@@ -137,7 +131,7 @@ export function useLogin() {
           description: `Welcome back, ${user.email?.split("@")[0]}!`,
         });
         
-        return { user: { ...user, role: normalizedRole }, redirectPath };
+        return { user: { ...user, role }, redirectPath };
       }
       
     } catch (error: any) {

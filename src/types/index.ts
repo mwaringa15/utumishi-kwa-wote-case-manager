@@ -2,7 +2,7 @@
 // src/types/index.ts
 
 // User types
-export type UserRole = "Public" | "Officer" | "OCS" | "Commander" | "Administrator" | "Judiciary" | "Supervisor";
+export type UserRole = "public" | "officer" | "judiciary" | "supervisor";
 export type OfficerStatus = "on_duty" | "on_leave" | "off_duty";
 
 export interface User {

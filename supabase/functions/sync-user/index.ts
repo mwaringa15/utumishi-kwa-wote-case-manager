@@ -72,8 +72,20 @@ serve(async (req) => {
     }
     
     // Normalize the role to lowercase to ensure consistency
-    const normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
+    let normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
     console.log("Normalized role:", normalizedRole);
+
+    // Map any old role names to the new simplified roles
+    if (normalizedRole === 'administrator' || normalizedRole === 'ocs' || normalizedRole === 'commander') {
+      normalizedRole = 'supervisor';
+      console.log(`Mapping old role ${role} to supervisor`);
+    }
+
+    // Ensure the role is one of the valid roles
+    if (!['public', 'officer', 'supervisor', 'judiciary'].includes(normalizedRole)) {
+      normalizedRole = 'public';
+      console.log(`Invalid role ${role} defaulting to public`);
+    }
 
     // Use a service_role client for operations that require elevated privileges
     const supabase = createClient(

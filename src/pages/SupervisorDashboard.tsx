@@ -20,7 +20,7 @@ const SupervisorDashboard = () => {
 
   // If user is not logged in or not authorized, redirect
   useEffect(() => {
-    if (!user || !["ocs", "commander", "administrator", "supervisor"].includes(user.role.toLowerCase())) {
+    if (!user || user.role !== "supervisor") {
       navigate('/dashboard');
     }
   }, [user, navigate]);
