@@ -15,7 +15,8 @@ export function useRegister() {
     password: string; 
     nationalId?: string; 
     phone?: string; 
-    role?: UserRole 
+    role?: UserRole;
+    stationId?: string;  // Added stationId parameter
   }) => {
     setIsLoading(true);
     
@@ -50,7 +51,8 @@ export function useRegister() {
             body: {
               id: user.id,
               email: user.email,
-              role: normalizedRole
+              role: normalizedRole,
+              station_id: userData.stationId || null  // Pass stationId to sync-user function
             }
           });
           

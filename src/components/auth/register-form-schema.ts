@@ -9,6 +9,7 @@ export const registerFormSchema = z.object({
   confirmPassword: z.string(),
   nationalId: z.string().min(6, "National ID must be at least 6 characters"),
   phone: z.string().min(10, "Phone number must be at least 10 characters"),
+  stationId: z.string().optional(), // Added station ID field
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -23,7 +24,8 @@ export interface RegisterFormProps {
     password: string; 
     nationalId?: string; 
     phone?: string; 
-    role?: UserRole 
+    role?: UserRole;
+    stationId?: string; // Added stationId parameter
   }) => Promise<void>;
 }
 
