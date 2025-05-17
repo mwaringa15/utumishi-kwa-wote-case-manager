@@ -25,25 +25,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Auth state changed:", event);
         if (session) {
           const supabaseUser = session.user;
-          // Get the role from email domain and convert to lowercase
-          const lowercaseRole = getRole(supabaseUser.email || "").toLowerCase();
           
-          // Convert the lowercase string back to UserRole type
-          const userRole = lowercaseRole as UserRole;
-          
-          // Map Supabase user to our app's User type
-          const appUser: User = {
-            id: supabaseUser.id,
-            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
-            email: supabaseUser.email || "",
-            role: userRole,
-            createdAt: supabaseUser.created_at
+          // Get user role and station ID from the edge function
+          const fetchUserData = async () => {
+            try {
+              const { data, error } = await supabase.functions.invoke('get-station-id');
+              
+              if (error) {
+                console.error("Error fetching user data:", error);
+                return;
+              }
+              
+              // Use the normalized role from the edge function
+              const userRole = data.role as UserRole;
+              
+              console.log("User data from get-station-id:", data);
+              
+              // Map Supabase user to our app's User type with role from edge function
+              const appUser: User = {
+                id: supabaseUser.id,
+                name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
+                email: supabaseUser.email || "",
+                role: userRole,
+                createdAt: supabaseUser.created_at
+              };
+              
+              setUser(appUser);
+              setIsLoading(false);
+            } catch (err) {
+              console.error("Error in fetchUserData:", err);
+              
+              // Fallback to role determination based on email domain
+              const lowercaseRole = getRole(supabaseUser.email || "").toLowerCase();
+              const userRole = lowercaseRole as UserRole;
+              
+              const appUser: User = {
+                id: supabaseUser.id,
+                name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
+                email: supabaseUser.email || "",
+                role: userRole,
+                createdAt: supabaseUser.created_at
+              };
+              
+              setUser(appUser);
+              setIsLoading(false);
+            }
           };
-          setUser(appUser);
+          
+          // Use setTimeout to avoid potential deadlocks with auth state change
+          setTimeout(() => {
+            fetchUserData();
+          }, 0);
         } else {
           setUser(null);
+          setIsLoading(false);
         }
-        setIsLoading(false);
       }
     );
 
@@ -51,23 +87,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         const supabaseUser = session.user;
-        // Get the role from email domain and convert to lowercase
-        const lowercaseRole = getRole(supabaseUser.email || "").toLowerCase();
         
-        // Convert the lowercase string back to UserRole type
-        const userRole = lowercaseRole as UserRole;
-        
-        // Map Supabase user to our app's User type
-        const appUser: User = {
-          id: supabaseUser.id,
-          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
-          email: supabaseUser.email || "",
-          role: userRole,
-          createdAt: supabaseUser.created_at
+        // Get user role and station ID from the edge function
+        const fetchUserData = async () => {
+          try {
+            const { data, error } = await supabase.functions.invoke('get-station-id');
+            
+            if (error) {
+              console.error("Error fetching user data:", error);
+              return;
+            }
+            
+            // Use the normalized role from the edge function
+            const userRole = data.role as UserRole;
+            
+            console.log("Initial user data from get-station-id:", data);
+            
+            // Map Supabase user to our app's User type with role from edge function
+            const appUser: User = {
+              id: supabaseUser.id,
+              name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
+              email: supabaseUser.email || "",
+              role: userRole,
+              createdAt: supabaseUser.created_at
+            };
+            
+            setUser(appUser);
+            setIsLoading(false);
+          } catch (err) {
+            console.error("Error in initial fetchUserData:", err);
+            
+            // Fallback to role determination based on email domain
+            const lowercaseRole = getRole(supabaseUser.email || "").toLowerCase();
+            const userRole = lowercaseRole as UserRole;
+            
+            const appUser: User = {
+              id: supabaseUser.id,
+              name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
+              email: supabaseUser.email || "",
+              role: userRole,
+              createdAt: supabaseUser.created_at
+            };
+            
+            setUser(appUser);
+            setIsLoading(false);
+          }
         };
-        setUser(appUser);
+        
+        fetchUserData();
+      } else {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     return () => {
@@ -85,18 +155,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 // Helper to determine user role based on email domain
 function getRole(email: string): User["role"] {
   if (email.endsWith("@police.go.ke")) {
-    return "Officer";
+    return "officer";
   } else if (email.endsWith("@admin.police.go.ke")) {
-    return "Administrator";
+    return "administrator";
   } else if (email.endsWith("@commander.police.go.ke")) {
-    return "Commander";
+    return "commander";
   } else if (email.endsWith("@ocs.police.go.ke")) {
-    return "OCS";
+    return "ocs";
   } else if (email.endsWith("@judiciary.go.ke")) {
-    return "Judiciary";
+    return "judiciary";
   } else if (email.endsWith("@supervisor.go.ke")) {
-    return "Supervisor";
+    return "supervisor";
   } else {
-    return "Public";
+    return "public";
   }
 }

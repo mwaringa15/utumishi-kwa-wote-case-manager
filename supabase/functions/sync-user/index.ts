@@ -70,6 +70,10 @@ serve(async (req) => {
         { headers: corsHeaders, status: 400 }
       );
     }
+    
+    // Normalize the role to lowercase to ensure consistency
+    const normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
+    console.log("Normalized role:", normalizedRole);
 
     // Use a service_role client for operations that require elevated privileges
     const supabase = createClient(
@@ -100,7 +104,7 @@ serve(async (req) => {
         .insert({
           id,
           email,
-          role,
+          role: normalizedRole, // Store the normalized role
           station_id: station_id || null, // Use null if not provided
           full_name: email.split('@')[0] // Simple name extraction from email
         });
@@ -110,7 +114,7 @@ serve(async (req) => {
       // Only update station_id if it's provided
       const updateData: any = { 
         email, 
-        role 
+        role: normalizedRole // Always update with the normalized role
       };
       
       if (station_id !== undefined) {
@@ -133,7 +137,7 @@ serve(async (req) => {
         message: `User ${id} has been synced successfully`,
         user_id: id,
         email: email,
-        role: role,
+        role: normalizedRole, // Return the normalized role
         station_id: station_id
       }),
       {

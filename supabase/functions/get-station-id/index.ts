@@ -67,12 +67,15 @@ serve(async (req) => {
     }
 
     console.log(`User ${user.id} has station_id: ${userData?.station_id || 'null'} and role: ${userData?.role || 'null'}`);
+    
+    // Make sure to normalize the role to lowercase for consistency
+    const normalizedRole = userData?.role ? userData.role.toLowerCase() : null;
 
     return new Response(
       JSON.stringify({
         station_id: userData?.station_id || null,
         user_id: user.id,
-        role: userData?.role || null
+        role: normalizedRole  // Return the normalized role
       }),
       {
         headers: corsHeaders,

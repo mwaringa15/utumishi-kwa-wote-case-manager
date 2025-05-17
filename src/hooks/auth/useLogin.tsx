@@ -60,7 +60,7 @@ export function useLogin() {
         // Determine role based on email domain
         const role = determineRoleFromEmail(email);
         
-        // Ensure the role is always stored as lowercase
+        // Ensure the role is always stored as lowercase for consistent comparison
         const normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
         
         console.log(`User role determined as: ${normalizedRole}`);
@@ -89,7 +89,7 @@ export function useLogin() {
           const syncData: any = {
             id: user.id,
             email: user.email,
-            role: normalizedRole
+            role: normalizedRole // Send the normalized role
           };
           
           // Include station_id if provided
