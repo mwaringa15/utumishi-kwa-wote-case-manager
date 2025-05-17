@@ -65,22 +65,6 @@ export function useLogin() {
         
         console.log(`User role determined as: ${role}`);
         
-        let redirectPath = "/dashboard";
-        
-        // Use role for path determination
-        if (role === "officer") {
-          console.log("Police officer login detected");
-          redirectPath = "/officer-dashboard";
-        } else if (role === "judiciary") {
-          console.log("Judiciary login detected");
-          redirectPath = "/judiciary-dashboard";
-        } else if (role === "supervisor") {
-          console.log("Supervisor login detected");
-          redirectPath = "/supervisor-dashboard";
-        } else {
-          console.log("Public user login detected");
-        }
-        
         // Sync user role using the edge function with station info if provided
         try {
           const syncData: any = {
@@ -122,11 +106,7 @@ export function useLogin() {
           }
         } catch (syncErr) {
           console.error("Error invoking sync-user function:", syncErr);
-          toast({
-            title: "Profile Sync Error",
-            description: "Login successful but failed to sync user profile. Please contact admin.",
-            variant: "destructive",
-          });
+          // Don't block login if sync fails
         }
         
         toast({
@@ -134,8 +114,8 @@ export function useLogin() {
           description: `Welcome back, ${user.email?.split("@")[0]}!`,
         });
         
-        // Make sure we also return the user role along with redirectPath
-        return { user: { ...user, role }, redirectPath };
+        // Return user with role info for immediate redirection
+        return { user: { ...user, role } };
       }
       
     } catch (error: any) {

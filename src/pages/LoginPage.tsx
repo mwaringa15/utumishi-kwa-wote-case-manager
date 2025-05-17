@@ -23,9 +23,11 @@ const LoginPage = () => {
 
   const handleLogin = async (email: string, password: string, stationId?: string) => {
     try {
+      // Important: Store login result to use for redirection
       const result = await login(email, password, stationId);
+      
+      // Force immediate redirection without waiting for auth state changes
       if (result && result.user) {
-        // Force redirection here in case the effect doesn't trigger
         const redirectPath = getRedirectPathForRole(result.user.role);
         console.log("LoginPage handleLogin: Redirecting to", redirectPath);
         navigate(redirectPath, { replace: true });

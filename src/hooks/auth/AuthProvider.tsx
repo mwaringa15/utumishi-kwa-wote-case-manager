@@ -33,6 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               
               if (error) {
                 console.error("Error fetching user data:", error);
+                // Fallback to email domain role determination
+                handleFallbackUserData(supabaseUser);
                 return;
               }
               
@@ -54,36 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setIsLoading(false);
             } catch (err) {
               console.error("Error in fetchUserData:", err);
-              
-              // Fallback to role determination based on email domain
-              const email = supabaseUser.email || "";
-              let userRole: UserRole = "public";
-              
-              if (email.endsWith("@police.go.ke")) {
-                userRole = "officer";
-              } else if (email.endsWith("@judiciary.go.ke")) {
-                userRole = "judiciary";
-              } else if (email.endsWith("@supervisor.go.ke")) {
-                userRole = "supervisor";
-              }
-              
-              const appUser: User = {
-                id: supabaseUser.id,
-                name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
-                email: supabaseUser.email || "",
-                role: userRole,
-                createdAt: supabaseUser.created_at
-              };
-              
-              setUser(appUser);
-              setIsLoading(false);
+              // Fallback to email domain role determination
+              handleFallbackUserData(supabaseUser);
             }
           };
           
           // Use setTimeout to avoid potential deadlocks with auth state change
           setTimeout(() => {
             fetchUserData();
-          }, 0);
+          }, 100);
         } else {
           setUser(null);
           setIsLoading(false);
@@ -103,6 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             if (error) {
               console.error("Error fetching user data:", error);
+              // Fallback to email domain role determination
+              handleFallbackUserData(supabaseUser);
               return;
             }
             
@@ -124,29 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsLoading(false);
           } catch (err) {
             console.error("Error in initial fetchUserData:", err);
-            
-            // Fallback to role determination based on email domain
-            const email = supabaseUser.email || "";
-            let userRole: UserRole = "public";
-            
-            if (email.endsWith("@police.go.ke")) {
-              userRole = "officer";
-            } else if (email.endsWith("@judiciary.go.ke")) {
-              userRole = "judiciary";
-            } else if (email.endsWith("@supervisor.go.ke")) {
-              userRole = "supervisor";
-            }
-            
-            const appUser: User = {
-              id: supabaseUser.id,
-              name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
-              email: supabaseUser.email || "",
-              role: userRole,
-              createdAt: supabaseUser.created_at
-            };
-            
-            setUser(appUser);
-            setIsLoading(false);
+            // Fallback to email domain role determination
+            handleFallbackUserData(supabaseUser);
           }
         };
         
@@ -155,6 +117,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     });
+
+    // Helper function for role determination fallback
+    const handleFallbackUserData = (supabaseUser: any) => {
+      // Fallback to role determination based on email domain
+      const email = supabaseUser.email || "";
+      let userRole: UserRole = "public";
+      
+      if (email.endsWith("@police.go.ke")) {
+        userRole = "officer";
+      } else if (email.endsWith("@judiciary.go.ke")) {
+        userRole = "judiciary";
+      } else if (email.endsWith("@supervisor.go.ke")) {
+        userRole = "supervisor";
+      }
+      
+      const appUser: User = {
+        id: supabaseUser.id,
+        name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "User",
+        email: supabaseUser.email || "",
+        role: userRole,
+        createdAt: supabaseUser.created_at
+      };
+      
+      setUser(appUser);
+      setIsLoading(false);
+    };
 
     return () => {
       subscription?.unsubscribe();
