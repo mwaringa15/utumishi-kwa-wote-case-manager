@@ -13,6 +13,8 @@ import { useSupervisorOfficers } from "@/hooks/supervisor/useSupervisorOfficers"
 import { fetchStationOfficersProfiles } from "@/hooks/supervisor/modules/fetchStationOfficersProfiles";
 import { OfficerProfile } from "@/components/officer/profile/ProfileContainer";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
 
 const SupervisorOfficersPage = () => {
   const { user } = useAuth();
@@ -132,11 +134,18 @@ const SupervisorOfficersPage = () => {
           <SidebarInset className="p-6">
             <div className="mb-6">
               <BackButton />
-              <h1 className="text-2xl font-bold mt-4">Officer Management</h1>
-              <p className="text-gray-500">View and manage officers in {stationName || 'Loading...'}</p>
+              <div className="flex justify-between items-center mt-4">
+                <div>
+                  <h1 className="text-2xl font-bold">Officer Management</h1>
+                  <p className="text-gray-500">View and manage officers in {stationName || 'Loading...'}</p>
+                </div>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <PlusCircle className="h-4 w-4" />
+                  Add Officer
+                </Button>
+              </div>
             </div>
             
-            {/* Use either the officer profiles data or fall back to the officers data */}
             <OfficersTab 
               officers={officers}
               officerProfiles={officerProfiles}

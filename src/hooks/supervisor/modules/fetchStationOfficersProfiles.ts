@@ -29,12 +29,12 @@ export async function fetchStationOfficersProfiles(stationId: string): Promise<O
     
     const stationName = stationData?.name || "Unknown Station";
     
-    // Get officers from the same station, but exclude supervisors and other admin roles
+    // Get officers from the same station
     const { data: officersData, error: officersError } = await supabase
       .from('users')
       .select('id, full_name, email, role, status')
       .eq('station_id', stationId)
-      .eq('role', 'officer'); // Only fetch users with 'officer' role
+      .eq('role', 'officer'); 
       
     if (officersError) {
       console.error("Error fetching officers:", officersError);
@@ -55,41 +55,6 @@ export async function fetchStationOfficersProfiles(stationId: string): Promise<O
 
     console.log(`Found ${formattedOfficers.length} officers for station ${stationName}`);
     
-    // If no officers are found based on assigned role, let's create some test data
-    if (formattedOfficers.length === 0) {
-      console.log("No officers found for station, creating test data for demo purposes");
-      
-      // Create test officers for demonstration purposes
-      const testOfficers: OfficerProfile[] = [
-        {
-          id: "test-officer-1",
-          full_name: "John Doe",
-          email: "john.doe@police.gov",
-          role: "officer",
-          status: "on_duty",
-          station: stationName
-        },
-        {
-          id: "test-officer-2",
-          full_name: "Jane Smith",
-          email: "jane.smith@police.gov",
-          role: "officer",
-          status: "on_duty",
-          station: stationName
-        },
-        {
-          id: "test-officer-3",
-          full_name: "Michael Johnson",
-          email: "michael.johnson@police.gov",
-          role: "officer",
-          status: "off_duty",
-          station: stationName
-        }
-      ];
-      
-      return testOfficers;
-    }
-
     return formattedOfficers;
   } catch (error) {
     console.error("Error in fetchStationOfficersProfiles:", error);
