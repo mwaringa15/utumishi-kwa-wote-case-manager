@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useCallback } from "react";
-import { CrimeReport, User } from "@/types";
+import { CrimeReport, User, OfficerStatus } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -66,7 +67,7 @@ export function useSupervisorReports(userId: string | undefined) {
         // Step 2: Fetch reports for this station
         const { data: reportsData, error: reportsError } = await supabase
           .from('reports')
-          .select('id, title, description, location, category, status, created_at, created_by_id')
+          .select('id, title, description, location, category, status, created_at, reporter_id')
           .eq('station_id', effectiveStationId)
           .eq('status', 'Pending');
           
@@ -78,7 +79,7 @@ export function useSupervisorReports(userId: string | undefined) {
             variant: "destructive",
           });
           setPendingReports([]);
-        } else {
+        } else if (reportsData) {
           // Format reports
           const formattedReports: CrimeReport[] = reportsData.map(report => ({
             id: report.id,
@@ -88,7 +89,7 @@ export function useSupervisorReports(userId: string | undefined) {
             createdAt: report.created_at,
             location: report.location,
             crimeType: report.category,
-            createdById: report.created_by_id || "",
+            createdById: report.reporter_id || "",
           }));
           
           setPendingReports(formattedReports);
@@ -109,7 +110,7 @@ export function useSupervisorReports(userId: string | undefined) {
             variant: "destructive",
           });
           setOfficers([]);
-        } else {
+        } else if (officersData) {
           // Count assigned cases for each officer
           const officerCaseCounts: Record<string, number> = {};
           
@@ -131,7 +132,7 @@ export function useSupervisorReports(userId: string | undefined) {
             name: officer.full_name || officer.email.split('@')[0],
             email: officer.email,
             role: "officer",
-            status: officer.status || 'on_duty',
+            status: (officer.status || 'on_duty') as OfficerStatus,
             badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
             assignedCases: officerCaseCounts[officer.id] || 0,
           }));

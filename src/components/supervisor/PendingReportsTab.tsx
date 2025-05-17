@@ -1,5 +1,5 @@
 
-import { Search, User, CalendarClock, MapPin } from "lucide-react";
+import { Search, User, CalendarClock, MapPin, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { CrimeReport, User as UserType } from "@/types";
 import { Button } from "@/components/ui/button";
