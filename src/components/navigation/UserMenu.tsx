@@ -25,7 +25,8 @@ export const UserMenu = ({ user, dashboardLink, isMobile = false, onClose }: Use
 
   // Get the correct profile link based on user role
   const getProfileLink = () => {
-    if (user?.role === 'Officer' || user?.role === 'OCS' || user?.role === 'Commander' || user?.role === 'Administrator') {
+    const role = user?.role?.toLowerCase();
+    if (role === 'officer') {
       return '/officer-profile';
     }
     return '/profile';

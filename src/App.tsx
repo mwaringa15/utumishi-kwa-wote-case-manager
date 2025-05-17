@@ -56,7 +56,7 @@ const App = () => (
               path="/officer-dashboard" 
               element={<ProtectedRoute 
                 element={<OfficerDashboard />} 
-                allowedRoles={["Officer", "OCS", "Commander", "Administrator"]} 
+                allowedRoles={["officer"]} 
                 redirectTo="/dashboard" 
               />} 
             />
@@ -64,7 +64,7 @@ const App = () => (
               path="/officer-profile" 
               element={<ProtectedRoute 
                 element={<OfficerProfile />} 
-                allowedRoles={["Officer", "OCS", "Commander", "Administrator"]} 
+                allowedRoles={["officer"]} 
                 redirectTo="/dashboard" 
               />} 
             />
@@ -72,17 +72,17 @@ const App = () => (
               path="/case/:id" 
               element={<ProtectedRoute 
                 element={<CaseDetails />} 
-                allowedRoles={["Officer", "OCS", "Commander", "Administrator", "Judiciary"]} 
+                allowedRoles={["officer", "judiciary"]} 
                 redirectTo="/dashboard" 
               />} 
             />
             
-            {/* Protected Routes - Supervisor (OCS/Commander/Admin) */}
+            {/* Protected Routes - Supervisor */}
             <Route 
               path="/supervisor-dashboard" 
               element={<ProtectedRoute 
                 element={<SupervisorDashboard />} 
-                allowedRoles={["OCS", "Commander", "Administrator", "Supervisor"]} 
+                allowedRoles={["supervisor"]} 
                 redirectTo="/dashboard" 
               />} 
             />
@@ -90,7 +90,7 @@ const App = () => (
               path="/supervisor-dashboard/cases" 
               element={<ProtectedRoute 
                 element={<SupervisorCases />} 
-                allowedRoles={["OCS", "Commander", "Administrator", "Supervisor"]} 
+                allowedRoles={["supervisor"]} 
                 redirectTo="/dashboard" 
               />} 
             />
@@ -98,7 +98,7 @@ const App = () => (
               path="/supervisor-dashboard/reports" 
               element={<ProtectedRoute 
                 element={<SupervisorReports />} 
-                allowedRoles={["OCS", "Commander", "Administrator", "Supervisor"]} 
+                allowedRoles={["supervisor"]} 
                 redirectTo="/dashboard" 
               />} 
             />
@@ -106,7 +106,7 @@ const App = () => (
               path="/supervisor-dashboard/officers" 
               element={<ProtectedRoute 
                 element={<SupervisorOfficers />} 
-                allowedRoles={["OCS", "Commander", "Administrator", "Supervisor"]} 
+                allowedRoles={["supervisor"]} 
                 redirectTo="/dashboard" 
               />} 
             />
@@ -116,7 +116,7 @@ const App = () => (
               path="/judiciary-dashboard" 
               element={<ProtectedRoute 
                 element={<JudiciaryDashboard />} 
-                allowedRoles={["Judiciary"]} 
+                allowedRoles={["judiciary"]} 
                 redirectTo="/dashboard" 
               />} 
             />

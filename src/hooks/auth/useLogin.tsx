@@ -57,7 +57,7 @@ export function useLogin() {
       const user = data.user;
       
       if (user) {
-        // Determine role based on email domain
+        // Determine role based on email domain - ensure lowercase
         const role = determineRoleFromEmail(email);
         
         console.log(`User role determined as: ${role}`);

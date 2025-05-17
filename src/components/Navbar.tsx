@@ -14,7 +14,7 @@ interface NavbarProps {
   userRole?: string;
 }
 
-const Navbar = ({ isLoggedIn = false, userRole = "Public" }: NavbarProps) => {
+const Navbar = ({ isLoggedIn = false, userRole = "public" }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -25,14 +25,12 @@ const Navbar = ({ isLoggedIn = false, userRole = "Public" }: NavbarProps) => {
   const getDashboardLink = () => {
     if (!isLoggedIn) return "/login";
     
-    switch (userRole) {
-      case "Officer":
+    switch (userRole.toLowerCase()) {
+      case "officer":
         return "/officer-dashboard";
-      case "OCS":
-      case "Commander":
-      case "Administrator":
+      case "supervisor":
         return "/supervisor-dashboard";
-      case "Judiciary":
+      case "judiciary":
         return "/judiciary-dashboard";
       default:
         return "/dashboard";
@@ -46,7 +44,7 @@ const Navbar = ({ isLoggedIn = false, userRole = "Public" }: NavbarProps) => {
     // Common links for all users
     links.push({ title: "Home", path: "/" });
     
-    if (!isLoggedIn || userRole === "Public") {
+    if (!isLoggedIn || userRole.toLowerCase() === "public") {
       links.push(
         { title: "Report a Crime", path: "/report-crime" },
         { title: "Track a Case", path: "/track-case" },

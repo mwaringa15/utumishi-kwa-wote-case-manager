@@ -167,16 +167,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
-// Helper to determine user role based on email domain
-function getRole(email: string): User["role"] {
-  if (email.endsWith("@police.go.ke")) {
-    return "officer";
-  } else if (email.endsWith("@judiciary.go.ke")) {
-    return "judiciary";
-  } else if (email.endsWith("@supervisor.go.ke")) {
-    return "supervisor";
-  } else {
-    return "public";
-  }
-}

@@ -69,7 +69,8 @@ serve(async (req) => {
     console.log(`User ${user.id} has station_id: ${userData?.station_id || 'null'} and role: ${userData?.role || 'null'}`);
     
     // Make sure to normalize the role to lowercase for consistency
-    const normalizedRole = userData?.role ? userData.role.toLowerCase() : null;
+    const normalizedRole = userData?.role ? userData.role.toLowerCase() : "public";
+    console.log(`Normalized role: ${normalizedRole}`);
 
     // Map old role names if they exist in the database
     let finalRole = normalizedRole;

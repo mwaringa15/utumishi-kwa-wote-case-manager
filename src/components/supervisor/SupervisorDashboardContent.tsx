@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SupervisorDashboardHeader } from "@/components/supervisor/SupervisorDashboardHeader";
 import { StatsOverview } from "@/components/supervisor/StatsOverview";
@@ -51,10 +50,8 @@ const SupervisorDashboardContent = ({
     handleSubmitToJudiciary
   } = supervisorHookData;
 
-  // Check if the user is a Commander, Administrator, or OCS to show analytics
-  const isCommanderOrAdmin = user?.role === "Commander" || 
-                             user?.role === "Administrator" || 
-                             user?.role === "OCS";
+  // Check if the user is a supervisor (previously was checking for Commander, Administrator, or OCS)
+  const isCommanderOrAdmin = user?.role === "supervisor";
   
   // Mock regional data for demonstration
   const regionalData = [

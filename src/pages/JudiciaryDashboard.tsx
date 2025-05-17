@@ -20,7 +20,7 @@ const JudiciaryDashboard = () => {
     filteredCases,
   } = useJudiciaryDashboardData();
 
-  if (!user || user.role !== "Judiciary") {
+  if (!user || user.role !== "judiciary") {
     navigate("/login");
     return null;
   }

@@ -81,7 +81,7 @@ serve(async (req) => {
       console.log(`Mapping old role ${role} to supervisor`);
     }
 
-    // Ensure the role is one of the valid roles
+    // Ensure the role is one of the valid roles (all lowercase)
     if (!['public', 'officer', 'supervisor', 'judiciary'].includes(normalizedRole)) {
       normalizedRole = 'public';
       console.log(`Invalid role ${role} defaulting to public`);
