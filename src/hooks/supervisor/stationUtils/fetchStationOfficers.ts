@@ -1,7 +1,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { StationOfficer, ToastType } from '@/components/supervisor/types';
-import { User } from '@/types';
+import { User, UserRole } from '@/types';
 
 interface FetchStationOfficersArgs {
   supabase: SupabaseClient<any, "public", any>;
@@ -10,7 +10,7 @@ interface FetchStationOfficersArgs {
   toast: ToastType;
 }
 
-export async function fetchStationOfficers({ supabase, stationId, stationName, toast }: FetchStationOfficersArgs): Promise<StationOfficer[]> {
+export async function fetchStationOfficers({ supabase, stationId, stationName, toast }: FetchStationOfficersArgs): Promise<User[]> {
   if (!stationId) {
     console.log("No station ID provided for fetchStationOfficers");
     return [];
@@ -69,13 +69,14 @@ export async function fetchStationOfficers({ supabase, stationId, stationName, t
     
     console.log("Officers with counts:", resolvedOfficersWithCounts);
 
-    const formattedOfficers: StationOfficer[] = resolvedOfficersWithCounts
+    // Convert to User type to match the expected type in useSupervisorReports.ts
+    const formattedOfficers: User[] = resolvedOfficersWithCounts
       .filter(o => o && o.id)
       .map(o => ({
         id: o.id,
         name: o.full_name || 'N/A',
         email: o.email || 'N/A',
-        role: o.role || 'Officer', 
+        role: (o.role || 'officer') as UserRole, // Cast to UserRole type
         station: stationName, 
         status: o.status || 'unknown',
         assignedCases: o.assignedCases,

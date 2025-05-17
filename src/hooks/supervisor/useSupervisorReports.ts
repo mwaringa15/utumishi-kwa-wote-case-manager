@@ -107,7 +107,7 @@ export function useSupervisorReports(userId: string | undefined) {
           });
           
           console.log("Fetched officers:", stationOfficers);
-          setOfficers(stationOfficers);
+          setOfficers(stationOfficers); // This now correctly accepts User[] type
         } catch (error) {
           console.error("Error in fetchStationOfficers:", error);
           setOfficers([]);
