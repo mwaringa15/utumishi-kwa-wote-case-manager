@@ -28,10 +28,11 @@ export async function fetchSupervisorData(
     const stationDataResult = await fetchStationData(user.id, showToast);
     const stationId = stationDataResult.stationId;
 
-    if (!stationId && user.role !== "supervisor") {
+    // For supervisors, we must have a station ID
+    if (!stationId && user.role === "supervisor") {
       showToast({ 
-        title: "No Station ID", 
-        description: "Supervisor's station ID could not be determined.", 
+        title: "No Station Selected", 
+        description: "Please log in again and select a station to manage officers.", 
         variant: "destructive" 
       });
       return null;

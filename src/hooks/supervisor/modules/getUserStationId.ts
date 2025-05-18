@@ -9,9 +9,9 @@ export async function getUserStationId(userId?: string): Promise<{stationId: str
   const storedStationId = localStorage.getItem('selected_station_id');
   const storedStationName = localStorage.getItem('selected_station_name');
   
-  if (storedStationId && storedStationName) {
+  if (storedStationId) {
     console.log("Using stored station data:", storedStationId, storedStationName);
-    return { stationId: storedStationId, stationName: storedStationName };
+    return { stationId: storedStationId, stationName: storedStationName || "Unknown Station" };
   }
   
   if (!userId) {
@@ -20,9 +20,10 @@ export async function getUserStationId(userId?: string): Promise<{stationId: str
   }
   
   try {
+    // Query the user record to get their assigned station
     const { data, error } = await supabase
       .from('users')
-      .select('station_id')
+      .select('station_id, role')
       .eq('id', userId)
       .single();
       
@@ -31,6 +32,13 @@ export async function getUserStationId(userId?: string): Promise<{stationId: str
       return { stationId: null, stationName: null };
     }
     
+    // If the user is a supervisor with no station, this is an error state
+    if (!data.station_id && data.role?.toLowerCase() === 'supervisor') {
+      console.error("Supervisor has no station assigned");
+      return { stationId: null, stationName: "No Station Selected" };
+    }
+    
+    // Get the station ID from the user record
     const stationId = data?.station_id || null;
     let stationName = null;
     
@@ -49,6 +57,9 @@ export async function getUserStationId(userId?: string): Promise<{stationId: str
         localStorage.setItem('selected_station_id', stationId);
         localStorage.setItem('selected_station_name', stationName);
       }
+    } else if (['administrator', 'commander', 'ocs'].includes(data.role?.toLowerCase() || '')) {
+      // For administrator roles, we can use "All Stations"
+      stationName = "All Stations";
     }
     
     return { stationId, stationName };

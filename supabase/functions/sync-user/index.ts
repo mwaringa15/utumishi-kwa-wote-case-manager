@@ -107,30 +107,38 @@ serve(async (req) => {
 
     console.log("Existing user check:", existingUser ? "Found" : "Not found");
 
+    // Important: Check if station_id is undefined, null, or valid
+    const validStationId = station_id || null;
+
+    // Supervisors should always have a station_id assigned if provided
+    const needsStationId = normalizedRole === 'supervisor' && validStationId !== null;
+
     let result;
     if (!existingUser) {
       // Insert a new user profile
-      console.log("Creating new user profile with station_id:", station_id);
+      console.log("Creating new user profile with station_id:", validStationId);
       result = await supabase
         .from('users')
         .insert({
           id,
           email,
           role: normalizedRole, // Store the normalized role
-          station_id: station_id || null, // Use null if not provided
+          station_id: validStationId, // Use null if not provided
           full_name: email.split('@')[0] // Simple name extraction from email
         });
     } else {
       // Update existing user profile
       console.log("Updating existing user profile");
-      // Only update station_id if it's provided
+      
+      // Always update with the normalized role and maintain station assignment
       const updateData: any = { 
-        email, 
-        role: normalizedRole // Always update with the normalized role
+        email,
+        role: normalizedRole
       };
       
-      if (station_id !== undefined) {
-        updateData.station_id = station_id;
+      // Only update station_id if provided or if user is a supervisor that needs one
+      if (validStationId !== undefined || needsStationId) {
+        updateData.station_id = validStationId;
       }
       
       result = await supabase
@@ -144,13 +152,41 @@ serve(async (req) => {
       throw result.error;
     }
 
+    // For supervisors, if station_id is provided, store it immediately
+    if (normalizedRole === 'supervisor' && validStationId) {
+      // Get station name for the response
+      const { data: stationData } = await supabase
+        .from('stations')
+        .select('name')
+        .eq('id', validStationId)
+        .single();
+        
+      const stationName = stationData?.name || "Unknown Station";
+      
+      return new Response(
+        JSON.stringify({
+          message: `User ${id} has been synced successfully with station assignment`,
+          user_id: id,
+          email: email,
+          role: normalizedRole,
+          station_id: validStationId,
+          station_name: stationName
+        }),
+        {
+          headers: corsHeaders,
+          status: 200,
+        },
+      );
+    }
+
+    // Return regular success response
     return new Response(
       JSON.stringify({
         message: `User ${id} has been synced successfully`,
         user_id: id,
         email: email,
-        role: normalizedRole, // Return the normalized role
-        station_id: station_id
+        role: normalizedRole,
+        station_id: validStationId
       }),
       {
         headers: corsHeaders,

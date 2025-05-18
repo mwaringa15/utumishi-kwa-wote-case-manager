@@ -10,15 +10,20 @@ export async function fetchStationData(
   showToast: ToastType
 ): Promise<{ stationId: string | null, stationName: string }> {
   if (!userId) {
-    return { stationId: null, stationName: "All Stations" };
+    return { stationId: null, stationName: "No Station Selected" };
   }
 
   try {
     console.log("Fetching station data for user:", userId);
     
+    // Check three potential sources for the station ID in order of preference:
+    // 1. localStorage (most immediate, set during login)
+    // 2. User profile in database (most authoritative)
+    // 3. Fall back to admin view if user role permits
+    
     // First check localStorage for stored station ID (set during login)
     const storedStationId = localStorage.getItem('selected_station_id');
-    const storedStationName = localStorage.getItem('selected_station_name') || "All Stations";
+    const storedStationName = localStorage.getItem('selected_station_name') || "Unknown Station";
     
     let effectiveStationId = null;
     let stationName = storedStationName;
@@ -26,6 +31,17 @@ export async function fetchStationData(
     if (storedStationId) {
       console.log("Using stored station ID:", storedStationId);
       effectiveStationId = storedStationId;
+      
+      // Verify station exists and get updated name
+      const { data: stationData, error: stationError } = await supabase
+        .from('stations')
+        .select('name')
+        .eq('id', storedStationId)
+        .single();
+        
+      if (!stationError && stationData) {
+        stationName = stationData.name;
+      }
     } else {
       // If no stored station ID, try to get it from user profile
       console.log("No stored station ID, fetching from user profile...");
@@ -46,19 +62,17 @@ export async function fetchStationData(
       }
       
       const userRole = userData.role?.toLowerCase() || '';
-      console.log("User role:", userRole);
+      console.log("User role:", userRole, "Station ID from database:", userData.station_id);
       
-      if (!userData.station_id && 
-          userRole !== 'administrator' && 
-          userRole !== 'commander' && 
-          userRole !== 'ocs') {
-        console.error("User has no station assigned and is not an admin role");
+      // For supervisors, having a station is mandatory
+      if (!userData.station_id && userRole === 'supervisor') {
+        console.error("Supervisor has no station assigned");
         showToast({
           title: "No Station Assigned",
-          description: "You are not assigned to any station. Please contact an administrator.",
+          description: "You need to select a station during login. Please log out and log in again.",
           variant: "destructive",
         });
-        return { stationId: null, stationName: "Unknown Station" };
+        return { stationId: null, stationName: "No Station Selected" };
       }
       
       // Use the station ID from user profile if available
@@ -85,14 +99,19 @@ export async function fetchStationData(
         }
       } else {
         // For administrators, commanders, or OCS, set a placeholder
-        console.log("User is an admin/commander/OCS, no station filter will be applied");
-        stationName = "All Stations";
+        if (['administrator', 'commander', 'ocs'].includes(userRole)) {
+          console.log("User is an admin/commander/OCS, no station filter will be applied");
+          stationName = "All Stations";
+        } else {
+          console.log("User has no station assigned and is not an admin role");
+          stationName = "No Station Selected";
+        }
       }
     }
 
     return { stationId: effectiveStationId, stationName };
   } catch (error) {
     console.error("Error fetching station data:", error);
-    return { stationId: null, stationName: "Unknown Station" };
+    return { stationId: null, stationName: "Error Getting Station" };
   }
 }

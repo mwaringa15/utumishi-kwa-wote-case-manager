@@ -86,6 +86,46 @@ export function useLogin() {
         
         console.log(`User role determined as: ${role}`);
         
+        // Important: For supervisors and officers, always update station assignment if provided
+        if (stationId && ["supervisor", "officer"].includes(role.toLowerCase())) {
+          console.log(`Updating ${role} station assignment to: ${stationId}`);
+          
+          // Store selected station ID in localStorage for persistence
+          localStorage.setItem('selected_station_id', stationId);
+          
+          // Get station name for display
+          const { data: stationData } = await supabase
+            .from('stations')
+            .select('name')
+            .eq('id', stationId)
+            .single();
+            
+          if (stationData) {
+            localStorage.setItem('selected_station_name', stationData.name);
+          }
+          
+          // Update user's station assignment in the database
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ station_id: stationId })
+            .eq('id', user.id);
+            
+          if (updateError) {
+            console.error("Error updating station assignment:", updateError);
+            toast({
+              title: "Station Assignment Error",
+              description: "Could not update your station assignment. Some features may be limited.",
+              variant: "destructive",
+            });
+          } else {
+            console.log("Station assignment updated successfully");
+            toast({
+              title: "Station Assignment Successful",
+              description: `You have been assigned to ${stationData?.name || 'the selected station'}.`,
+            });
+          }
+        }
+        
         // Sync user role using the edge function with station info if provided
         try {
           const syncData: any = {
@@ -98,27 +138,6 @@ export function useLogin() {
           if (stationId) {
             console.log(`Adding station ID ${stationId} to user sync data`);
             syncData.station_id = stationId;
-            
-            // Store selected station ID in localStorage for persistence
-            localStorage.setItem('selected_station_id', stationId);
-            
-            // Get station name for display
-            const { data: stationData } = await supabase
-              .from('stations')
-              .select('name')
-              .eq('id', stationId)
-              .single();
-              
-            if (stationData) {
-              localStorage.setItem('selected_station_name', stationData.name);
-              
-              if (role === 'officer') {
-                toast({
-                  title: "Station Assignment",
-                  description: `You are now assigned to ${stationData.name} station`,
-                });
-              }
-            }
           }
           
           const { data: syncResult, error: syncError } = await supabase.functions.invoke('sync-user', {
@@ -134,39 +153,6 @@ export function useLogin() {
             });
           } else {
             console.log("User synced successfully:", syncResult);
-            
-            // Update user's station assignment in the database
-            if (stationId && role) {
-              const { error: updateError } = await supabase
-                .from('users')
-                .update({ station_id: stationId })
-                .eq('id', user.id);
-                
-              if (updateError) {
-                console.error("Error updating user's station assignment:", updateError);
-              } else {
-                console.log("User's station assignment updated in the database");
-                
-                // Get station name
-                const { data: stationData } = await supabase
-                  .from('stations')
-                  .select('name')
-                  .eq('id', stationId)
-                  .single();
-                  
-                if (stationData) {
-                  toast({
-                    title: "Station Assignment Successful",
-                    description: `You have been assigned to ${stationData.name} station.`,
-                  });
-                } else {
-                  toast({
-                    title: "Station Assignment Successful",
-                    description: "You have been assigned to the selected station.",
-                  });
-                }
-              }
-            }
           }
         } catch (syncErr) {
           console.error("Error invoking sync-user function:", syncErr);

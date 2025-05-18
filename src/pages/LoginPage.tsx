@@ -23,6 +23,13 @@ const LoginPage = () => {
 
   const handleLogin = async (email: string, password: string, stationId?: string) => {
     try {
+      console.log("LoginPage handleLogin with stationId:", stationId);
+      
+      // Store selected station data for immediate access
+      if (stationId) {
+        localStorage.setItem('selected_station_id', stationId);
+      }
+      
       // Important: Store login result to use for redirection
       const result = await login(email, password, stationId);
       
