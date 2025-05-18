@@ -9,54 +9,49 @@ export async function fetchOfficers(stationId: string | null): Promise<User[]> {
   try {
     console.log("Fetching officers for station ID:", stationId);
     
-    // Get officers from the same station
-    let officersQuery = supabase
-      .from('users')
-      .select('id, full_name, email, role, status, station_id');
-      
-    // Only filter by station_id if we have one
-    if (stationId) {
-      console.log("Filtering by station ID:", stationId);
-      officersQuery = officersQuery.eq('station_id', stationId);
+    // If no stationId is provided, return an empty array as we can't fetch officers without a station
+    if (!stationId) {
+      console.warn("No station ID provided to fetchOfficers, returning empty array");
+      return [];
     }
     
-    // Always filter for officers only
-    officersQuery = officersQuery.eq('role', 'officer');
-    
-    const { data: officersData, error: officersError } = await officersQuery;
-
+    // Get officers from the specified station
+    const { data: officersData, error: officersError } = await supabase
+      .from('users')
+      .select('id, full_name, email, role, status, station_id')
+      .eq('station_id', stationId)
+      .eq('role', 'officer');
+      
     if (officersError) {
       console.error("Error fetching officers:", officersError);
       throw officersError;
     }
 
-    console.log("Raw officers data:", officersData);
+    console.log(`Found ${officersData?.length || 0} officers for station ID ${stationId}:`, officersData);
 
-    // Fetch the station name for each officer if available
-    const stationIds = [...new Set(officersData.filter(officer => officer.station_id).map(officer => officer.station_id))];
-    const stationNames: Record<string, string> = {};
-    
-    for (const stId of stationIds) {
+    // Fetch the station name for the officers' station
+    let stationName = "Unknown Station";
+    if (stationId) {
       const { data, error } = await supabase
         .from('stations')
-        .select('id, name')
-        .eq('id', stId)
+        .select('name')
+        .eq('id', stationId)
         .single();
         
       if (!error && data) {
-        stationNames[stId] = data.name;
+        stationName = data.name;
       }
     }
 
     // Count assigned cases for each officer
     const officerCaseCounts: Record<string, number> = {};
     
-    for (const officer of officersData) {
+    for (const officer of officersData || []) {
       const { count, error } = await supabase
         .from('cases')
         .select('*', { count: 'exact', head: true })
         .eq('assigned_officer_id', officer.id)
-        .not('status', 'eq', 'Completed');
+        .not('status', 'in', '("Closed", "Rejected")');
         
       if (!error) {
         officerCaseCounts[officer.id] = count || 0;
@@ -64,13 +59,13 @@ export async function fetchOfficers(stationId: string | null): Promise<User[]> {
     }
 
     // Format officers data with their station names and case counts
-    const formattedOfficers: User[] = officersData.map(officer => ({
+    const formattedOfficers: User[] = (officersData || []).map(officer => ({
       id: officer.id,
       name: officer.full_name || officer.email.split('@')[0],
       email: officer.email,
       role: "officer" as UserRole,
-      station: officer.station_id ? stationNames[officer.station_id] || "Unknown Station" : "Unassigned",
-      status: (officer.status || 'on_duty') as OfficerStatus, // Cast to OfficerStatus
+      station: stationName,
+      status: (officer.status || 'on_duty') as OfficerStatus,
       badgeNumber: `KP${Math.floor(10000 + Math.random() * 90000)}`,
       assignedCases: officerCaseCounts[officer.id] || 0
     }));

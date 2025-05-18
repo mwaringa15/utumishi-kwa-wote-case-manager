@@ -9,7 +9,6 @@ import { SupervisorSidebar } from "@/components/supervisor/SupervisorSidebar";
 import { OfficersTab } from "@/components/supervisor/OfficersTab";
 import { useSupervisorOfficers } from "@/hooks/supervisor/useSupervisorOfficers";
 import { OfficersPageHeader } from "@/components/supervisor/officers/OfficersPageHeader";
-import { OfficersList } from "@/components/supervisor/officers/OfficersList";
 import { useFetchStationData } from "@/components/supervisor/officers/useFetchStationData";
 
 const SupervisorOfficersPage = () => {
@@ -23,10 +22,11 @@ const SupervisorOfficersPage = () => {
     supervisorProfile,
     availableOfficers,
     officerProfiles,
-    isLoading,
+    isLoading: stationDataLoading,
     refreshStationData
   } = useFetchStationData(user?.id);
 
+  // Use the fetched stationId to get officers specifically for this station
   const { 
     officers, 
     refreshData,
@@ -35,6 +35,7 @@ const SupervisorOfficersPage = () => {
 
   // Function to refresh all officer data when a new officer is added
   const handleOfficerAdded = useCallback(() => {
+    console.log("Officer added, refreshing data...");
     refreshData();
     refreshStationData();
   }, [refreshData, refreshStationData]);
@@ -68,7 +69,7 @@ const SupervisorOfficersPage = () => {
             <OfficersTab 
               officers={officers}
               officerProfiles={officerProfiles}
-              isLoading={isLoading || officersLoading}
+              isLoading={stationDataLoading || officersLoading}
               stationName={stationName}
             />
           </SidebarInset>

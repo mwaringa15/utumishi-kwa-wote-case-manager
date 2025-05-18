@@ -24,7 +24,10 @@ export const OfficersList = ({
     );
   }
 
-  if (officers.length === 0) {
+  // Priority use officers from the stationId query if available
+  const displayOfficers = officers.length > 0 ? officers : officerProfiles;
+
+  if (displayOfficers.length === 0) {
     return (
       <div className="p-4 rounded-md bg-muted">
         <p className="text-center">No officers found for {stationName || 'this station'}</p>
@@ -34,11 +37,11 @@ export const OfficersList = ({
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {officers.map((officer) => (
+      {displayOfficers.map((officer) => (
         <div key={officer.id} className="p-4 bg-white rounded-lg shadow">
           <div className="flex justify-between items-start mb-2">
             <div>
-              <h3 className="font-medium">{officer.name}</h3>
+              <h3 className="font-medium">{officer.name || officer.full_name}</h3>
               <p className="text-sm text-gray-500">{officer.email}</p>
             </div>
             <Badge variant={officer.status === 'on_duty' ? 'default' : 'secondary'}>
@@ -52,6 +55,9 @@ export const OfficersList = ({
             </p>
             <p className="text-sm">
               <span className="font-medium">Badge:</span> {officer.badgeNumber || 'N/A'}
+            </p>
+            <p className="text-sm">
+              <span className="font-medium">Station:</span> {officer.station || stationName || 'Not assigned'}
             </p>
           </div>
         </div>

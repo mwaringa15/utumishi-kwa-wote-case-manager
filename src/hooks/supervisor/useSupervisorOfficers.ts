@@ -3,8 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { getUserStationData } from "./modules/getUserStationData";
-import { fetchStationOfficers } from "./modules/fetchStationOfficers";
-import { fetchAllOfficers } from "./modules/fetchAllOfficers";
+import { fetchOfficers } from "./modules/fetchOfficers";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useSupervisorOfficers(userId?: string, providedStationId?: string | null) {
@@ -42,6 +41,18 @@ export function useSupervisorOfficers(userId?: string, providedStationId?: strin
         
         setStationId(effectiveStationId);
         setStationName(stationNameValue);
+      } else if (!stationNameValue) {
+        // If we have a station ID but no name, fetch the name
+        const { data, error } = await supabase
+          .from('stations')
+          .select('name')
+          .eq('id', effectiveStationId)
+          .single();
+          
+        if (!error && data) {
+          stationNameValue = data.name;
+          setStationName(stationNameValue);
+        }
       }
       
       console.log("Using station data:", { effectiveStationId, stationNameValue });
@@ -51,10 +62,9 @@ export function useSupervisorOfficers(userId?: string, providedStationId?: strin
       
       if (effectiveStationId) {
         // Fetch officers for specific station
-        officersData = await fetchStationOfficers(effectiveStationId, stationNameValue);
+        officersData = await fetchOfficers(effectiveStationId);
       } else {
-        // Fetch all officers (for administrators)
-        officersData = await fetchAllOfficers();
+        console.warn("No station ID available, returning empty officers array");
       }
       
       console.log("Fetched officers:", officersData);
