@@ -44,7 +44,7 @@ export async function fetchSupervisorData(
     // Fetch pending reports that don't have cases yet
     const formattedReports = await fetchPendingReports(stationId || null);
     
-    // Fetch officers with their case counts
+    // Fetch officers with their case counts - only for this specific station
     const officersWithCaseCounts = await fetchOfficersWithCounts(stationId || null);
 
     return {

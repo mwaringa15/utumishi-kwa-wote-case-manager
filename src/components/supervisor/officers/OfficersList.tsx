@@ -2,6 +2,8 @@
 import { OfficerProfile } from "@/components/officer/profile/ProfileContainer";
 import { User, OfficerStatus } from "@/types";
 import { Badge } from "@/components/ui/badge";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface OfficersListProps {
   officers: User[];
@@ -21,6 +23,19 @@ export const OfficersList = ({
       <div className="p-4 rounded-md bg-muted">
         <p className="text-center">Loading officers...</p>
       </div>
+    );
+  }
+
+  // If no station name is provided, show a warning
+  if (!stationName || stationName === "No Station Selected") {
+    return (
+      <Alert variant="warning" className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Station Selection Required</AlertTitle>
+        <AlertDescription>
+          Please select your station to view and manage officers. Log out and log in again to select a station.
+        </AlertDescription>
+      </Alert>
     );
   }
 

@@ -12,6 +12,8 @@ import { StationOfficers } from "@/components/supervisor/StationOfficers";
 import { useStationData } from "@/hooks/supervisor/useStationData";
 import { SupervisorDashboardHeader } from "@/components/supervisor/SupervisorDashboardHeader";
 import { SupervisorStats } from "@/hooks/supervisor/types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const SupervisorDashboard = () => {
   const { user } = useAuth();
@@ -48,6 +50,16 @@ const SupervisorDashboard = () => {
               user={user} 
               station={stationData?.station} 
             />
+            
+            {!stationData?.station && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>No Station Selected</AlertTitle>
+                <AlertDescription>
+                  Please select your station to continue. Log out and log in again to select a station.
+                </AlertDescription>
+              </Alert>
+            )}
             
             {stationData && (
               <StatsOverview stats={stationData.stats || defaultStats} />
