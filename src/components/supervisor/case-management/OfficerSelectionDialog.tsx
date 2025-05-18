@@ -15,10 +15,11 @@ import { Badge } from "@/components/ui/badge";
 interface OfficerSelectionDialogProps {
   officers: UserType[];
   caseId: string;
+  stationName?: string;
   onAssign: (caseId: string, officerId: string, officerName: string) => void;
 }
 
-export function OfficerSelectionDialog({ officers, caseId, onAssign }: OfficerSelectionDialogProps) {
+export function OfficerSelectionDialog({ officers, caseId, stationName, onAssign }: OfficerSelectionDialogProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -30,13 +31,16 @@ export function OfficerSelectionDialog({ officers, caseId, onAssign }: OfficerSe
         <DialogHeader>
           <DialogTitle>Assign Case to Officer</DialogTitle>
           <DialogDescription>
-            Select an officer from your station to assign to this case.
+            {stationName ? 
+              `Select an officer from ${stationName} station to assign to this case.` :
+              `Select an officer to assign to this case.`
+            }
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
           {officers.length === 0 ? (
             <div className="text-center py-4 text-gray-500">
-              No officers available in your station.
+              No officers available {stationName ? `in ${stationName} station` : ''}.
             </div>
           ) : (
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">

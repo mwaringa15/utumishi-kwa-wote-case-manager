@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import CaseCard from "@/components/CaseCard";
 import { Case, CaseProgress, CaseStatus } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -10,9 +11,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { EvidenceUploader } from "@/components/officer/EvidenceUploader";
-import { useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface AssignedCasesTabProps {
   cases: Case[];
@@ -20,6 +24,7 @@ interface AssignedCasesTabProps {
   onUpdateStatus: (caseId: string, newStatus: CaseStatus) => void;
   onUpdateProgress: (caseId: string, newProgress: CaseProgress) => void;
   onEvidenceUploaded: () => void;
+  onUploadEvidence?: (caseId: string, file: File, description: string) => Promise<boolean>;
 }
 
 export function AssignedCasesTab({ 
@@ -27,13 +32,48 @@ export function AssignedCasesTab({
   isLoading, 
   onUpdateStatus, 
   onUpdateProgress,
-  onEvidenceUploaded 
+  onEvidenceUploaded,
+  onUploadEvidence
 }: AssignedCasesTabProps) {
   const [selectedCaseForEvidence, setSelectedCaseForEvidence] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [evidenceDescription, setEvidenceDescription] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [evidenceDialogOpen, setEvidenceDialogOpen] = useState(false);
 
   const handleEvidenceComplete = () => {
     setSelectedCaseForEvidence(null);
     onEvidenceUploaded();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleUploadEvidence = async () => {
+    if (!selectedCaseForEvidence || !selectedFile || !onUploadEvidence) {
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const success = await onUploadEvidence(
+        selectedCaseForEvidence, 
+        selectedFile, 
+        evidenceDescription
+      );
+
+      if (success) {
+        setEvidenceDialogOpen(false);
+        setSelectedFile(null);
+        setEvidenceDescription("");
+        onEvidenceUploaded();
+      }
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -54,13 +94,24 @@ export function AssignedCasesTab({
                 onUpdateStatus={onUpdateStatus}
                 onUpdateProgress={onUpdateProgress}
               />
-              <Dialog>
+              <Dialog open={evidenceDialogOpen && selectedCaseForEvidence === caseItem.id} 
+                onOpenChange={(open) => {
+                  setEvidenceDialogOpen(open);
+                  if (!open) {
+                    setSelectedFile(null);
+                    setEvidenceDescription("");
+                    setSelectedCaseForEvidence(null);
+                  }
+                }}>
                 <DialogTrigger asChild>
                   <Button 
                     variant="outline" 
                     size="sm"
                     className="absolute top-4 right-4 bg-white"
-                    onClick={() => setSelectedCaseForEvidence(caseItem.id)}
+                    onClick={() => {
+                      setSelectedCaseForEvidence(caseItem.id);
+                      setEvidenceDialogOpen(true);
+                    }}
                   >
                     <Upload className="h-4 w-4 mr-1" />
                     Evidence
@@ -73,10 +124,42 @@ export function AssignedCasesTab({
                       Attach evidence to case {caseItem.id}
                     </DialogDescription>
                   </DialogHeader>
-                  <EvidenceUploader 
-                    caseId={caseItem.id} 
-                    onComplete={handleEvidenceComplete} 
-                  />
+                  
+                  <div className="space-y-4 py-4">
+                    <div className="grid w-full max-w-sm items-center gap-1.5">
+                      <Label htmlFor="evidence-file">Select File</Label>
+                      <Input 
+                        id="evidence-file" 
+                        type="file" 
+                        onChange={handleFileChange}
+                      />
+                    </div>
+                    
+                    <div className="grid w-full gap-1.5">
+                      <Label htmlFor="evidence-description">Description</Label>
+                      <Textarea 
+                        id="evidence-description" 
+                        placeholder="Describe this evidence..."
+                        value={evidenceDescription}
+                        onChange={(e) => setEvidenceDescription(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button 
+                      variant="secondary" 
+                      onClick={() => setEvidenceDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleUploadEvidence}
+                      disabled={!selectedFile || isUploading}
+                    >
+                      {isUploading ? "Uploading..." : "Upload Evidence"}
+                    </Button>
+                  </DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>

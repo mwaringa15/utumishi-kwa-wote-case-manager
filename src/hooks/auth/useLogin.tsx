@@ -22,7 +22,7 @@ export function useLogin() {
       // Check for demo accounts first
       const demoAccount = checkForDemoAccount(lowercaseEmail, password);
       if (demoAccount) {
-        // If it's a supervisor demo account, assign a station
+        // If it's a supervisor or officer demo account, assign a station
         if (["supervisor", "officer"].includes(demoAccount.user.role)) {
           // For demo accounts, store a default station ID if none was selected
           if (stationId) {
@@ -135,12 +135,37 @@ export function useLogin() {
           } else {
             console.log("User synced successfully:", syncResult);
             
-            // If station was provided, give feedback
-            if (stationId) {
-              toast({
-                title: "Station Assignment Successful",
-                description: "You have been assigned to the selected station.",
-              });
+            // Update user's station assignment in the database
+            if (stationId && role) {
+              const { error: updateError } = await supabase
+                .from('users')
+                .update({ station_id: stationId })
+                .eq('id', user.id);
+                
+              if (updateError) {
+                console.error("Error updating user's station assignment:", updateError);
+              } else {
+                console.log("User's station assignment updated in the database");
+                
+                // Get station name
+                const { data: stationData } = await supabase
+                  .from('stations')
+                  .select('name')
+                  .eq('id', stationId)
+                  .single();
+                  
+                if (stationData) {
+                  toast({
+                    title: "Station Assignment Successful",
+                    description: `You have been assigned to ${stationData.name} station.`,
+                  });
+                } else {
+                  toast({
+                    title: "Station Assignment Successful",
+                    description: "You have been assigned to the selected station.",
+                  });
+                }
+              }
             }
           }
         } catch (syncErr) {

@@ -2,20 +2,21 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Retrieves the station ID for a specific user
+ * Retrieves the station ID and name for a specific user
  */
-export async function getUserStationId(userId?: string): Promise<string | null> {
+export async function getUserStationId(userId?: string): Promise<{stationId: string | null, stationName: string | null}> {
   // First check localStorage for stored station ID (set during login)
   const storedStationId = localStorage.getItem('selected_station_id');
+  const storedStationName = localStorage.getItem('selected_station_name');
   
-  if (storedStationId) {
-    console.log("Using stored station ID:", storedStationId);
-    return storedStationId;
+  if (storedStationId && storedStationName) {
+    console.log("Using stored station data:", storedStationId, storedStationName);
+    return { stationId: storedStationId, stationName: storedStationName };
   }
   
   if (!userId) {
     console.warn("No user ID provided to getUserStationId and no station in localStorage");
-    return null;
+    return { stationId: null, stationName: null };
   }
   
   try {
@@ -27,17 +28,32 @@ export async function getUserStationId(userId?: string): Promise<string | null> 
       
     if (error) {
       console.error("Error fetching user's station ID:", error);
-      return null;
+      return { stationId: null, stationName: null };
     }
     
-    if (data?.station_id) {
-      // Store the station ID for future use
-      localStorage.setItem('selected_station_id', data.station_id);
+    const stationId = data?.station_id || null;
+    let stationName = null;
+    
+    if (stationId) {
+      // Get station name
+      const { data: stationData, error: stationError } = await supabase
+        .from('stations')
+        .select('name')
+        .eq('id', stationId)
+        .single();
+      
+      if (!stationError && stationData) {
+        stationName = stationData.name;
+        
+        // Store the station data for future use
+        localStorage.setItem('selected_station_id', stationId);
+        localStorage.setItem('selected_station_name', stationName);
+      }
     }
     
-    return data?.station_id || null;
+    return { stationId, stationName };
   } catch (error) {
     console.error("Error in getUserStationId:", error);
-    return null;
+    return { stationId: null, stationName: null };
   }
 }

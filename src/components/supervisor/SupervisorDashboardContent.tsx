@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SupervisorDashboardHeader } from "@/components/supervisor/SupervisorDashboardHeader";
 import { StatsOverview } from "@/components/supervisor/StatsOverview";
@@ -17,8 +18,11 @@ import { SupervisorDashboardProps } from "@/components/supervisor/types";
 import { SupervisorStats } from "@/hooks/supervisor/types";
 import { StationAnalytics } from "@/components/supervisor/StationAnalytics";
 import { SupervisorTabs } from "@/components/supervisor/SupervisorTabs";
-import { useState } from "react";
-import { OfficerStats } from "@/types"; // For mapping if needed"
+import { useState, useEffect } from "react";
+import { OfficerStats } from "@/types";
+import { CrimeStatisticsChart } from "@/components/supervisor/CrimeStatisticsChart";
+import { CaseCompletionChart } from "@/components/supervisor/CaseCompletionChart";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SupervisorDashboardContentProps extends SupervisorDashboardProps {
   onAssignCase: (caseId: string, officerId: string) => Promise<boolean>;
@@ -32,6 +36,9 @@ const SupervisorDashboardContent = ({
 }: SupervisorDashboardContentProps) => {
   const { toast } = useToast();
   const supervisorHookData = useSupervisorData(user); 
+  const [crimeStats, setCrimeStats] = useState<Array<{ name: string; value: number; color: string }>>([]);
+  const [caseCompletionStats, setCaseCompletionStats] = useState<Array<any>>([]);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
 
   const { 
     cases, 
@@ -50,7 +57,92 @@ const SupervisorDashboardContent = ({
     handleSubmitToJudiciary
   } = supervisorHookData;
 
-  // Check if the user is a supervisor (previously was checking for Commander, Administrator, or OCS)
+  // Fetch crime statistics for the supervisor's station
+  useEffect(() => {
+    if (!stationData?.station) return;
+    
+    const fetchCrimeStats = async () => {
+      setIsStatsLoading(true);
+      try {
+        // Get distribution of crime types for this station
+        const { data: crimeData, error: crimeError } = await supabase
+          .from('reports')
+          .select('category, count')
+          .eq('station_id', stationData.station)
+          .not('category', 'is', null)
+          .group('category');
+          
+        if (crimeError) throw crimeError;
+        
+        // Get case completion statistics by month
+        const { data: caseData, error: caseError } = await supabase
+          .from('cases')
+          .select('status, created_at, count')
+          .eq('station', stationData.station)
+          .group('status, created_at');
+          
+        if (caseError) throw caseError;
+        
+        // Process crime type data
+        const colors = [
+          "#3b82f6", "#ef4444", "#10b981", "#f97316", 
+          "#8b5cf6", "#ec4899", "#6366f1", "#14b8a6",
+          "#f59e0b", "#84cc16", "#06b6d4", "#d946ef"
+        ];
+        
+        const formattedCrimeStats = crimeData.map((item, index) => ({
+          name: item.category || "Unknown",
+          value: parseInt(item.count),
+          color: colors[index % colors.length]
+        }));
+        
+        setCrimeStats(formattedCrimeStats);
+        
+        // Process case completion data
+        // Group by month and status
+        const casesByMonth: Record<string, { completed: number; inProgress: number; pending: number }> = {};
+        
+        caseData.forEach(item => {
+          const date = new Date(item.created_at);
+          const monthYear = `${date.getMonth() + 1}/${date.getFullYear()}`;
+          
+          if (!casesByMonth[monthYear]) {
+            casesByMonth[monthYear] = { completed: 0, inProgress: 0, pending: 0 };
+          }
+          
+          if (item.status === "Closed" || item.status === "Submitted to Judiciary") {
+            casesByMonth[monthYear].completed += parseInt(item.count);
+          } else if (item.status === "Under Investigation") {
+            casesByMonth[monthYear].inProgress += parseInt(item.count);
+          } else {
+            casesByMonth[monthYear].pending += parseInt(item.count);
+          }
+        });
+        
+        const formattedCaseStats = Object.entries(casesByMonth).map(([month, stats]) => ({
+          name: month,
+          completed: stats.completed,
+          inProgress: stats.inProgress,
+          pending: stats.pending
+        }));
+        
+        setCaseCompletionStats(formattedCaseStats);
+      } catch (error) {
+        console.error("Error fetching statistics:", error);
+        toast({
+          title: "Error loading statistics",
+          description: "Could not load station statistics",
+          variant: "destructive"
+        });
+      } finally {
+        setIsStatsLoading(false);
+      }
+    };
+    
+    fetchCrimeStats();
+  }, [stationData?.station, toast]);
+
+  // Check if the user is a supervisor
   const isCommanderOrAdmin = user?.role === "supervisor";
   
   // Mock regional data for demonstration
@@ -71,6 +163,22 @@ const SupervisorDashboardContent = ({
       <SidebarInset className="p-6">
         <SupervisorDashboardHeader user={user} station={stationData?.station} />
         <StatsOverview stats={overviewStats} /> 
+        
+        {/* Station-specific charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <CrimeStatisticsChart 
+            data={crimeStats} 
+            isLoading={isStatsLoading} 
+            title="Crime Types in Your Station"
+            description="Distribution of crime reports by category"
+          />
+          <CaseCompletionChart 
+            data={caseCompletionStats}
+            isLoading={isStatsLoading}
+            title="Case Status by Month" 
+            description="Overview of case completion rates"
+          />
+        </div>
         
         {/* Station-specific sections */}
         {stationData && (

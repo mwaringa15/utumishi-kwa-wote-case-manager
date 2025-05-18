@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -9,13 +9,14 @@ import { StatsOverview } from "./StatsOverview";
 import { AssignedCasesTab } from "./AssignedCasesTab";
 import { PendingReportsTab } from "./PendingReportsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, UserCircle } from "lucide-react";
+import { Search, UserCircle, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCasesAndReports } from "@/hooks/officer/useCasesAndReports";
 import { Button } from "@/components/ui/button";
 import CrimeReportForm from "@/components/CrimeReportForm";
 import { BackButton } from "@/components/ui/back-button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 interface OfficerDashboardProps {
   stationName?: string;
@@ -30,12 +31,14 @@ const OfficerDashboard = ({ stationName = "Unknown Station" }: OfficerDashboardP
   const { 
     assignedCases, 
     pendingReports, 
+    officerReports,
     isLoading, 
     stats,
     handleUpdateStatus,
     handleUpdateProgress,
     handleAssignReport,
-    handleEvidenceUploaded
+    handleEvidenceUploaded,
+    handleUploadEvidence
   } = useCasesAndReports(user);
   
   // Filter cases based on search term
@@ -54,11 +57,18 @@ const OfficerDashboard = ({ stationName = "Unknown Station" }: OfficerDashboardP
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
           <div>
             <h1 className="text-2xl font-bold text-kenya-black mb-1">Officer Dashboard</h1>
-            <p className="text-gray-600">
-              Welcome, Officer {user?.name}{stationName ? ` - ${stationName}` : ''}
-            </p>
+            <div className="flex items-center">
+              <p className="text-gray-600">
+                Welcome, Officer {user?.name}
+              </p>
+              {stationName && (
+                <Badge className="ml-2 bg-blue-100 text-blue-800 hover:bg-blue-200">
+                  {stationName} Station
+                </Badge>
+              )}
+            </div>
           </div>
-          <div className="mt-4 sm:mt-0 flex gap-3">
+          <div className="mt-4 sm:mt-0 flex flex-wrap gap-3">
             <Button 
               variant="outline"
               onClick={() => navigate("/officer-profile")}
@@ -84,8 +94,9 @@ const OfficerDashboard = ({ stationName = "Unknown Station" }: OfficerDashboardP
 
             <Button 
               onClick={() => navigate("/officer-reports")}
-              className="bg-kenya-green hover:bg-kenya-green/90 text-white"
+              className="flex items-center gap-2 bg-kenya-green hover:bg-kenya-green/90 text-white"
             >
+              <FileText className="h-4 w-4" />
               View All Reports
             </Button>
           </div>
@@ -111,6 +122,7 @@ const OfficerDashboard = ({ stationName = "Unknown Station" }: OfficerDashboardP
           <TabsList className="mb-6">
             <TabsTrigger value="assigned">Assigned Cases</TabsTrigger>
             <TabsTrigger value="pending">Pending Reports</TabsTrigger>
+            <TabsTrigger value="my-reports">My Reports</TabsTrigger>
           </TabsList>
           
           <TabsContent value="assigned">
@@ -120,6 +132,7 @@ const OfficerDashboard = ({ stationName = "Unknown Station" }: OfficerDashboardP
               onUpdateStatus={handleUpdateStatus}
               onUpdateProgress={handleUpdateProgress}
               onEvidenceUploaded={handleEvidenceUploaded}
+              onUploadEvidence={handleUploadEvidence}
             />
           </TabsContent>
           
@@ -129,6 +142,39 @@ const OfficerDashboard = ({ stationName = "Unknown Station" }: OfficerDashboardP
               isLoading={isLoading} 
               onAssign={handleAssignReport} 
             />
+          </TabsContent>
+
+          <TabsContent value="my-reports">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold mb-4">My Crime Reports</h2>
+              
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-pulse text-gray-400">Loading reports...</div>
+                </div>
+              ) : officerReports && officerReports.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {officerReports.map((report) => (
+                    <div key={report.id} className="bg-white border rounded-lg shadow-sm p-4">
+                      <h3 className="font-semibold text-lg">{report.title}</h3>
+                      <div className="mt-2 text-sm text-gray-500">
+                        <p><span className="font-medium">Status:</span> {report.status}</p>
+                        <p><span className="font-medium">Date:</span> {new Date(report.createdAt).toLocaleDateString()}</p>
+                        <p><span className="font-medium">Location:</span> {report.location}</p>
+                        <p><span className="font-medium">Type:</span> {report.crimeType || report.category}</p>
+                      </div>
+                      <div className="mt-3 border-t pt-3 text-sm">
+                        <p className="line-clamp-2">{report.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">You haven't created any crime reports yet</p>
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>
