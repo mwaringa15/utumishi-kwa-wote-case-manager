@@ -1,16 +1,78 @@
 
-import { User } from "@/types";
+import { User, OfficerStatus } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { useState } from "react";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AddOfficerDialogProps {
   availableOfficers: User[];
+  stationId: string | null;
+  onOfficerAdded?: () => void;
 }
 
-export const AddOfficerDialog = ({ availableOfficers }: AddOfficerDialogProps) => {
+export const AddOfficerDialog = ({ availableOfficers, stationId, onOfficerAdded }: AddOfficerDialogProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedOfficerId, setSelectedOfficerId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  
+  const handleAddOfficer = async () => {
+    if (!selectedOfficerId || !stationId) {
+      toast({
+        title: "Selection required",
+        description: "Please select an officer to add to this station.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    // Update the officer's station_id in the database
+    const { error } = await supabase
+      .from('users')
+      .update({ station_id: stationId })
+      .eq('id', selectedOfficerId);
+      
+    setIsLoading(false);
+    
+    if (error) {
+      console.error("Error adding officer to station:", error);
+      toast({
+        title: "Failed to add officer",
+        description: error.message,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    toast({
+      title: "Officer added",
+      description: "Officer has been successfully added to your station.",
+      variant: "default"
+    });
+    
+    // Close the dialog and trigger refresh
+    setDialogOpen(false);
+    if (onOfficerAdded) {
+      onOfficerAdded();
+    }
+  };
+  
+  // Filter available officers to exclude those already assigned to this station
+  const unassignedOfficers = availableOfficers.filter(officer => 
+    !officer.station || officer.station === "Unassigned"
+  );
   
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -22,42 +84,44 @@ export const AddOfficerDialog = ({ availableOfficers }: AddOfficerDialogProps) =
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Available Officers</DialogTitle>
+          <DialogTitle>Add Officer to Station</DialogTitle>
         </DialogHeader>
-        {availableOfficers.length > 0 ? (
-          <div className="max-h-[400px] overflow-y-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b">
-                  <th className="px-4 py-2">Name</th>
-                  <th className="px-4 py-2">Email</th>
-                  <th className="px-4 py-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {availableOfficers.map(officer => (
-                  <tr key={officer.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-3">{officer.name}</td>
-                    <td className="px-4 py-3">{officer.email}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block rounded-full px-2 py-1 text-xs ${
-                        officer.status === 'on_duty' ? 'bg-green-100 text-green-800' : 
-                        officer.status === 'on_leave' ? 'bg-yellow-100 text-yellow-800' : 
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {officer.status === 'on_duty' ? 'On Duty' : 
-                         officer.status === 'on_leave' ? 'On Leave' : 
-                         'Off Duty'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        
+        {unassignedOfficers.length > 0 ? (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="officer-select" className="text-sm font-medium">
+                Select Officer
+              </label>
+              <Select
+                value={selectedOfficerId}
+                onValueChange={setSelectedOfficerId}
+              >
+                <SelectTrigger id="officer-select" className="w-full">
+                  <SelectValue placeholder="Select an officer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {unassignedOfficers.map(officer => (
+                    <SelectItem key={officer.id} value={officer.id}>
+                      {officer.name} ({officer.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex justify-end">
+              <Button 
+                onClick={handleAddOfficer} 
+                disabled={isLoading || !selectedOfficerId}
+              >
+                {isLoading ? "Adding..." : "Add to Station"}
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="p-4 text-center text-gray-500">
-            No available officers found for this station
+            No unassigned officers available to add to this station
           </div>
         )}
       </DialogContent>

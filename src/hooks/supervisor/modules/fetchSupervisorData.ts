@@ -25,8 +25,8 @@ export async function fetchSupervisorData(
 
   try {
     // Get the station data for the current user
-    const stationData = await fetchStationData(user.id, showToast);
-    const stationId = stationData.stationId;
+    const stationDataResult = await fetchStationData(user.id, showToast);
+    const stationId = stationDataResult.stationId;
 
     if (!stationId && user.role !== "supervisor") {
       showToast({ 
@@ -38,14 +38,14 @@ export async function fetchSupervisorData(
     }
 
     // Fetch cases and related data
-    const { casesData, reportsById, officerNamesById } = await fetchCases(stationId);
+    const { casesData, reportsById, officerNamesById } = await fetchCases(stationId || null);
     const formattedCases = formatCases(casesData, reportsById, officerNamesById);
     
     // Fetch pending reports that don't have cases yet
-    const formattedReports = await fetchPendingReports(stationId);
+    const formattedReports = await fetchPendingReports(stationId || null);
     
     // Fetch officers with their case counts
-    const officersWithCaseCounts = await fetchOfficersWithCounts(stationId);
+    const officersWithCaseCounts = await fetchOfficersWithCounts(stationId || null);
 
     return {
       cases: formattedCases,

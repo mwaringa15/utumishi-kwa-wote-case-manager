@@ -6,18 +6,22 @@ import { User } from "@/types";
 
 interface OfficersPageHeaderProps {
   stationName: string;
+  stationId: string | null;
   supervisorProfile: {
     name: string;
     email: string;
     station: string;
   } | null;
   availableOfficers: User[];
+  onOfficerAdded?: () => void;
 }
 
 export const OfficersPageHeader = ({ 
   stationName, 
+  stationId,
   supervisorProfile,
-  availableOfficers
+  availableOfficers,
+  onOfficerAdded
 }: OfficersPageHeaderProps) => {
   return (
     <div className="mb-6">
@@ -28,7 +32,11 @@ export const OfficersPageHeader = ({
           <p className="text-gray-500">View and manage officers in {stationName || 'Loading...'}</p>
           <SupervisorProfileCard profile={supervisorProfile} />
         </div>
-        <AddOfficerDialog availableOfficers={availableOfficers} />
+        <AddOfficerDialog 
+          availableOfficers={availableOfficers} 
+          stationId={stationId}
+          onOfficerAdded={onOfficerAdded}
+        />
       </div>
     </div>
   );

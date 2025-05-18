@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { User, OfficerStatus, UserRole } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ interface StationDataResult {
   availableOfficers: User[];
   officerProfiles: OfficerProfile[];
   isLoading: boolean;
+  refreshStationData: () => Promise<void>;
 }
 
 export function useFetchStationData(userId: string | undefined): StationDataResult {
@@ -24,129 +25,107 @@ export function useFetchStationData(userId: string | undefined): StationDataResu
   const [supervisorProfile, setSupervisorProfile] = useState<{ name: string, email: string, station: string } | null>(null);
   const [availableOfficers, setAvailableOfficers] = useState<User[]>([]);
 
-  // Get supervisor's station ID from localStorage or fetch it
-  useEffect(() => {
-    const getStationId = async () => {
-      setIsLoading(true);
-      
-      try {
-        console.log("Initial station ID check:", { 
-          userId, 
-          storedStationId: localStorage.getItem('selected_station_id') 
-        });
-        
-        let effectiveStationId = localStorage.getItem('selected_station_id');
-        
-        if (!effectiveStationId && userId) {
-          // Fetch from user profile
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('station_id')
-            .eq('id', userId)
-            .single();
-            
-          if (error) throw error;
-          
-          if (userData?.station_id) {
-            effectiveStationId = userData.station_id;
-            localStorage.setItem('selected_station_id', userData.station_id);
-          }
-        }
-        
-        console.log("Effective station ID:", effectiveStationId);
-        setStationId(effectiveStationId);
-        
-        // Get supervisor profile information
-        if (userId) {
-          const { data: supervisorData, error: supervisorError } = await supabase
-            .from('users')
-            .select('full_name, email, station_id')
-            .eq('id', userId)
-            .single();
-            
-          if (supervisorError) throw supervisorError;
-          
-          // Get station name
-          if (supervisorData?.station_id) {
-            const { data: stationData, error: stationError } = await supabase
-              .from('stations')
-              .select('name')
-              .eq('id', supervisorData.station_id)
-              .single();
-              
-            if (stationError) throw stationError;
-            
-            if (stationData) {
-              console.log("Station name found:", stationData.name);
-              setStationName(stationData.name);
-              setSupervisorProfile({
-                name: supervisorData.full_name || userId,
-                email: supervisorData.email || userId,
-                station: stationData.name
-              });
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error getting station ID:", error);
-        toast({
-          title: "Error",
-          description: "Failed to get station information",
-          variant: "destructive",
-        });
-      }
-    };
+  // Function to fetch all officers with the same station ID
+  const fetchStationOfficers = useCallback(async (stationId: string | null) => {
+    if (!stationId) return [];
     
-    if (userId) {
-      getStationId();
-    }
-  }, [userId, toast]);
-
-  // Fetch officer profiles once we have the station ID
-  useEffect(() => {
-    const fetchOfficers = async () => {
-      if (!stationId) return;
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, full_name, email, role, status')
+        .eq('role', 'officer');
+        
+      if (error) throw error;
       
-      setIsLoading(true);
-      try {
-        const profiles = await fetchStationOfficersProfiles(stationId);
+      if (data) {
+        // Format the officer data to match the User type
+        return data.map(officer => ({
+          id: officer.id || '',
+          name: officer.full_name || officer.email,
+          email: officer.email,
+          role: officer.role as UserRole,
+          status: (officer.status || 'on_duty') as OfficerStatus,
+          station: stationName
+        }));
+      }
+      
+      return [];
+    } catch (error) {
+      console.error("Error fetching officers:", error);
+      return [];
+    }
+  }, [stationName]);
+
+  // Fetch all data related to the station
+  const fetchAllStationData = useCallback(async () => {
+    if (!userId) return;
+    
+    setIsLoading(true);
+    try {
+      let effectiveStationId = localStorage.getItem('selected_station_id');
+      
+      if (!effectiveStationId) {
+        // Fetch from user profile
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('station_id, full_name, email')
+          .eq('id', userId)
+          .single();
+          
+        if (error) throw error;
+        
+        if (userData?.station_id) {
+          effectiveStationId = userData.station_id;
+          localStorage.setItem('selected_station_id', userData.station_id);
+        }
+        
+        // Get station name
+        if (effectiveStationId) {
+          const { data: stationData, error: stationError } = await supabase
+            .from('stations')
+            .select('name')
+            .eq('id', effectiveStationId)
+            .single();
+            
+          if (stationError) throw stationError;
+          
+          if (stationData) {
+            setStationName(stationData.name);
+            setSupervisorProfile({
+              name: userData.full_name || userId,
+              email: userData.email || userId,
+              station: stationData.name
+            });
+          }
+        }
+      }
+      
+      setStationId(effectiveStationId);
+      
+      // Fetch officer profiles and available officers
+      if (effectiveStationId) {
+        const profiles = await fetchStationOfficersProfiles(effectiveStationId);
         setOfficerProfiles(profiles);
         
-        // Fetch available officers with the same station ID
-        const { data: availableOfficersData, error: availableOfficersError } = await supabase
-          .from('users')
-          .select('id, full_name, email, role, status')
-          .eq('station_id', stationId)
-          .eq('role', 'officer');
-          
-        if (availableOfficersError) throw availableOfficersError;
-        
-        if (availableOfficersData) {
-          // Correctly convert the data to match User type with proper type casting for status
-          const formattedAvailableOfficers: User[] = availableOfficersData.map(officer => ({
-            id: officer.id || '',
-            name: officer.full_name || officer.email,
-            email: officer.email,
-            role: officer.role as UserRole,
-            status: (officer.status || 'on_duty') as OfficerStatus, // Cast to OfficerStatus type
-            station: stationName
-          }));
-          setAvailableOfficers(formattedAvailableOfficers);
-        }
-      } catch (error) {
-        console.error("Error fetching officer profiles:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch officer profiles",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+        const allOfficers = await fetchStationOfficers(effectiveStationId);
+        setAvailableOfficers(allOfficers);
       }
-    };
-    
-    fetchOfficers();
-  }, [stationId, stationName, toast]);
+    } catch (error: any) {
+      console.error("Error fetching station data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load station data: " + error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, toast, fetchStationOfficers]);
+  
+  // Initial data fetch
+  useEffect(() => {
+    fetchAllStationData();
+  }, [fetchAllStationData]);
 
   return {
     stationId,
@@ -154,6 +133,7 @@ export function useFetchStationData(userId: string | undefined): StationDataResu
     supervisorProfile,
     availableOfficers,
     officerProfiles,
-    isLoading
+    isLoading,
+    refreshStationData: fetchAllStationData
   };
 }

@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -23,7 +23,8 @@ const SupervisorOfficersPage = () => {
     supervisorProfile,
     availableOfficers,
     officerProfiles,
-    isLoading
+    isLoading,
+    refreshStationData
   } = useFetchStationData(user?.id);
 
   const { 
@@ -31,6 +32,12 @@ const SupervisorOfficersPage = () => {
     refreshData,
     isLoading: officersLoading 
   } = useSupervisorOfficers(user?.id, stationId);
+
+  // Function to refresh all officer data when a new officer is added
+  const handleOfficerAdded = useCallback(() => {
+    refreshData();
+    refreshStationData();
+  }, [refreshData, refreshStationData]);
 
   // If user is not logged in or not authorized, redirect
   useEffect(() => {
@@ -52,8 +59,10 @@ const SupervisorOfficersPage = () => {
           <SidebarInset className="p-6">
             <OfficersPageHeader 
               stationName={stationName}
+              stationId={stationId}
               supervisorProfile={supervisorProfile}
               availableOfficers={availableOfficers}
+              onOfficerAdded={handleOfficerAdded}
             />
             
             <OfficersTab 
