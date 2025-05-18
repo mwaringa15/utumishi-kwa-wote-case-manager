@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Case, CaseProgress, CaseStatus, CrimeReport, User, OfficerStats } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -35,17 +34,20 @@ export function useCasesAndReports(user: User | null) {
           throw error;
         }
         
-        setOfficerReports(data.map(report => ({
+        // Transform the data to match CrimeReport type
+        const transformedReports: CrimeReport[] = data.map(report => ({
           id: report.id,
           title: report.title,
           description: report.description,
           createdById: report.reporter_id,
           createdAt: report.created_at,
-          status: report.status,
+          status: report.status as CrimeReport['status'], // Cast to CrimeStatus type
           location: report.location,
           crimeType: report.category,
           category: report.category,
-        })));
+        }));
+        
+        setOfficerReports(transformedReports);
       } catch (error) {
         console.error("Error fetching officer reports:", error);
         toast({

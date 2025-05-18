@@ -24,9 +24,10 @@ export async function fetchSupervisorData(
 
   try {
     // Get the station ID for the current user
-    const fetchedStationId = await getUserStationId(user.id);
+    const stationInfo = await getUserStationId(user.id);
+    const stationId = stationInfo.stationId;
 
-    if (!fetchedStationId && user.role !== "supervisor") {
+    if (!stationId && user.role !== "supervisor") {
       showToast({ 
         title: "No Station ID", 
         description: "Supervisor's station ID could not be determined.", 
@@ -36,20 +37,20 @@ export async function fetchSupervisorData(
     }
 
     // Fetch cases and related data
-    const { casesData, reportsById, officerNamesById } = await fetchCases(fetchedStationId);
+    const { casesData, reportsById, officerNamesById } = await fetchCases(stationId);
     const formattedCases = formatCases(casesData, reportsById, officerNamesById);
     
     // Fetch pending reports that don't have cases yet
-    const formattedReports = await fetchPendingReports(fetchedStationId);
+    const formattedReports = await fetchPendingReports(stationId);
     
     // Fetch officers with their case counts
-    const officersWithCaseCounts = await fetchOfficersWithCounts(fetchedStationId);
+    const officersWithCaseCounts = await fetchOfficersWithCounts(stationId);
 
     return {
       cases: formattedCases,
       pendingReports: formattedReports,
       officers: officersWithCaseCounts,
-      stationId: fetchedStationId || undefined,
+      stationId: stationId || undefined,
     };
 
   } catch (error: any) {

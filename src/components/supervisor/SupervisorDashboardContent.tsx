@@ -69,17 +69,15 @@ const SupervisorDashboardContent = ({
           .from('reports')
           .select('category, count')
           .eq('station_id', stationData.station)
-          .not('category', 'is', null)
-          .group('category');
+          .not('category', 'is', null);
           
         if (crimeError) throw crimeError;
         
         // Get case completion statistics by month
         const { data: caseData, error: caseError } = await supabase
           .from('cases')
-          .select('status, created_at, count')
-          .eq('station', stationData.station)
-          .group('status, created_at');
+          .select('status, created_at')
+          .eq('station', stationData.station);
           
         if (caseError) throw caseError;
         
@@ -90,9 +88,16 @@ const SupervisorDashboardContent = ({
           "#f59e0b", "#84cc16", "#06b6d4", "#d946ef"
         ];
         
-        const formattedCrimeStats = crimeData.map((item, index) => ({
-          name: item.category || "Unknown",
-          value: parseInt(item.count),
+        // Count crime types manually
+        const crimeTypeCounts: Record<string, number> = {};
+        crimeData.forEach(item => {
+          const category = item.category || "Unknown";
+          crimeTypeCounts[category] = (crimeTypeCounts[category] || 0) + 1;
+        });
+        
+        const formattedCrimeStats = Object.entries(crimeTypeCounts).map(([category, count], index) => ({
+          name: category,
+          value: count,
           color: colors[index % colors.length]
         }));
         
@@ -111,11 +116,11 @@ const SupervisorDashboardContent = ({
           }
           
           if (item.status === "Closed" || item.status === "Submitted to Judiciary") {
-            casesByMonth[monthYear].completed += parseInt(item.count);
+            casesByMonth[monthYear].completed += 1;
           } else if (item.status === "Under Investigation") {
-            casesByMonth[monthYear].inProgress += parseInt(item.count);
+            casesByMonth[monthYear].inProgress += 1;
           } else {
-            casesByMonth[monthYear].pending += parseInt(item.count);
+            casesByMonth[monthYear].pending += 1;
           }
         });
         

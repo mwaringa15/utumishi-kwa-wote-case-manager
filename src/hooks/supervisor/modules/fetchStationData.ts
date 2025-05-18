@@ -18,27 +18,14 @@ export async function fetchStationData(
     
     // First check localStorage for stored station ID (set during login)
     const storedStationId = localStorage.getItem('selected_station_id');
+    const storedStationName = localStorage.getItem('selected_station_name') || "All Stations";
     
     let effectiveStationId = null;
-    let stationName = "All Stations";
+    let stationName = storedStationName;
     
     if (storedStationId) {
       console.log("Using stored station ID:", storedStationId);
       effectiveStationId = storedStationId;
-      
-      // Get station name
-      const { data: stationData, error: stationError } = await supabase
-        .from('stations')
-        .select('name')
-        .eq('id', storedStationId)
-        .single();
-        
-      if (stationError) {
-        console.error("Error fetching station name:", stationError);
-      } else if (stationData) {
-        console.log("Found station name:", stationData.name);
-        stationName = stationData.name;
-      }
     } else {
       // If no stored station ID, try to get it from user profile
       console.log("No stored station ID, fetching from user profile...");
@@ -94,6 +81,7 @@ export async function fetchStationData(
         } else if (stationData) {
           console.log("Found station name:", stationData.name);
           stationName = stationData.name;
+          localStorage.setItem('selected_station_name', stationName);
         }
       } else {
         // For administrators, commanders, or OCS, set a placeholder
