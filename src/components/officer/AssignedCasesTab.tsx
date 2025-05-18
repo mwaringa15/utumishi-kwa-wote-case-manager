@@ -88,80 +88,85 @@ export function AssignedCasesTab({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {cases.map((caseItem) => (
             <div key={caseItem.id} className="relative">
-              <CaseCard 
-                caseData={caseItem} 
-                showActions={true}
-                onUpdateStatus={onUpdateStatus}
-                onUpdateProgress={onUpdateProgress}
-              />
-              <Dialog open={evidenceDialogOpen && selectedCaseForEvidence === caseItem.id} 
-                onOpenChange={(open) => {
-                  setEvidenceDialogOpen(open);
-                  if (!open) {
-                    setSelectedFile(null);
-                    setEvidenceDescription("");
-                    setSelectedCaseForEvidence(null);
-                  }
-                }}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="absolute top-4 right-4 bg-white"
-                    onClick={() => {
-                      setSelectedCaseForEvidence(caseItem.id);
-                      setEvidenceDialogOpen(true);
-                    }}
-                  >
-                    <Upload className="h-4 w-4 mr-1" />
-                    Evidence
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Upload Evidence</DialogTitle>
-                    <DialogDescription>
-                      Attach evidence to case {caseItem.id}
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="space-y-4 py-4">
-                    <div className="grid w-full max-w-sm items-center gap-1.5">
-                      <Label htmlFor="evidence-file">Select File</Label>
-                      <Input 
-                        id="evidence-file" 
-                        type="file" 
-                        onChange={handleFileChange}
-                      />
-                    </div>
-                    
-                    <div className="grid w-full gap-1.5">
-                      <Label htmlFor="evidence-description">Description</Label>
-                      <Textarea 
-                        id="evidence-description" 
-                        placeholder="Describe this evidence..."
-                        value={evidenceDescription}
-                        onChange={(e) => setEvidenceDescription(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <DialogFooter>
-                    <Button 
-                      variant="secondary" 
-                      onClick={() => setEvidenceDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleUploadEvidence}
-                      disabled={!selectedFile || isUploading}
-                    >
-                      {isUploading ? "Uploading..." : "Upload Evidence"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex-grow">
+                  <CaseCard 
+                    caseData={caseItem} 
+                    showActions={true}
+                    onUpdateStatus={onUpdateStatus}
+                    onUpdateProgress={onUpdateProgress}
+                  />
+                </div>
+                <div className="ml-2">
+                  <Dialog open={evidenceDialogOpen && selectedCaseForEvidence === caseItem.id} 
+                    onOpenChange={(open) => {
+                      setEvidenceDialogOpen(open);
+                      if (!open) {
+                        setSelectedFile(null);
+                        setEvidenceDescription("");
+                        setSelectedCaseForEvidence(null);
+                      }
+                    }}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedCaseForEvidence(caseItem.id);
+                          setEvidenceDialogOpen(true);
+                        }}
+                      >
+                        <Upload className="h-4 w-4 mr-1" />
+                        Evidence
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Upload Evidence</DialogTitle>
+                        <DialogDescription>
+                          Attach evidence to case {caseItem.id}
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <div className="space-y-4 py-4">
+                        <div className="grid w-full max-w-sm items-center gap-1.5">
+                          <Label htmlFor="evidence-file">Select File</Label>
+                          <Input 
+                            id="evidence-file" 
+                            type="file" 
+                            onChange={handleFileChange}
+                          />
+                        </div>
+                        
+                        <div className="grid w-full gap-1.5">
+                          <Label htmlFor="evidence-description">Description</Label>
+                          <Textarea 
+                            id="evidence-description" 
+                            placeholder="Describe this evidence..."
+                            value={evidenceDescription}
+                            onChange={(e) => setEvidenceDescription(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <DialogFooter>
+                        <Button 
+                          variant="secondary" 
+                          onClick={() => setEvidenceDialogOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={handleUploadEvidence}
+                          disabled={!selectedFile || isUploading}
+                        >
+                          {isUploading ? "Uploading..." : "Upload Evidence"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
             </div>
           ))}
         </div>
