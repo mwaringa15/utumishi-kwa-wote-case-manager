@@ -16,11 +16,7 @@ const SupervisorOfficersPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  const { 
-    officers, 
-    refreshData 
-  } = useSupervisorOfficers(user?.id);
-
+  // Fetch station data and officers for that station
   const {
     stationId,
     stationName,
@@ -29,6 +25,12 @@ const SupervisorOfficersPage = () => {
     officerProfiles,
     isLoading
   } = useFetchStationData(user?.id);
+
+  const { 
+    officers, 
+    refreshData,
+    isLoading: officersLoading 
+  } = useSupervisorOfficers(user?.id, stationId);
 
   // If user is not logged in or not authorized, redirect
   useEffect(() => {
@@ -57,7 +59,7 @@ const SupervisorOfficersPage = () => {
             <OfficersTab 
               officers={officers}
               officerProfiles={officerProfiles}
-              isLoading={isLoading}
+              isLoading={isLoading || officersLoading}
               stationName={stationName}
             />
           </SidebarInset>

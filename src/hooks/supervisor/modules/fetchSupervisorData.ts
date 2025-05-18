@@ -5,6 +5,7 @@ import { getUserStationId } from "./getUserStationId";
 import { fetchCases, formatCases } from "./fetchCases";
 import { fetchPendingReports } from "./fetchPendingReports";
 import { fetchOfficersWithCounts } from "./fetchOfficersWithCounts";
+import { fetchStationData } from "./fetchStationData";
 
 /**
  * Main function to fetch all supervisor dashboard data
@@ -23,9 +24,9 @@ export async function fetchSupervisorData(
   }
 
   try {
-    // Get the station ID for the current user
-    const stationInfo = await getUserStationId(user.id);
-    const stationId = stationInfo.stationId;
+    // Get the station data for the current user
+    const stationData = await fetchStationData(user.id, showToast);
+    const stationId = stationData.stationId;
 
     if (!stationId && user.role !== "supervisor") {
       showToast({ 

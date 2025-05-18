@@ -7,42 +7,51 @@ import { fetchStationOfficers } from "./modules/fetchStationOfficers";
 import { fetchAllOfficers } from "./modules/fetchAllOfficers";
 import { supabase } from "@/integrations/supabase/client";
 
-export function useSupervisorOfficers(userId?: string) {
+export function useSupervisorOfficers(userId?: string, providedStationId?: string | null) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [officers, setOfficers] = useState<User[]>([]);
   const [stationName, setStationName] = useState<string>("");
-  const [stationId, setStationId] = useState<string | null>(null);
+  const [stationId, setStationId] = useState<string | null>(providedStationId || null);
   
   const fetchOfficersData = useCallback(async () => {
     setIsLoading(true);
     try {
-      console.log("Fetching officers data for user ID:", userId);
+      console.log("Fetching officers data for user ID:", userId, "Station ID:", providedStationId || stationId);
       
-      // Get user's station data
-      const stationData = await getUserStationData(userId);
+      // Use provided stationId if available, otherwise get user's station data
+      let effectiveStationId = providedStationId || stationId;
+      let stationNameValue = stationName;
       
-      if ('error' in stationData) {
-        toast({
-          title: "Station Data Error",
-          description: stationData.error,
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
+      if (!effectiveStationId) {
+        // Get user's station data
+        const stationData = await getUserStationData(userId);
+        
+        if ('error' in stationData) {
+          toast({
+            title: "Station Data Error",
+            description: stationData.error,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        effectiveStationId = stationData.stationId;
+        stationNameValue = stationData.stationName;
+        
+        setStationId(effectiveStationId);
+        setStationName(stationNameValue);
       }
       
-      setStationId(stationData.stationId);
-      setStationName(stationData.stationName);
-      
-      console.log("Station data retrieved:", stationData);
+      console.log("Using station data:", { effectiveStationId, stationNameValue });
       
       // Fetch officers data based on station
       let officersData: User[] = [];
       
-      if (stationData.stationId) {
+      if (effectiveStationId) {
         // Fetch officers for specific station
-        officersData = await fetchStationOfficers(stationData.stationId, stationData.stationName);
+        officersData = await fetchStationOfficers(effectiveStationId, stationNameValue);
       } else {
         // Fetch all officers (for administrators)
         officersData = await fetchAllOfficers();
@@ -60,7 +69,7 @@ export function useSupervisorOfficers(userId?: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, toast]);
+  }, [userId, toast, providedStationId, stationId, stationName]);
 
   useEffect(() => {
     fetchOfficersData();

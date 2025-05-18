@@ -16,6 +16,7 @@ export async function fetchOfficers(stationId: string | null): Promise<User[]> {
       
     // Only filter by station_id if we have one
     if (stationId) {
+      console.log("Filtering by station ID:", stationId);
       officersQuery = officersQuery.eq('station_id', stationId);
     }
     

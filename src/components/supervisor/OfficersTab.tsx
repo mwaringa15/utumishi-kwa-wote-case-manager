@@ -41,7 +41,7 @@ export function OfficersTab({ officers, officerProfiles = [], isLoading, station
         station: o.station
       }));
       
-  console.log("Officers to display:", displayOfficers);
+  console.log("Officers to display in OfficersTab:", displayOfficers);
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
