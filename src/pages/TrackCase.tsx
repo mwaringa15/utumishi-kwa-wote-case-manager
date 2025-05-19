@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -14,12 +14,13 @@ const TrackCase = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const { isSearching, caseData, handleSearch, error } = useTrackCase();
+  const initialSearchDone = useRef(false);
   
   // If we have an ID in the URL, automatically search for it only once on initial load
   useEffect(() => {
     const id = searchParams.get("id");
-    if (id) {
-      // Only search if we have a valid ID
+    if (id && !initialSearchDone.current) {
+      initialSearchDone.current = true; // Mark that we've done the initial search
       handleSearch({ caseId: id });
     }
   }, [searchParams, handleSearch]); // Include handleSearch in the dependency array

@@ -129,7 +129,7 @@ export function useReportSubmission() {
           navigate(`/case/${newCaseId}`, { replace: true });
         } else {
           // For public users, navigate to track case page with the new ID
-          navigate(`/track-case?id=${newCaseId}`);
+          navigate(`/track-case?id=${newCaseId}`, { replace: true });
         }
       }
       

@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+
+import { useState, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Case, CaseProgress, CaseStatus, CrimeReport } from "@/types";
+import { Case, CaseProgress, CaseStatus } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { CaseSearchFormValues } from "@/components/case-tracking/CaseSearchForm";
 
@@ -11,7 +12,8 @@ export function useTrackCase() {
   const { toast } = useToast();
   const lastSearchedId = useRef<string | null>(null);
 
-  const handleSearch = async (data: CaseSearchFormValues) => {
+  const handleSearch = useCallback(async (data: CaseSearchFormValues) => {
+    // Don't search again if we're already searching the same ID
     if (isSearching && lastSearchedId.current === data.caseId) {
       return;
     }
@@ -88,7 +90,7 @@ export function useTrackCase() {
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [isSearching, toast]);
 
   return {
     isSearching,
