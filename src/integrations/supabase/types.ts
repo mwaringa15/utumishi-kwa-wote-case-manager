@@ -378,6 +378,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      custom_jwt: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_station_id_for_current_user: {
         Args: Record<PropertyKey, never>
         Returns: string

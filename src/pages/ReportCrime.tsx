@@ -13,6 +13,11 @@ const ReportCrime = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
+  // This handler isn't needed anymore since redirection happens in useReportSubmission
+  const handleReportComplete = () => {
+    console.log("Report submission complete, redirection handled by submission hook");
+  };
+  
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar isLoggedIn={!!user} userRole={user?.role} />
@@ -36,7 +41,7 @@ const ReportCrime = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2">
-              <CrimeReportForm />
+              <CrimeReportForm onComplete={handleReportComplete} />
             </div>
             
             <div className="md:col-span-1">

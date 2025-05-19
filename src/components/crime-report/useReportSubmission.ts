@@ -94,12 +94,8 @@ export function useReportSubmission() {
             description: "Your report has been submitted for review. A supervisor will review it shortly.",
           });
           
-          // If user is authenticated, redirect them to dashboard, otherwise to the home page
-          if (user) {
-            navigate("/dashboard");
-          } else {
-            navigate("/");
-          }
+          // Always redirect to track case page, even without a case ID
+          navigate("/track-case");
           
           setIsSubmitting(false);
           return true;
