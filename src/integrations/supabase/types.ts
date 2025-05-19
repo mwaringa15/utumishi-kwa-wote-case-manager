@@ -382,6 +382,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_current_user_station_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_station_id_for_current_user: {
         Args: Record<PropertyKey, never>
         Returns: string
